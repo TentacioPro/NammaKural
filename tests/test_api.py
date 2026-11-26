@@ -131,6 +131,18 @@ def test_otp_and_dual_confirm_hitl_gates() -> None:
     assert modal_ok["approved"] is True
 
 
+def test_greeting_and_mic_check_respond_naturally() -> None:
+    hello = client.post("/api/turn", json={"combined_text": "hello ஹலோ", "latest_text": "ஹலோ"}).json()
+    assert hello["phase"] == "chitchat"
+    assert hello["chitchat"]["kind"] == "greeting_or_mic_check"
+
+    mic = client.post(
+        "/api/turn",
+        json={"combined_text": "Ward 44 issue\nநான் பேசுறது கேக்குதா", "latest_text": "நான் பேசுறது கேக்குதா"},
+    ).json()
+    assert mic["phase"] == "chitchat"
+
+
 def test_reverse_gps_and_telemetry_pii_redaction() -> None:
     geo = client.post("/api/location/reverse", json={"lat": 13.085, "lon": 80.21}).json()
     assert geo["landmark"]["ward"] == "Ward 103"

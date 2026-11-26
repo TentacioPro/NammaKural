@@ -260,6 +260,55 @@ def resolve_gps_to_landmark(lat: float, lon: float) -> dict[str, Any]:
     return {"service_id": best_svc, "landmark": best_lm, "distance_deg": round(best_dist, 5)}
 
 
+_CHAT_GREETING_RE = re.compile(
+    r"^(\s*(hello|hi|hey|vanakkam|namaste|ஹலோ|வணக்கம்)\s*[!?.]*)$|(கேக்குதா|கேட்கிறதா|kekutha|kekudha|hear me|mic test|listening)",
+    re.IGNORECASE,
+)
+_CHAT_HELP_RE = re.compile(
+    r"(how (does|do) (this|it|you) work|what can you do|என்ன செய்ய|எப்படி பயன்படுத்து|guide)",
+    re.IGNORECASE,
+)
+_ATTACH_MENTION_RE = re.compile(
+    r"(attach|upload|photo|picture|image|bill|receipt|screenshot|புகைப்படம்|படம்|ரசீது|பில்)",
+    re.IGNORECASE,
+)
+
+
+def classify_conversational_chitchat(text: str) -> dict[str, Any] | None:
+    """Respond naturally to greetings, mic checks, and how-to questions without repeating ticket summaries."""
+    cleaned = text.strip()
+    if _CHAT_GREETING_RE.search(cleaned):
+        return {
+            "kind": "greeting_or_mic_check",
+            "reply_en": "Yes, I hear you clearly! Tell me your street problem and landmark in Tanglish or Tamil.",
+            "reply_ta": "வணக்கம், நன்றாகக் கேட்கிறது! உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்.",
+        }
+    if _CHAT_HELP_RE.search(cleaned):
+        return {
+            "kind": "help",
+            "reply_en": "Just tell me what broke on your street and where. I will detect urgency, verify your Ward, and wait for your confirmation before sending.",
+            "reply_ta": "உங்கள் தெருப் பிரச்சனையையும் இடத்தையும் சொன்னால் போதும்; வார்டு கண்டறிந்து உங்கள் அனுமதியுடன் புகார் அனுப்புவேன்.",
+        }
+    return None
+
+
+def resolve_explicit_place(txt: str) -> dict[str, Any] | None:
+    """Resolve spoken TN landmark independently of the civic issue category."""
+    if re.search(r"(tower\s*park|5th\s*ave|vth\s*ave|3rd\s*cross)", txt):
+        return SERVICE_CATALOG["streetlight_eb"]["landmarks"][0]
+    if re.search(r"(anna\s*arch|iii(rd)?\s*ave)", txt):
+        return SERVICE_CATALOG["streetlight_eb"]["landmarks"][1]
+    if re.search(r"(vijaya\s*nagar|velachery\s*main)", txt):
+        return SERVICE_CATALOG["sewage_pothole"]["landmarks"][0]
+    if "phoenix" in txt:
+        return SERVICE_CATALOG["sewage_pothole"]["landmarks"][1]
+    if re.search(r"(madurai|kuruvikaran|anna\s*bus\s*stand|மதுரை)", txt):
+        return SERVICE_CATALOG["water_pipe"]["landmarks"][0]
+    if re.search(r"(coimbatore|gandhipuram|கோவை)", txt):
+        return SERVICE_CATALOG["water_pipe"]["landmarks"][1]
+    return None
+
+
 def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None) -> dict[str, Any]:
     """Normalize Tanglish/Tamil utterance, detect missing slots or multi-ward ambiguity."""
     txt = combined_text.lower()
@@ -304,13 +353,17 @@ def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None)
 
     svc = SERVICE_CATALOG[svc_id]
     lm_idx = 1 if ("phoenix" in txt or "arch" in txt or "coimbatore" in txt) else 0
-    lm = gps_landmark or svc["landmarks"][min(lm_idx, len(svc["landmarks"]) - 1)]
+    explicit_lm = resolve_explicit_place(txt)
+    lm = gps_landmark or explicit_lm or svc["landmarks"][min(lm_idx, len(svc["landmarks"]) - 1)]
     urgency = classify_sentiment_urgency(combined_text)
+
+    wants_attachment = bool(_ATTACH_MENTION_RE.search(txt))
 
     return {
         "has_place": has_place,
         "has_issue": has_issue,
         "ambiguous_area": ambiguous_area,
+        "wants_attachment": wants_attachment,
         "service_id": svc_id,
         "landmark_idx": lm_idx,
         "landmark": lm,

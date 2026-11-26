@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from backend.nlu import (
     SERVICE_CATALOG,
     analyze_turn,
+    classify_conversational_chitchat,
     classify_semantic_vad,
     resolve_gps_to_landmark,
 )
@@ -41,6 +42,7 @@ app.mount("/assets", StaticFiles(directory=str(ROOT_DIR / "assets")), name="asse
 
 class TurnRequest(BaseModel):
     combined_text: str
+    latest_text: str | None = None
     gps_lat: float | None = None
     gps_lon: float | None = None
     assistant_speaking: bool = False
@@ -103,10 +105,15 @@ def health_check() -> dict[str, Any]:
 
 @app.post("/api/turn")
 def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
-    """Run Semantic VAD, Tanglish NLU, optional GPS reverse match, and cooldown check."""
-    vad = classify_semantic_vad(req.combined_text, req.assistant_speaking)
+    """Run Semantic VAD, natural greeting/mic-check handling, Tanglish NLU, GPS match, and cooldown."""
+    utterance = req.latest_text if req.latest_text is not None else req.combined_text
+    vad = classify_semantic_vad(utterance, req.assistant_speaking)
     if vad["action"] == "not_turn":
         return {"vad": vad, "phase": "ignored_backchannel"}
+
+    chitchat = classify_conversational_chitchat(utterance)
+    if chitchat is not None:
+        return {"vad": vad, "phase": "chitchat", "chitchat": chitchat}
 
     gps_lm = None
     if req.gps_lat is not None and req.gps_lon is not None:
@@ -125,7 +132,35 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
             "ward": analysis["landmark"]["ward"],
         }
     )
-    return {"vad": vad, "analysis": analysis, "cooldown": cooldown}
+    return {"vad": vad, "phase": "civic", "analysis": analysis, "cooldown": cooldown}
+
+
+@app.websocket("/ws/voice")
+async def voice_live_ws(websocket: WebSocket) -> None:
+    """Real-time bidirectional JSON stream for live interim transcripts and instant state transitions."""
+    await websocket.accept()
+    try:
+        while True:
+            payload = await websocket.receive_json()
+            msg_type = payload.get("type", "turn")
+            if msg_type == "interim":
+                await websocket.send_json({"type": "interim_ack", "text": payload.get("text", "")})
+                continue
+            text = str(payload.get("latest_text", "") or payload.get("combined_text", ""))
+            combined = str(payload.get("combined_text", text))
+            vad = classify_semantic_vad(text, bool(payload.get("assistant_speaking", False)))
+            if vad["action"] == "not_turn":
+                await websocket.send_json({"type": "turn_result", "vad": vad, "phase": "ignored_backchannel"})
+                continue
+            chitchat = classify_conversational_chitchat(text)
+            if chitchat is not None:
+                await websocket.send_json({"type": "turn_result", "vad": vad, "phase": "chitchat", "chitchat": chitchat})
+                continue
+            analysis = analyze_turn(combined)
+            cooldown = check_cooldown(analysis["landmark"]["ward"], analysis["service_id"], analysis["urgency"]["tier"])
+            await websocket.send_json({"type": "turn_result", "vad": vad, "phase": "civic", "analysis": analysis, "cooldown": cooldown})
+    except WebSocketDisconnect:
+        return
 
 
 @app.post("/api/location/reverse")

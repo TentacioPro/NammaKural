@@ -10,7 +10,7 @@ allowed_paths:
 # 001 Foundry Voice Orb Minimal UI
 
 ## Goal
-Refine the initial idle/listening canvas in `index.html` to match the pure Microsoft Foundry Voice Live aesthetic (`Speaking...`, `Talk to interrupt` barge-in hint, minimal bottom control strip with Mic / Captions / Call Timer / End, top-right `+ New`), while retaining sunlit accessibility (`A+ Text`, `2G Lite`) and the mandatory HITL gate.
+Refine the initial idle/listening canvas in `index.html` to match the pure Microsoft Foundry Voice Live aesthetic (`Speaking...`, `Talk to interrupt` barge-in hint, minimal bottom control strip with Mic / Captions / Call Timer / End, top-right `+ New`), add a gentle 3-step citizen onboarding micro-guide ("How to speak, upload docs, & confirm"), inline Clip/Camera attachment inside the Wispr Voice Bar for runtime evidence/bills, a non-intrusive GPS location permission popup (with seamless spoken fallback), and the dual-path HITL seal.
 
 ## Non-goals
 - Do not restore the upfront `Full Form View` or government portal table grids.

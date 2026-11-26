@@ -10,7 +10,7 @@ allowed_paths:
 # 003 Tanglish & Regional TN Accent Normalization
 
 ## Goal
-Convert noisy spoken Tanglish, colloquial Chennai/Madurai/Kongu/Tirunelveli/Trichy Tamil, and Indian English into clean civic intents, resolved landmarks (`District -> Zone -> Ward -> Road ID`), and urgency/sentiment tags without forcing citizens to repeat themselves.
+Convert noisy spoken Tanglish, colloquial Chennai/Madurai/Kongu/Tirunelveli/Trichy Tamil, and Indian English—combined with optional browser GPS (via calm location popup) or purely spoken landmarks when location is denied/remote—into clean civic intents, resolved landmarks (`District -> Zone -> Ward -> Road ID`), runtime OCR'd ticket/bill references, and urgency/sentiment tags without forcing citizens to repeat themselves.
 
 ## Non-goals
 - Do not build a custom acoustic model from scratch; combine ASR keyterm biasing + phonetic/fuzzy landmark normalization + contextual disambiguation.

@@ -2364,11 +2364,26 @@
           }
           return;
         }
-        const chunk = chunks[i];
+        let chunk = chunks[i];
         const isTamil = /[\u0B80-\u0BFF]/.test(chunk);
+        const taVoice = isTamil ? pickTtsVoice(true) : null;
+        if (isTamil && !taVoice) {
+          // Windows/Chrome without a local Tamil voice pack silently drops Unicode Tamil; transliterate key cues for en-IN voice
+          chunk = chunk
+            .replace(/வணக்கம்!?/g, "Vanakkam!")
+            .replace(/நான் நம்ம குரல்/g, "Naan Namma Kural")
+            .replace(/நன்றாகக் கேட்கிறது!?/g, "Nalla kekudhu!")
+            .replace(/உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்\.?/g, "Ungal theru prachanaiyai sollunga.")
+            .replace(/புரிந்தது/g, "Purinjidhu")
+            .replace(/உறுதி/g, "Urudhi");
+          if (/[\u0B80-\u0BFF]/.test(chunk)) {
+            chunk = chunk.replace(/[\u0B80-\u0BFF]+/g, "").trim();
+          }
+          if (!chunk) { speakChunk(i + 1); return; }
+        }
         const u = new SpeechSynthesisUtterance(chunk);
-        u.lang = isTamil ? "ta-IN" : "en-IN";
-        const voice = pickTtsVoice(isTamil);
+        u.lang = (isTamil && taVoice) ? "ta-IN" : "en-IN";
+        const voice = (isTamil && taVoice) ? taVoice : pickTtsVoice(false);
         if (voice) u.voice = voice;
         u.rate = 0.96;
         u.onend = () => speakChunk(i + 1);
@@ -2380,7 +2395,7 @@
 
     function classifyConversationalGreeting(msg) {
       const cleaned = msg.trim();
-      if (/^(\s*(hello|hi|hey|vanakkam|namaste|ஹலோ|வணக்கம்)\s*[!?.]*)$|(கேக்குதா|கேட்கிறதா|kekutha|kekudha|hear me|mic test|listening)/i.test(cleaned)) {
+      if (/^(\s*((hello|hi|hey|vanakkam|namaste|ஹலோ|வணக்கம்)[\s,!?.]*)+)$|(கேக்குதா|கேட்கிறதா|kekutha|kekudha|hear me|mic test|listening)/i.test(cleaned)) {
         return {
           en: "Yes, I hear you clearly! Speak your street issue and landmark in Tanglish or Tamil.",
           ta: "வணக்கம், நன்றாகக் கேட்கிறது! உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
@@ -2468,6 +2483,42 @@
         .map(t => t.text).join(" ") + (state.gpsLandmarkName ? ` ${state.gpsLandmarkName}` : "");
       const parsed = detectIssueAndPlace(combined);
 
+      if (!parsed.hasIssue && !parsed.hasPlace) {
+        state.agentPhase = "clarifying";
+        state.needsSlot = "issue";
+        state.clarifyOptions = [
+          { label: "Streetlight + Loose Wire", value: "Anna Nagar Tower Park streetlight eriyala wire spark aaguthu" },
+          { label: "Sewage Overflow + Pothole", value: "Velachery Vijayanagar saakkadai overflow aaguthu" },
+          { label: "False Closure (1100)", value: "Complaint #GCC-20491 closed without fixing garbage" }
+        ];
+
+        let ask = state.lang === "ta"
+          ? `"${msg}" — உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள் (எ.கா. அண்ணா நகர் தெருவிளக்கு எரியல).`
+          : `I heard "${msg}". Tell me what needs fixing on your street and your area/landmark (e.g. "Anna Nagar Tower Park streetlight eriyala").`;
+
+        if (!fromPreset && state.llmMode !== "offline" && window.location.protocol !== "file:") {
+          const llmRes = await apiCall("/api/turn", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              combined_text: combined,
+              latest_text: msg,
+              lang: state.lang,
+              llm_mode: state.llmMode,
+              history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text }))
+            })
+          });
+          if (llmRes?.llm?.used && llmRes.llm.reply) {
+            ask = llmRes.llm.reply;
+          }
+        }
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        voiceInput.value = "";
+        renderAll(false);
+        speakReply(ask);
+        return;
+      }
+
       if (!parsed.hasIssue) {
         state.agentPhase = "clarifying";
         state.needsSlot = "issue";
@@ -2477,7 +2528,7 @@
           { label: "False Closure (1100)", value: "Complaint #GCC-20491 closed without fixing garbage" }
         ];
         const ask = state.lang === "ta"
-          ? "என்ன பிரச்சனை (தெருவிளக்கு, மின் கம்பி, சாக்கடை, குடிநீர், ரேஷன்) என்று சொல்லுங்கள்?"
+          ? "இடம் புரிந்தது. என்ன பிரச்சனை (தெருவிளக்கு, மின் கம்பி, சாக்கடை, குடிநீர், ரேஷன்) என்று சொல்லுங்கள்?"
           : "Got the location. What civic issue needs fixing there?";
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
@@ -2836,8 +2887,14 @@
           interruptAgentSpeech();
           let interim = "";
           for (let i = ev.resultIndex; i < ev.results.length; i++) {
-            const piece = ev.results[i][0].transcript;
+            const alt = ev.results[i][0];
+            const piece = alt.transcript;
             if (ev.results[i].isFinal) {
+              const words = piece.trim().split(/\s+/).filter(Boolean);
+              if (alt.confidence > 0 && alt.confidence < 0.42 && words.length <= 2) {
+                document.getElementById("liveTranscriptText").textContent = "Filtered faint background noise...";
+                continue;
+              }
               commitRecognizedTurn(piece);
             } else {
               interim += piece;

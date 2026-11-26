@@ -261,7 +261,7 @@ def resolve_gps_to_landmark(lat: float, lon: float) -> dict[str, Any]:
 
 
 _CHAT_GREETING_RE = re.compile(
-    r"^(\s*(hello|hi|hey|vanakkam|namaste|ஹலோ|வணக்கம்)\s*[!?.]*)$|(கேக்குதா|கேட்கிறதா|kekutha|kekudha|hear me|mic test|listening)",
+    r"^(\s*((hello|hi|hey|vanakkam|namaste|ஹலோ|வணக்கம்)[\s,!?.]*)+)$|(கேக்குதா|கேட்கிறதா|kekutha|kekudha|hear me|mic test|listening)",
     re.IGNORECASE,
 )
 _CHAT_HELP_RE = re.compile(

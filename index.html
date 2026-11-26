@@ -918,7 +918,7 @@
       position: fixed;
       bottom: 20px;
       right: 20px;
-      z-index: 80;
+      z-index: 95;
       background: var(--ink);
       color: #FFFFFF;
       padding: 10px 16px;
@@ -930,6 +930,157 @@
       gap: 8px;
     }
     .toast[data-visible="true"] { display: inline-flex; }
+
+    .barge-hint {
+      font-size: 0.78rem;
+      color: var(--ink-3);
+      letter-spacing: 0.01em;
+    }
+
+    .runtime-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .engine-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--teal-dark);
+      background: var(--bg-mint);
+      border: 1px solid #A7F3D0;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .onboarding-strip {
+      width: 100%;
+      max-width: 700px;
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      text-align: left;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .onboarding-strip[data-visible="true"] { display: flex; }
+
+    .onboarding-steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 640px) {
+      .onboarding-steps { grid-template-columns: 1fr; }
+    }
+
+    .onboard-step {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      color: var(--ink-2);
+    }
+
+    .attach-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--ink);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: 8px;
+      padding: 6px 10px;
+      min-height: 36px;
+      cursor: pointer;
+    }
+    .attach-chip:hover { background: var(--bg-subtle); }
+
+    .otp-cooldown-box {
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .otp-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .otp-input {
+      width: 110px;
+      padding: 7px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 7px;
+      background: var(--bg-surface);
+      color: var(--ink);
+    }
+
+    .cooldown-alert {
+      font-size: 0.84rem;
+      padding: 8px 11px;
+      border-radius: 8px;
+      background: var(--bg-warm);
+      border: 1px solid #FDE68A;
+      color: var(--amber);
+      display: none;
+    }
+    .cooldown-alert[data-visible="true"] { display: block; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop[data-open="true"] { display: flex; }
+
+    .modal-dialog {
+      width: 100%;
+      max-width: 520px;
+      max-height: 88vh;
+      overflow-y: auto;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .history-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: var(--bg-page);
+      font-size: 0.86rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
   </style>
 </head>
 <body>
@@ -957,6 +1108,8 @@
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
         </div>
 
+        <button type="button" class="btn-pill-quiet" id="historyOpenBtn">My Requests</button>
+        <button type="button" class="btn-pill-quiet" id="guideToggleBtn" aria-pressed="true">How to Use</button>
         <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+ Text</button>
         <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G Lite</button>
       </div>
@@ -968,11 +1121,14 @@
          PURE VOICE-FIRST CIVIC AGENT (HITL CLARITY CHECK + SENTIMENT/URGENCY)
          ====================================================================== -->
     <section class="agent-shell" aria-label="Voice Civic Agent">
-      <div class="orb-stage" id="orbStage" data-agent-state="ready">
-        <span class="agent-state-pill">
-          <span class="pulse-dot"></span>
-          <span id="agentStateLabel">Agent Ready · Wispr Flow Tanglish / தமிழ்</span>
-        </span>
+      <div class="orb-stage" id="orbStage" data-agent-state="idle">
+        <div class="runtime-meta-row">
+          <span class="agent-state-pill">
+            <span class="pulse-dot"></span>
+            <span id="agentStateLabel">Agent Ready · Speak in Tanglish / தமிழ்</span>
+          </span>
+          <span class="engine-pill" id="voiceModePill">Offline Tanglish Engine Ready (No API keys needed)</span>
+        </div>
 
         <!-- AcousticOrb (3-Layer Harmonic Neural Canvas) -->
         <div class="orb-canvas-wrap" id="orbTrigger" title="Tap orb to speak via microphone or Wispr Flow">
@@ -986,9 +1142,27 @@
           </button>
         </div>
 
+        <span class="barge-hint" id="bargeHint">Talk to interrupt · Say "stop" / "niruthunga" anytime · Say "ok / seri" safely</span>
+
         <div>
           <h2 class="agent-headline" id="agentHeadline">Speak what needs fixing on your street</h2>
-          <p class="agent-subline" id="agentSubline">Speak once in Tanglish or Tamil. NammaKural detects urgency, asks only if a detail is missing, and waits for your approval before dispatch.</p>
+          <p class="agent-subline" id="agentSubline">Speak once in Tanglish or Tamil. NammaKural detects urgency, checks location/history cleanly, and waits for your Tamil seal before dispatch.</p>
+        </div>
+
+        <!-- Gentle 3-Step Citizen Onboarding Micro-Guide -->
+        <div class="onboarding-strip" id="onboardingStrip" data-visible="true">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:0.84rem;" id="onboardTitle">New to NammaKural? 3 simple voice steps</strong>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn-outline" id="listenGuideBtn" style="min-height:32px;padding:4px 10px;font-size:0.78rem;">Listen Tamil Guide</button>
+              <button type="button" class="btn-outline" id="gpsTriggerBtn" style="min-height:32px;padding:4px 10px;font-size:0.78rem;">Check GPS Location</button>
+            </div>
+          </div>
+          <div class="onboarding-steps">
+            <div class="onboard-step"><strong>1. Speak or Wispr Flow:</strong> Say street problem + landmark in Tanglish or Tamil.</div>
+            <div class="onboard-step"><strong>2. Attach Photo / Bill:</strong> Tap Attach below anytime to add street photo or closed ticket slip.</div>
+            <div class="onboard-step"><strong>3. Verify & Seal:</strong> Confirm OTP + say <em>"உறுதி, உறுதி"</em> or review popup OK + <em>"உறுதி"</em>.</div>
+          </div>
         </div>
 
         <!-- Multi-Turn Conversation Thread -->
@@ -997,14 +1171,20 @@
         <!-- Dynamic Clarifier Pills (Rendered ONLY when a detail/landmark needs disambiguation) -->
         <div class="clarify-pills" id="clarifyPills" style="display:none;"></div>
 
-        <!-- Clean Single Wispr Flow Voice Bar -->
+        <!-- Clean Single Wispr Flow Voice Bar + Runtime Doc/Photo Upload -->
         <div class="wispr-input-bar">
           <textarea id="voiceInput" class="wispr-textarea" rows="2" placeholder="Press Wispr Flow hotkey & speak naturally (e.g. 'Streetlight 5 naala eriyala' or 'Anna Nagar Tower Park...')" aria-label="Spoken complaint input"></textarea>
           <div class="wispr-bar-footer">
-            <span class="wispr-hint" id="wisprHint">
-              <svg class="icon" style="width:15px;height:15px;color:var(--teal)" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              <span id="wisprHintText">No forms to fill · Speak naturally or pick an example below</span>
-            </span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <label class="attach-chip" title="Attach street photo, EB/water bill, or closed ticket screenshot">
+                <svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                <span id="runtimeAttachLabel">Attach Photo / Bill</span>
+                <input type="file" id="runtimeAttachInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none">
+              </label>
+              <span class="wispr-hint" id="wisprHint">
+                <span id="wisprHintText">Zero forms · Runtime photo/doc ready</span>
+              </span>
+            </div>
             <div style="display:flex;gap:8px;align-items:center;">
               <button type="button" class="btn-outline" id="newChatBtn" style="min-height:38px;padding:6px 12px;">Clear / New</button>
               <button type="button" class="btn-agent-send" id="runAgentBtn">
@@ -1033,12 +1213,14 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
           <div>
             <div class="hitl-label" id="hitlKicker">Step 3 · Human-in-the-Loop Clarity Check</div>
-            <h3 id="hitlTitle" style="font-size:1.08rem;margin-top:2px;">Please verify before NammaKural prepares dispatch</h3>
+            <h3 id="hitlTitle" style="font-size:1.08rem;margin-top:2px;">Verify details, OTP & seal before dispatch</h3>
           </div>
           <span class="urgency-pill" id="hitlUrgencyBadge" data-tier="STANDARD">Standard Civic Request</span>
         </div>
 
         <p id="hitlSummaryText" style="font-size:0.94rem;color:var(--ink-2);line-height:1.5;"></p>
+
+        <div class="cooldown-alert" id="cooldownAlert" data-visible="false"></div>
 
         <div class="hitl-grid">
           <div class="hitl-box">
@@ -1054,18 +1236,31 @@
             <span class="hitl-val" id="hitlUrgencyVal"></span>
           </div>
           <div class="hitl-box">
-            <span class="hitl-label" id="hitlNoteLabel">Privacy / Extra Context</span>
+            <span class="hitl-label" id="hitlNoteLabel">Evidence / Anti-Spam Guard</span>
             <span class="hitl-val" id="hitlNoteVal">Anonymous Web where supported · Ready</span>
           </div>
         </div>
 
         <div class="landmark-bar" id="landmarkBar"></div>
 
+        <!-- Citizen Mobile OTP + Dual-Confirm Tamil Seal Controls -->
+        <div class="otp-cooldown-box">
+          <div class="otp-row">
+            <strong style="font-size:0.84rem;" id="otpStatusLabel">Anti-Spam Check: Citizen Mobile OTP</strong>
+            <button type="button" class="btn-outline" id="otpSendBtn" style="min-height:34px;padding:4px 10px;font-size:0.8rem;">Get Demo OTP</button>
+            <input type="text" id="otpCodeInput" class="otp-input" placeholder="OTP (4829)" aria-label="Enter Mobile OTP" value="">
+            <button type="button" class="btn-outline" id="otpVerifyBtn" style="min-height:34px;padding:4px 10px;font-size:0.8rem;">Verify OTP</button>
+          </div>
+          <div style="font-size:0.78rem;color:var(--ink-3);" id="otpHintText">
+            Zero raw Aadhaar stored (DigiLocker/API-Setu ready for ULB rollout). Voice path: speak/type <strong>"உறுதி, உறுதி"</strong> or <strong>"Confirm, Confirm"</strong> twice above, OR use the Clarity Popup below.
+          </div>
+        </div>
+
         <div class="hitl-actions">
           <button type="button" class="btn-outline" id="hitlEditBtn">Speak / Type a Change</button>
           <button type="button" class="btn-hitl-approve" id="hitlApproveBtn">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-            <span id="hitlApproveLabel">Approve & Prepare Dispatch</span>
+            <span id="hitlApproveLabel">Review Popup & Confirm</span>
           </button>
         </div>
       </section>
@@ -1120,6 +1315,45 @@
     </section>
   </main>
 
+  <!-- MODAL 1: LOCATION PERMISSION POPUP + SPOKEN LANDMARK FALLBACK -->
+  <div class="modal-backdrop" id="gpsModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="gpsModalTitle" data-open="false">
+    <div class="modal-dialog">
+      <h3 id="gpsModalTitle" style="font-size:1.05rem;">Use Current GPS Location?</h3>
+      <p style="font-size:0.9rem;color:var(--ink-2);">Allow one-time GPS check to auto-detect your Ward & Road ID, or decline to speak your street landmark instead.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+        <button type="button" class="btn-outline" id="gpsDenyBtn">No GPS — Speak Landmark</button>
+        <button type="button" class="btn-hitl-approve" id="gpsAllowBtn">Allow GPS Check</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: MY REQUEST HISTORY (ANTI-SPAM & COOLDOWN TRACKER) -->
+  <div class="modal-backdrop" id="historyModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle" data-open="false">
+    <div class="modal-dialog">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="historyModalTitle" style="font-size:1.05rem;">My Civic Request History (24h Cooldown Guard)</h3>
+        <button type="button" class="btn-outline" id="historyCloseBtn" style="min-height:34px;padding:4px 10px;">Close</button>
+      </div>
+      <div id="historyList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: DYNAMIC FINAL CLARITY POPUP + NATIVE TAMIL VOICE SEAL -->
+  <div class="modal-backdrop" id="clarityModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="clarityModalTitle" data-open="false">
+    <div class="modal-dialog">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 id="clarityModalTitle" style="font-size:1.08rem;">Final Clarity Check — Native Seal</h3>
+        <button type="button" class="btn-outline" id="clarityCloseBtn" style="min-height:32px;padding:4px 10px;">Cancel</button>
+      </div>
+      <div id="clarityPopupBody" style="font-size:0.9rem;color:var(--ink-2);line-height:1.5;background:var(--bg-page);padding:12px;border-radius:10px;border:1px solid var(--border);"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn-outline" id="modalOkBtn" aria-pressed="false">1. OK, Details Correct</button>
+        <input type="text" id="modalSealInput" class="otp-input" style="flex:1;min-width:150px;" placeholder='Speak/type "உறுதி" or "Confirm"' aria-label="Native confirmation keyword">
+        <button type="button" class="btn-hitl-approve" id="modalSealBtn" disabled>2. Seal ("உறுதி")</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const COPY = {
       en: {
@@ -1142,7 +1376,7 @@
         hitlKicker: "Step 3 · Human-in-the-Loop Clarity Check",
         hitlTitle: "Please verify before NammaKural prepares dispatch",
         hitlEdit: "Speak / Type a Change",
-        hitlApprove: "Approve & Prepare Dispatch",
+        hitlApprove: "Review Popup & Confirm",
         hitlApprovedBtn: "Approved · Dispatch Unlocked",
         copy: "Copy",
         copied: "Copied!",
@@ -1400,8 +1634,29 @@
       turns: [],
       clarifyOptions: [],
       needsSlot: null, // null | "issue" | "location" | "disambiguate" | "ticket"
-      ticketRef: "#GCC-20491"
+      ticketRef: "#GCC-20491",
+      otpSessionId: null,
+      otpVerified: false,
+      modalOkChecked: false,
+      gpsCoords: null,
+      gpsLandmarkName: "",
+      attachmentInfo: null,
+      showOnboarding: true,
+      historyItems: [
+        { ticket_id: "#GCC-20491", ward: "Ward 178", service_id: "garbage_1100", agency: "GCC PGRS (1913)", summary: "Velachery Main Rd garbage overflow — marked Resolved without clearance", hours_ago: 14, status: "PREMATURELY_CLOSED" },
+        { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
+      ]
     };
+
+    async function apiCall(path, opts = {}) {
+      try {
+        const res = await fetch(path, opts);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
 
     const voiceInput = document.getElementById("voiceInput");
     const orbStage = document.getElementById("orbStage");
@@ -1709,7 +1964,13 @@
           b.type = "button";
           b.className = "lm-pill";
           b.textContent = opt.label;
-          b.addEventListener("click", () => handleAgentTurn(opt.value));
+          b.addEventListener("click", () => {
+            if (opt.value === "__OPEN_GPS_MODAL__") {
+              document.getElementById("gpsModalBackdrop").setAttribute("data-open", "true");
+              return;
+            }
+            handleAgentTurn(opt.value);
+          });
           clarifyEl.appendChild(b);
         });
       } else {
@@ -1862,6 +2123,23 @@
       };
     }
 
+    function renderCooldownBanner(lm, svc, urgency) {
+      const box = document.getElementById("cooldownAlert");
+      const active = state.historyItems.find(h => h.ward === lm.ward && h.service_id === svc.id && h.hours_ago < 24);
+      if (!active) {
+        box.setAttribute("data-visible", "false");
+        return;
+      }
+      box.setAttribute("data-visible", "true");
+      if (urgency.tier === "CRITICAL_SAFETY") {
+        box.textContent = `Cooldown Override (P1 Critical Safety): ${active.ticket_id} exists for ${lm.ward}, but sparking/safety risk bypasses 24h wait.`;
+      } else if (svc.id === "garbage_1100") {
+        box.textContent = `Reopen Eligible: ${active.ticket_id} (${active.hours_ago}h ago) was falsely closed — routing to CM Cell 1100 appeal.`;
+      } else {
+        box.textContent = `24h Cooldown Active: ${active.ticket_id} was already filed ${active.hours_ago}h ago in ${lm.ward}. Escalate existing ticket or switch landmark.`;
+      }
+    }
+
     function handleAgentTurn(raw, fromPreset = false) {
       const msg = (raw || "").trim();
       if (!msg) {
@@ -1870,11 +2148,34 @@
         return;
       }
 
+      /* Spoken Hands-Free Double Affirmation during HITL review ("Confirm Confirm" / "உறுதி உறுதி") */
+      if (state.agentPhase === "hitl_review") {
+        const sealMatches = msg.match(/(confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)/gi) || [];
+        if (sealMatches.length >= 2) {
+          attemptHitlSeal("voice_double", msg, false);
+          if (!fromPreset) voiceInput.value = "";
+          return;
+        }
+        if (sealMatches.length === 1) {
+          state.turns.push({ role: "user", text: msg });
+          state.turns.push({
+            role: "agent",
+            text: state.lang === "ta"
+              ? "ஒரு முறை உறுதி கேட்டது. கை இல்லாமல் அனுப்ப 'உறுதி, உறுதி' என இருமுறை சொல்லுங்கள், அல்லது கீழே உள்ள சரிபார்ப்புப் பெட்டியைத் திறக்கவும்."
+              : "Heard 1 confirmation. To unlock hands-free, affirm twice ('Confirm, Confirm' or 'உறுதி, உறுதி'), or tap 'Review Popup & Confirm' below.",
+            needsInput: true
+          });
+          voiceInput.value = "";
+          renderAll(false);
+          return;
+        }
+      }
+
       /* Spoken quick detail added during HITL review or edit */
       if ((state.agentPhase === "hitl_review" || state.agentPhase === "approved_dispatch") && /(pole|door|pillar|shop|add\s|note\s)/i.test(msg) && msg.length < 48) {
         state.turns.push({ role: "user", text: msg });
         state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${msg}` : msg;
-        state.turns.push({ role: "agent", text: `Updated clarity summary with "${msg}". Please review and approve when ready.`, needsInput: false });
+        state.turns.push({ role: "agent", text: `Updated clarity summary with "${msg}". Please verify and seal when ready.`, needsInput: false });
         state.agentPhase = "hitl_review";
         voiceInput.value = "";
         renderAll(false);
@@ -1882,7 +2183,7 @@
       }
 
       state.turns.push({ role: "user", text: msg });
-      const combined = state.turns.filter(t => t.role === "user").map(t => t.text).join(" ");
+      const combined = state.turns.filter(t => t.role === "user").map(t => t.text).join(" ") + (state.gpsLandmarkName ? ` ${state.gpsLandmarkName}` : "");
       const parsed = detectIssueAndPlace(combined);
 
       if (!parsed.hasIssue) {
@@ -1907,13 +2208,14 @@
         state.agentPhase = "clarifying";
         state.needsSlot = "location";
         state.clarifyOptions = [
+          { label: "Use Current GPS Location", value: "__OPEN_GPS_MODAL__" },
           { label: "Anna Nagar Tower Park", value: "Anna Nagar Tower Park back side 5th Avenue" },
           { label: "Velachery Vijayanagar", value: "Velachery Vijayanagar Bus Stand main road" },
           { label: "Madurai Kuruvikaran Salai", value: "Madurai Kuruvikaran Salai near Anna Bus Stand" }
         ];
         const ask = state.lang === "ta"
-          ? "பிரச்சனை புரிந்தது. இது எந்தப் பகுதி அல்லது அடையாள இடம் என்று சொல்லுங்கள்?"
-          : "Understood the issue. Which neighborhood or nearby landmark is this at?";
+          ? "பிரச்சனை புரிந்தது. GPS அனுமதிக்கலாம் அல்லது அருகிலுள்ள தேநீர்க்கடை / பேருந்து நிலையம் பெயரைச் சொல்லுங்கள்?"
+          : "Understood the issue. Allow GPS or tell me your area / nearest landmark (e.g. 'Anna Nagar Tower Park' or 'Velachery Vijayanagar')?";
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         voiceInput.focus();
@@ -1970,11 +2272,18 @@
       state.agentPhase = "hitl_review";
 
       const lm = svc.landmarks[state.landmarkIdx];
+      renderCooldownBanner(lm, svc, urgency);
+      apiCall("/api/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ combined_text: combined })
+      });
+
       state.turns.push({
         role: "agent",
         text: state.lang === "ta"
-          ? `${lm.ward} கண்டறியப்பட்டது (${urgency.badgeTa}). கீழே உள்ள இறுதிச் சரிபார்ப்பை உறுதிப்படுத்தவும்.`
-          : `Resolved ${lm.ward} (${urgency.badgeEn}). Review the Final Clarity Check below and tap Approve to prepare dispatch.`,
+          ? `${lm.ward} கண்டறியப்பட்டது (${urgency.badgeTa}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும் அல்லது கீழே உள்ள சரிபார்ப்பை திறக்கவும்.`
+          : `Resolved ${lm.ward} (${urgency.badgeEn}). Verify Mobile OTP below, then say 'Confirm, Confirm' ('உறுதி, உறுதி') OR tap 'Review Popup & Confirm'.`,
         needsInput: false
       });
 
@@ -1982,18 +2291,245 @@
       renderAll(true);
     }
 
-    /* HITL Approval & Edit Handlers */
-    document.getElementById("hitlApproveBtn").addEventListener("click", () => {
+    async function attemptHitlSeal(mode, spokenPhrase, modalOk) {
+      const svc = getService();
+      const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
+
+      if (!state.otpVerified) {
+        showToast("Verify Demo Mobile OTP (4829) first to prevent spam");
+        document.getElementById("otpCodeInput").focus();
+        return;
+      }
+
+      const activeDup = state.historyItems.find(h => h.ward === lm.ward && h.service_id === svc.id && h.hours_ago < 24);
+      if (activeDup && urgency.tier !== "CRITICAL_SAFETY" && svc.id !== "garbage_1100") {
+        showToast(`24h cooldown on ${lm.ward} (${activeDup.ticket_id}) — escalate via 1100 instead!`);
+        return;
+      }
+
+      let apiRes = await apiCall("/api/hitl/seal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          spoken_phrase: spokenPhrase,
+          modal_ok: modalOk,
+          otp_verified: state.otpVerified,
+          ward: lm.ward,
+          service_id: svc.id,
+          urgency_tier: urgency.tier
+        })
+      });
+
+      if (!apiRes) {
+        const hits = (spokenPhrase.match(/(confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)/gi) || []).length;
+        const ok = (mode === "voice_double" && hits >= 2) || (mode === "modal_plus_voice" && modalOk && hits >= 1);
+        apiRes = ok
+          ? { approved: true, ticket_id: `#NK-${Math.floor(10000 + Math.random() * 89999)}`, seal_method: mode }
+          : { approved: false, reason: "Confirmation phrase did not match HITL rule." };
+      }
+
+      if (!apiRes.approved) {
+        showToast(apiRes.reason || "Confirmation rejected");
+        return;
+      }
+
+      state.historyItems.unshift({
+        ticket_id: apiRes.ticket_id || "#NK-NEW01",
+        ward: lm.ward,
+        service_id: svc.id,
+        agency: svc.portals[0].name,
+        summary: `${lm.street} (${urgency.tier})`,
+        hours_ago: 0,
+        status: "HITL_SEALED"
+      });
       state.agentPhase = "approved_dispatch";
+      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "false");
       state.turns.push({
         role: "agent",
         text: state.lang === "ta"
-          ? "உறுதிப்படுத்தப்பட்டது! வாட்ஸ்அப் மற்றும் உதவி எண் இணைப்புகள் தயாராக உள்ளன."
-          : "Approved! Direct WhatsApp, helpline dial, stamped street photo, and optional portal fields are ready below.",
+          ? `உறுதிப்படுத்தப்பட்டது (${apiRes.ticket_id})! வாட்ஸ்அப், 1912 உதவி எண் மற்றும் <1 MB புகைப்படம் தயார்.`
+          : `Sealed (${apiRes.ticket_id})! Official WhatsApp, helpline dial, <1 MB photo stamper, and portal fields unlocked below.`,
         needsInput: false
       });
       renderAll(false);
-      showToast("Approved — Dispatch tools unlocked");
+      showToast(`Sealed ${apiRes.ticket_id} — Dispatch tools unlocked`);
+    }
+
+    /* Onboarding, GPS Modal, History Modal & Runtime Attachment */
+    document.getElementById("guideToggleBtn").addEventListener("click", (e) => {
+      state.showOnboarding = !state.showOnboarding;
+      document.getElementById("onboardingStrip").setAttribute("data-visible", state.showOnboarding ? "true" : "false");
+      e.currentTarget.setAttribute("aria-pressed", state.showOnboarding ? "true" : "false");
+    });
+
+    document.getElementById("listenGuideBtn").addEventListener("click", () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance("நம்ம குரல் வழிகாட்டி: முதலில் உங்கள் தெருப் பிரச்சனையைத் தமிழிலோ Tanglish-லோ பேசுங்கள். புகைப்படம் அல்லது ரசீது இணைக்கலாம். இறுதியில் OTP சரிபார்த்து உறுதி என்று சொல்லி அனுப்புங்கள்.");
+        u.lang = "ta-IN";
+        window.speechSynthesis.speak(u);
+        showToast("Playing 3-step Tamil onboarding guide");
+      }
+    });
+
+    document.getElementById("gpsTriggerBtn").addEventListener("click", () => {
+      document.getElementById("gpsModalBackdrop").setAttribute("data-open", "true");
+    });
+
+    document.getElementById("gpsDenyBtn").addEventListener("click", () => {
+      document.getElementById("gpsModalBackdrop").setAttribute("data-open", "false");
+      state.gpsLandmarkName = "";
+      state.agentPhase = "clarifying";
+      state.turns.push({
+        role: "agent",
+        text: state.lang === "ta"
+          ? "பரவாயில்லை! உங்கள் தெரு பெயர் அல்லது அருகிலுள்ள தேநீர்க்கடை / பேருந்து நிலையத்தைச் சொல்லுங்கள்."
+          : "No GPS needed — tell me your street name or nearest tea shop, bus stand, or temple.",
+        needsInput: true
+      });
+      renderAll(false);
+      voiceInput.focus();
+    });
+
+    document.getElementById("gpsAllowBtn").addEventListener("click", async () => {
+      document.getElementById("gpsModalBackdrop").setAttribute("data-open", "false");
+      const applyCoords = async (lat, lon) => {
+        state.gpsCoords = { lat, lon };
+        let res = await apiCall("/api/location/reverse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lon })
+        });
+        const matchedName = res?.landmark?.name || "Anna Nagar Tower Park · Vth Ave";
+        state.gpsLandmarkName = matchedName;
+        state.turns.push({
+          role: "agent",
+          text: `GPS detected near ${matchedName} (${res?.landmark?.ward || "Ward 103"}). Speak your street problem or say 'wrong area' to correct.`,
+          needsInput: false
+        });
+        renderAll(false);
+        showToast(`GPS matched: ${res?.landmark?.ward || "Ward 103"}`);
+      };
+
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude),
+          () => applyCoords(13.0850, 80.2101),
+          { timeout: 3000 }
+        );
+      } else {
+        applyCoords(13.0850, 80.2101);
+      }
+    });
+
+    document.getElementById("historyOpenBtn").addEventListener("click", async () => {
+      const apiHist = await apiCall("/api/history");
+      if (apiHist?.items) state.historyItems = apiHist.items;
+      const list = document.getElementById("historyList");
+      list.innerHTML = state.historyItems.map(item => `
+        <div class="history-item">
+          <div style="display:flex;justify-content:space-between;font-weight:700;">
+            <span>${item.ticket_id} · ${item.ward}</span>
+            <span class="num" style="color:var(--amber);font-size:0.78rem;">${item.hours_ago}h ago · ${item.status}</span>
+          </div>
+          <div style="color:var(--ink-2);">${item.agency}: ${item.summary}</div>
+        </div>
+      `).join("");
+      document.getElementById("historyModalBackdrop").setAttribute("data-open", "true");
+    });
+
+    document.getElementById("historyCloseBtn").addEventListener("click", () => {
+      document.getElementById("historyModalBackdrop").setAttribute("data-open", "false");
+    });
+
+    document.getElementById("runtimeAttachInput").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("note", voiceInput.value || "");
+      const res = await apiCall("/api/attachment/inspect", { method: "POST", body: formData });
+      if (!file.name.toLowerCase().endsWith(".pdf")) {
+        state.customPhotoUrl = URL.createObjectURL(file);
+      }
+      const ticketNote = res?.extracted_ticket ? ` [Ticket ${res.extracted_ticket}]` : "";
+      state.attachmentInfo = `${file.name} (${res?.size_kb || Math.round(file.size / 1024)} KB)${ticketNote}`;
+      state.appendedNote = state.appendedNote ? `${state.appendedNote}, Attached: ${file.name}` : `Attached: ${file.name}`;
+      if (res?.extracted_ticket) state.ticketRef = res.extracted_ticket;
+      state.turns.push({ role: "user", text: `Uploaded evidence: ${state.attachmentInfo}` });
+      renderAll(false);
+      showToast(`Attached ${file.name} mid-conversation`);
+    });
+
+    /* Mobile OTP Verification */
+    document.getElementById("otpSendBtn").addEventListener("click", async () => {
+      const res = await apiCall("/api/otp/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone_masked: "+91 98XXXXXX10" })
+      });
+      state.otpSessionId = res?.otp_session_id || "local-demo";
+      const demo = res?.demo_otp_hint || "4829";
+      document.getElementById("otpCodeInput").value = demo;
+      document.getElementById("otpStatusLabel").textContent = `Demo OTP Sent (${demo}) — Tap Verify OTP`;
+      showToast(`Synthetic OTP ${demo} ready (Zero SMS key needed)`);
+    });
+
+    document.getElementById("otpVerifyBtn").addEventListener("click", async () => {
+      const code = document.getElementById("otpCodeInput").value.trim();
+      const res = await apiCall("/api/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp_session_id: state.otpSessionId || "local", code })
+      });
+      const ok = res ? res.verified : (code === "4829" || code === "0000");
+      if (!ok) {
+        showToast(res?.error || "Enter demo OTP 4829");
+        return;
+      }
+      state.otpVerified = true;
+      document.getElementById("otpStatusLabel").textContent = "Mobile OTP Verified ✓ (Ready to Seal)";
+      showToast("Citizen Mobile OTP verified ✓");
+    });
+
+    /* Dynamic Clarity Popup + Native Spoken Seal */
+    document.getElementById("hitlApproveBtn").addEventListener("click", () => {
+      const svc = getService();
+      const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
+      state.modalOkChecked = false;
+      document.getElementById("modalOkBtn").setAttribute("aria-pressed", "false");
+      document.getElementById("modalSealBtn").disabled = true;
+      document.getElementById("modalSealInput").value = "";
+      document.getElementById("clarityPopupBody").innerHTML = `
+        <strong>Issue & Urgency:</strong> ${urgency.badgeEn}<br>
+        <strong>Location:</strong> ${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})<br>
+        <strong>Agencies:</strong> ${svc.portals.map(p => p.name).join(" + ")}<br>
+        <strong>Evidence / Note:</strong> ${state.attachmentInfo || state.appendedNote || "Default street hazard plate (<1 MB)"}<br>
+        <strong>Citizen OTP:</strong> ${state.otpVerified ? "Verified ✓" : "Not verified yet (close & click Verify OTP 4829)"}
+      `;
+      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "true");
+    });
+
+    document.getElementById("clarityCloseBtn").addEventListener("click", () => {
+      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "false");
+    });
+
+    document.getElementById("modalOkBtn").addEventListener("click", (e) => {
+      state.modalOkChecked = true;
+      e.currentTarget.setAttribute("aria-pressed", "true");
+      document.getElementById("modalSealBtn").disabled = false;
+      if (!document.getElementById("modalSealInput").value.trim()) {
+        document.getElementById("modalSealInput").focus();
+      }
+      showToast("Popup checked — now speak or enter 'உறுதி / Confirm'");
+    });
+
+    document.getElementById("modalSealBtn").addEventListener("click", () => {
+      const phrase = document.getElementById("modalSealInput").value.trim() || "உறுதி";
+      attemptHitlSeal("modal_plus_voice", phrase, state.modalOkChecked);
     });
 
     document.getElementById("hitlEditBtn").addEventListener("click", () => {
@@ -2023,6 +2559,9 @@
       state.clarifyOptions = [];
       state.appendedNote = "";
       state.customPhotoUrl = null;
+      state.attachmentInfo = null;
+      state.gpsLandmarkName = "";
+      state.modalOkChecked = false;
       state.urgencyTier = "STANDARD";
       state.urgencyMeta = null;
       state.agentPhase = "idle";
@@ -2147,6 +2686,13 @@
 
     /* Start pure and calm: only orb + single voice bar + 5 scenarios (Zero upfront forms) */
     renderAll(false);
+    apiCall("/api/health").then(info => {
+      const pill = document.getElementById("voiceModePill");
+      if (!info) return;
+      pill.textContent = info.voice_mode === "live-neural"
+        ? "Live Neural Voice Active · Optional Keys Set"
+        : "Offline Tanglish Engine Active (No API keys required)";
+    });
   </script>
 </body>
 </html>

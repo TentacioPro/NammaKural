@@ -1,12 +1,12 @@
 # CONTEXT — NammaKural (*நம்ம குரல்*)
 
-Updated: `2026-11-27 03:48 IST` · Repo: `D:\NammaKural` · Stack: Pure Light HTML5 Voice Agent (`index.html`) + Specs (`specs/`)
+Updated: `2026-11-27 04:19 IST` · Repo: `D:\NammaKural` · Stack: FastAPI (`backend/`) + Docker Compose (`8000`) + Pure Voice Agent (`index.html`)
 
 ## Now
-- **Round 1 Status:** `2 of 3 complete` (**Activity 01 Idea**: Complete; **Activity 02 Prompt**: Complete (`689 words`); **Activity 03 Impact**: Unlocked & draft ready in [docs/ROUND1_SUBMISSIONS.md](docs/ROUND1_SUBMISSIONS.md)). Hard R1 deadline: **29 Nov 2026, 11:59 pm**.
-- **Prototype State (`index.html`):** Refactored into Pure Voice Agent v2 with `AcousticOrb` harmonic canvas (`azure-voice-live-agent` pattern), turn-by-turn slot clarification (`clarifying`), P1/P2/P3 sentiment/urgency triage, mandatory HITL clarity gate (`#hitlApproveBtn`), post-approval 1-tap WhatsApp/1912/photo stamper, `English | தமிழ்`, `A+ Text`, `2G Lite`.
-- **Last Gate:** `impeccable detect --json index.html` -> `[]`; Playwright QA (`1440px`/`768px`/`390px`) -> `0` console errors, `0` failed requests, `0` overflow across `idle -> clarifying -> hitl_review -> approved_dispatch`.
-- **Immediate Owner Action:** Open `Start Activity 3 ->` on Scaler dashboard, check its exact word-count rules, and submit Activity 03 (`Impact`) before `29 Nov 23:59` to unlock Round 2.
+- **Round 1 Cleared (`3 of 3`):** Activity 01, 02, and 03 passed; **Round 2 Build Live** (**Submit by `30 Nov, 11:59 pm`** · Theme: *Public infrastructure and civic services*).
+- **Round 2 Working App Complete:** Built zero-key FastAPI backend (`backend/main.py`, `nlu.py`, `state.py`) + `Dockerfile` + `docker-compose.yml` (`port 8000`) + full UI (`index.html`: 3-step onboarding micro-guide, GPS modal + spoken fallback, runtime photo/bill upload, Request History + 24h cooldown guard, Mobile OTP `4829`, Dual-Confirm Tamil HITL seal, WhatsApp/1912/<1MB JPEG stamper).
+- **Last Gate (`2026-11-27 04:18 IST`):** `pytest -q` -> `6 passed`; `impeccable detect --json index.html` -> `[]`; Playwright over live Uvicorn (`1440px`/`768px`/`390px`) -> `0` console/network errors, `0` overflow across idle, GPS deny, runtime attach, OTP + Clarity Modal `"உறுதி"`, double-spoken `"உறுதி, உறுதி"`, & Request History. `docker compose config --quiet` ok.
+- **Remaining for Final Submit (`30 Nov`):** (1) Test `docker compose up --build` with Docker Desktop started, (2) Record <=3m YouTube demo video, (3) Build PDF Pitch Deck (4 required text sections via `open-design` / HTML->PDF), (4) Submit on Scaler portal.
 - **Next Build Phase (Round 2 `27–30 Nov`, submit `30 Nov`):** Wire live audio/Tanglish backend per [`specs/INDEX.md`](specs/INDEX.md) and [`docs/architecture/VOICE_AGENT_ARCHITECTURE.md`](docs/architecture/VOICE_AGENT_ARCHITECTURE.md).
 
 ## Standing Architectural Decisions

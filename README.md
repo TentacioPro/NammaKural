@@ -37,20 +37,33 @@ Citizens stand on the street and speak in mixed **Tanglish, Tamil, and landmarks
 
 ---
 
-## Quick Start (Local Prototype)
-Serve locally over HTTP so the `<1 MB` Canvas Photo Stamper and all assets run without browser `file://` restrictions:
+## Quick Start (One Command via Docker — Zero Secret Keys Required)
 
+`NammaKural` boots cleanly with **zero API keys required** (`offline-tanglish-engine` runs locally; optional `SARVAM_API_KEY` or `GEMINI_API_KEY` in `.env` enables live neural streaming).
+
+### Option A: Docker Compose (Recommended for Judges)
 ```bash
-python -m http.server 8000
+git clone https://github.com/TentacioPro/NammaKural.git
+cd NammaKural
+docker compose up --build
 # Open http://localhost:8000
 ```
 
-Zero build step, zero npm runtime dependencies, `<15 KB` critical inline CSS/JS, and full offline functionality with embedded Chennai ArcGIS Zone/Ward/Road ID fixtures.
+### Option B: Local Python (FastAPI + Uvicorn)
+```bash
+pip install -r requirements.txt
+uvicorn backend.main:app --host 0.0.0.0 --port 8000
+# Run automated tests:
+pytest -q
+```
 
 ---
 
 ## Repository Structure (Spec-Driven MD System)
-- [`index.html`](index.html) — Self-contained Pure Voice Agent web application
+- [`backend/`](backend/) — FastAPI Voice Agent gateway, Tanglish NLU, Semantic VAD, GPS/Landmark GIS resolver, 24h Ward/Agency Cooldown, Mobile OTP, Dual-Confirm HITL Seal & Redacted OTel Telemetry ([`main.py`](backend/main.py), [`nlu.py`](backend/nlu.py), [`state.py`](backend/state.py))
+- [`tests/test_api.py`](tests/test_api.py) — Automated API & gate verification tests (`pytest -q`)
+- [`Dockerfile`](Dockerfile) & [`docker-compose.yml`](docker-compose.yml) — One-command key-free startup (`port 8000`)
+- [`index.html`](index.html) — Self-contained Pure Voice Agent web frontend
 - [`assets/`](assets/) — 5 compressed `800×450` TN civic hazard photos (`<95 KB` each)
 - [`AGENTS.md`](AGENTS.md) · [`DESIGN.md`](DESIGN.md) · [`CONTEXT.md`](CONTEXT.md) · [`TODO.md`](TODO.md) · [`LOG.md`](LOG.md)
 - [`specs/`](specs/INDEX.md) — Spec-driven Round 2 roadmap (`001` Foundry Orb UI -> `005` Telemetry & Self-Improvement)

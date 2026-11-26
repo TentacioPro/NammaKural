@@ -7,7 +7,16 @@ Legend: `[ ]` open, `[x]` done (`- [x] ~~task~~ (YYYY-MM-DD, agent)`), `[~]` awa
 - [x] ~~Draft & submit Activity 01 (Idea) on Scaler × Wispr dashboard (quality check passed)~~ (2026-11-26, owner)
 - [x] ~~Draft & verify Activity 02 Prompt (`657 words`, under `80–800` word cap) in `docs/ROUND1_SUBMISSIONS.md`~~ (2026-11-27, antigravity)
 - [x] ~~Paste & submit Activity 02 on Scaler portal (passed AI check, Activity 03 revealed)~~ (2026-11-27, owner)
-- [~] Draft, paste & submit Activity 03 (`Impact` — benefits, impact deltas, measurable metrics) before `29 Nov 23:59`
+- [x] ~~Draft, paste & submit Activity 03 (`Impact`) & clear Round 1~~ (2026-11-27, owner)
+
+## Objective: Round 2 Working Prototype (`Submit by 30 Nov 23:59 IST`)
+- [x] ~~Build zero-key FastAPI backend (`backend/main.py`, `nlu.py`, `state.py`) + `Dockerfile` + `docker-compose.yml` (`8000`)~~ (2026-11-27, antigravity)
+- [x] ~~Add 3-step onboarding micro-guide, GPS permission popup + spoken fallback, runtime photo/bill clip, Request History + 24h cooldown, Mobile OTP & Dual-Confirm Tamil HITL seal in `index.html`~~ (2026-11-27, antigravity)
+- [x] ~~Verify `pytest` (`6 passed`), `impeccable detect` (`[]`), and Playwright live-server E2E (`0` errors, `0` overflow)~~ (2026-11-27, antigravity)
+- [ ] Start Docker Desktop and run smoke check `docker compose up --build` (fresh clone test)
+- [ ] Build 4-section PDF Pitch Deck (`Problem+Solution`, `Who/How Many`, `Dependencies/Fallback`, `Launch Plan`) via `open-design` / HTML->PDF
+- [ ] Record <=3 minute unlisted/public YouTube demo video
+- [ ] Final single submission on Scaler Round 2 portal (GitHub + YouTube + PDF + optional live link) before `30 Nov 23:59`
 
 ## Objective: Pure Voice Agent Prototype v2 (`Round 2 Prep · Due 30 Nov`)
 - [x] ~~Isolate Codex experiments cleanly in `codex-experiment/`~~ (2026-11-26, antigravity)

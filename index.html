@@ -73,11 +73,11 @@
     body {
       margin: 0;
       min-height: 100vh;
-      background-color: var(--bg-page);
+      background-color: #FAF9F6;
       background-image:
-        radial-gradient(circle at 22% 14%, rgba(14, 165, 233, 0.08), transparent 44%),
-        radial-gradient(circle at 78% 18%, rgba(194, 59, 26, 0.06), transparent 42%),
-        radial-gradient(circle at 50% 60%, rgba(11, 107, 92, 0.05), transparent 55%);
+        radial-gradient(ellipse 80% 55% at 50% 0%, rgba(124, 58, 237, 0.055), transparent 65%),
+        radial-gradient(ellipse 65% 50% at 85% 20%, rgba(13, 148, 136, 0.045), transparent 60%),
+        radial-gradient(ellipse 65% 55% at 15% 80%, rgba(234, 179, 8, 0.04), transparent 60%);
       padding-bottom: calc(48px + env(safe-area-inset-bottom));
     }
 
@@ -123,19 +123,18 @@
     .skip-link:focus { left: 16px; }
 
     /* ==========================================================================
-       1. CALM LIGHT HEADER
+       1. MINIMAL WATERLINE HEADER (NO BOXES / NO PILL SOUP)
        ========================================================================== */
     .app-header {
       position: relative;
       z-index: 40;
-      background: rgba(255, 255, 255, 0.96);
-      border-bottom: 1px solid var(--border);
+      background: transparent;
     }
 
     .header-inner {
-      max-width: 1260px;
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 10px 20px;
+      padding: 16px 24px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -145,128 +144,98 @@
 
     .brand {
       display: flex;
-      align-items: center;
-      gap: 11px;
+      align-items: baseline;
+      gap: 10px;
     }
 
-    .brand-mark {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      background: var(--accent);
-      color: #FFFFFF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.95rem;
-      flex-shrink: 0;
-    }
+    .brand-mark { display: none; }
 
     .brand h1 {
-      font-size: 1.15rem;
+      font-size: 1.05rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      line-height: 1.15;
+      color: var(--ink);
     }
 
     .brand-tag {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--ink-3);
     }
 
     .nav-controls {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
       flex-wrap: wrap;
     }
 
     .segmented {
       display: inline-flex;
-      background: var(--bg-subtle);
-      padding: 3px;
-      border-radius: 9px;
-      border: 1px solid var(--border);
+      background: transparent;
+      padding: 0;
+      border: 0;
       gap: 2px;
+      margin-right: 4px;
     }
 
-    .seg-btn {
+    .seg-btn, .btn-pill-quiet {
       appearance: none;
       border: 0;
       background: transparent;
-      color: var(--ink-2);
-      font-family: var(--font-sans);
-      font-size: 0.84rem;
-      font-weight: 600;
-      padding: 6px 12px;
-      min-height: 36px;
-      border-radius: 7px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .seg-btn[aria-pressed="true"] {
-      background: var(--bg-surface);
-      color: var(--ink);
-      font-weight: 700;
-      border: 1px solid var(--border);
-    }
-
-    .btn-pill-quiet {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-surface);
-      color: var(--ink-2);
+      color: var(--ink-3);
       font-family: var(--font-sans);
       font-size: 0.82rem;
       font-weight: 600;
-      padding: 6px 11px;
+      padding: 6px 10px;
       min-height: 36px;
-      border-radius: 9px;
+      border-radius: 999px;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 140ms ease, color 140ms ease;
     }
 
-    .btn-pill-quiet[aria-pressed="true"] {
-      background: var(--ink);
-      color: #FFFFFF;
-      border-color: var(--ink);
+    .seg-btn:hover, .btn-pill-quiet:hover {
+      background: rgba(15, 23, 42, 0.05);
+      color: var(--ink);
+    }
+
+    .seg-btn[aria-pressed="true"], .btn-pill-quiet[aria-pressed="true"] {
+      background: rgba(15, 23, 42, 0.08);
+      color: var(--ink);
+      font-weight: 700;
     }
 
     /* ==========================================================================
-       2. PURE VOICE AGENT VIEW (AZURE VOICE LIVE / FOUNDRY INSPIRED)
+       2. OPEN RIVER-RIPPLE VOICE CANVAS (FOUNDRY STYLE — NO OUTER CARD BOX)
        ========================================================================== */
     .agent-shell {
-      max-width: 820px;
+      max-width: 780px;
       margin: 0 auto;
-      padding: 28px 20px 18px;
+      padding: 10px 20px 28px;
       display: flex;
       flex-direction: column;
       gap: 18px;
     }
 
-    /* Hero Voice Orb Stage */
     .orb-stage {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 28px 24px 22px;
-      box-shadow: var(--shadow-soft);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 8px 0 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      gap: 16px;
+      gap: 12px;
       position: relative;
-      overflow: hidden;
     }
 
     .orb-canvas-wrap {
       position: relative;
-      width: 152px;
-      height: 152px;
+      width: 248px;
+      height: 248px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -276,42 +245,35 @@
     .orb-canvas {
       position: absolute;
       inset: 0;
-      width: 152px;
-      height: 152px;
+      width: 248px;
+      height: 248px;
+      pointer-events: none;
     }
 
     .orb-core-btn {
       position: relative;
       z-index: 2;
-      width: 72px;
-      height: 72px;
+      width: 112px;
+      height: 112px;
       border-radius: 50%;
       border: 0;
-      background: linear-gradient(135deg, #0EA5E9 0%, #0B6B5C 60%, #C23B1A 100%);
+      background: transparent;
       color: #FFFFFF;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 24px -6px rgba(11, 107, 92, 0.38);
-      transition: transform 180ms ease;
-    }
-
-    .orb-core-btn:hover { transform: scale(1.04); }
-    .orb-core-btn[data-state="listening"] {
-      background: linear-gradient(135deg, #C23B1A 0%, #EA580C 100%);
     }
 
     .agent-state-pill {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: var(--bg-subtle);
-      color: var(--ink-2);
-      font-size: 0.8rem;
+      font-size: 0.98rem;
       font-weight: 600;
+      color: var(--ink);
+      background: transparent;
+      padding: 0;
     }
 
     .pulse-dot {
@@ -327,34 +289,92 @@
     }
 
     .agent-headline {
-      font-size: 1.45rem;
+      font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: -0.025em;
       color: var(--ink);
     }
 
     .agent-subline {
-      font-size: 0.94rem;
+      font-size: 0.9rem;
       color: var(--ink-3);
-      max-width: 56ch;
+      max-width: 52ch;
     }
 
-    /* Clean Dictation Input Pill inside Orb Stage */
+    /* Call / Mute / Cut Tactile Dock */
+    .call-dock {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      padding: 6px 8px;
+      border-radius: 999px;
+      box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.12);
+    }
+
+    .call-btn {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      font-family: var(--font-sans);
+      font-size: 0.86rem;
+      font-weight: 700;
+      padding: 8px 16px;
+      min-height: 40px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: transform 140ms ease, background 140ms ease;
+    }
+    .call-btn:active { transform: scale(0.97); }
+    .call-btn-start { background: var(--teal); color: #FFFFFF; }
+    .call-btn-start[data-active="true"] { background: #E9F7F2; color: var(--teal-dark); }
+    .call-btn-mute { background: transparent; color: var(--ink-2); }
+    .call-btn-mute[aria-pressed="true"] { background: #FFF8EC; color: var(--amber); }
+    .call-btn-cut { background: #FEF2F2; color: #B91C1C; }
+    .call-btn[disabled] { opacity: 0.42; cursor: not-allowed; }
+
+    /* Particulars Chips (Live Conversational Slots) */
+    .particulars-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      max-width: 680px;
+    }
+    .particular-chip {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--border);
+      color: var(--ink-2);
+    }
+    .particular-chip[data-filled="true"] {
+      background: #E9F7F2;
+      border-color: #A7F3D0;
+      color: var(--teal-dark);
+    }
+
+    /* Borderless Wispr Flow / Text Composer */
     .wispr-input-bar {
       width: 100%;
-      max-width: 700px;
-      background: var(--bg-page);
-      border: 1.5px solid var(--border-strong);
-      border-radius: 14px;
-      padding: 10px 12px;
+      max-width: 660px;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 16px;
+      padding: 8px 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 6px;
       text-align: left;
     }
 
     .wispr-input-bar:focus-within {
-      background: var(--bg-surface);
+      background: #FFFFFF;
       border-color: var(--teal);
     }
 
@@ -1125,70 +1145,74 @@
     <span id="toastText">Copied</span>
   </div>
 
-  <!-- CALM LIGHT HEADER -->
+  <!-- MINIMAL HEADER (TEXT LINKS ONLY) -->
   <header class="app-header">
     <div class="header-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">குரல்</div>
         <div>
           <h1>NammaKural <span style="font-weight:500;color:var(--ink-3)">· நம்ம குரல்</span></h1>
-          <p class="brand-tag" id="headerSub">Wispr Flow Voice Agent for Tamil Nadu Civic Portals</p>
+          <p class="brand-tag" id="headerSub">Wispr Flow Voice Agent · Tamil Nadu</p>
         </div>
       </div>
 
       <div class="nav-controls">
         <div class="segmented" role="group" aria-label="Language">
-          <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">English</button>
+          <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">EN</button>
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
         </div>
 
-        <button type="button" class="btn-pill-quiet" id="historyOpenBtn">My Requests</button>
-        <button type="button" class="btn-pill-quiet" id="guideToggleBtn">How to Use</button>
-        <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+ Text</button>
-        <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G Lite</button>
+        <button type="button" class="btn-pill-quiet" id="modelSetupOpenBtn">STT & Model</button>
+        <button type="button" class="btn-pill-quiet" id="historyOpenBtn">Requests</button>
+        <button type="button" class="btn-pill-quiet" id="guideToggleBtn">Guide</button>
+        <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+</button>
+        <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G</button>
       </div>
     </div>
   </header>
 
   <main id="mainStage">
     <!-- ======================================================================
-         PURE REAL-TIME VOICE AGENT (LIVE TRANSCRIPTS + DYNAMIC POPUPS + HITL)
+         OPEN SUNLIT RIVER-RIPPLE VOICE AGENT (ZERO OUTER BOXES)
          ====================================================================== -->
     <section class="agent-shell" aria-label="Voice Civic Agent">
       <div class="orb-stage" id="orbStage" data-agent-state="idle">
-        <div class="runtime-meta-row">
-          <span class="agent-state-pill">
-            <span class="pulse-dot"></span>
-            <span id="agentStateLabel">Agent Ready · Speak in Tanglish / தமிழ்</span>
-          </span>
-          <span class="engine-pill" id="voiceModePill">Offline Tanglish Engine Ready (No API keys required)</span>
-          <span class="num" id="callTimer" style="font-size:0.8rem;color:var(--ink-3);">00:00</span>
+        <!-- River-Ripple Acoustic Orb Floating Directly on Light Background -->
+        <div class="orb-canvas-wrap" id="orbTrigger" title="Click orb to start / toggle call">
+          <canvas id="neuralOrbCanvas" class="orb-canvas" width="248" height="248" aria-hidden="true"></canvas>
+          <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle" aria-label="Start or mute voice call"></button>
         </div>
 
-        <!-- AcousticOrb (Reacts Live to Mic Audio Amplitude & Agent State) -->
-        <div class="orb-canvas-wrap" id="orbTrigger" title="Tap orb to toggle continuous Live Microphone">
-          <canvas id="neuralOrbCanvas" class="orb-canvas" width="304" height="304" aria-hidden="true"></canvas>
-          <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle" aria-label="Toggle live streaming microphone">
-            <svg class="icon" style="width:26px;height:26px" viewBox="0 0 24 24">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-              <line x1="12" x2="12" y1="19" y2="22"/>
-            </svg>
+        <span class="agent-state-pill">
+          <span class="pulse-dot"></span>
+          <span id="agentStateLabel">Tap Call to speak · Wispr Flow Ready</span>
+          <span class="num" id="callTimer" style="font-size:0.8rem;color:var(--ink-3);margin-left:4px;">00:00</span>
+        </span>
+        <span class="barge-hint" id="bargeHint">Talk to interrupt · Say "stop" / "niruthunga" anytime</span>
+
+        <!-- Real-Time Call Controls: Start Call | Mute | Cut -->
+        <div class="call-dock" role="group" aria-label="Voice Call Controls">
+          <button type="button" class="call-btn call-btn-start" id="startCallBtn" data-active="false">
+            <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span id="startCallLabel">Call</span>
+          </button>
+          <button type="button" class="call-btn call-btn-mute" id="muteMicBtn" aria-pressed="false" disabled>
+            <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <span id="muteLabel">Mute</span>
+          </button>
+          <button type="button" class="call-btn call-btn-cut" id="endCallBtn" disabled>
+            <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 2.09 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
+            <span>Cut</span>
           </button>
         </div>
 
-        <span class="barge-hint" id="bargeHint">Talk to interrupt · Say "stop" / "niruthunga" anytime · Say "ok / seri" safely</span>
+        <!-- Subtle Borderless Live Transcript Stream & Gathered Particulars -->
+        <div id="liveTranscriptText" style="font-size:0.88rem;color:var(--ink-2);min-height:20px;max-width:620px;" aria-live="polite"></div>
+        <div class="particulars-row" id="particularsStrip" aria-label="Gathered complaint particulars"></div>
 
-        <div>
-          <h2 class="agent-headline" id="agentHeadline">Speak what needs fixing on your street</h2>
-          <p class="agent-subline" id="agentSubline">Tap the orb for Live Mic or speak with Wispr Flow. UI popups appear dynamically only when GPS, clarification, photo, or HITL seal is needed.</p>
-        </div>
-
-        <!-- Real-Time Streaming Transcript Strip -->
-        <div class="live-transcript-strip" id="liveTranscriptBar" data-live="false" aria-live="polite">
-          <span id="liveTranscriptText">Live Transcript: Waiting for voice or Wispr Flow dictation...</span>
-          <button type="button" class="btn-outline" id="liveMicToggleBtn" style="min-height:32px;padding:4px 10px;font-size:0.78rem;">Start Live Mic</button>
-        </div>
+        <!-- Hidden accessibility anchors preserved cleanly for bilingual helper updates -->
+        <h2 class="agent-headline" id="agentHeadline" style="display:none;">Speak what needs fixing on your street</h2>
+        <p class="agent-subline" id="agentSubline" style="display:none;">NammaKural listens in Tanglish or Tamil.</p>
 
         <!-- Multi-Turn Conversation Thread -->
         <div class="agent-thread" id="agentThread" aria-live="polite"></div>
@@ -1196,24 +1220,23 @@
         <!-- Dynamic Clarifier Pills (Rendered ONLY when needed mid-conversation) -->
         <div class="clarify-pills" id="clarifyPills" style="display:none;"></div>
 
-        <!-- Clean Single Wispr Flow / Text Bar + Runtime Upload + Voice Controls -->
+        <!-- Clean Wispr Flow / Text Bar + Runtime Upload + GPS -->
         <div class="wispr-input-bar">
-          <textarea id="voiceInput" class="wispr-textarea" rows="2" placeholder="Tap Live Mic above OR press Wispr Flow hotkey & speak in Tamil / Tanglish..." aria-label="Spoken complaint input"></textarea>
+          <textarea id="voiceInput" class="wispr-textarea" rows="1" placeholder="Press Wispr Flow hotkey or type in Tamil / Tanglish..." aria-label="Spoken complaint input"></textarea>
           <div class="wispr-bar-footer">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
               <label class="attach-chip" title="Attach street photo, EB/water bill, or closed ticket screenshot">
-                <svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                <svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 <span id="runtimeAttachLabel">Attach Photo / Bill</span>
                 <input type="file" id="runtimeAttachInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none">
               </label>
               <button type="button" class="attach-chip" id="gpsTriggerBtn">Check GPS</button>
-              <button type="button" class="attach-chip" id="autoSpeakToggleBtn" aria-pressed="true">Voice Reply: ON</button>
+              <button type="button" class="attach-chip" id="autoSpeakToggleBtn" aria-pressed="true">Voice: ON</button>
             </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button type="button" class="btn-outline" id="newChatBtn" style="min-height:38px;padding:6px 12px;">+ New</button>
-              <button type="button" class="btn-agent-send" id="runAgentBtn">
-                <span id="runAgentLabel">Send / Speak</span>
-                <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button type="button" class="btn-outline" id="newChatBtn" style="min-height:34px;padding:4px 10px;font-size:0.82rem;">+ New</button>
+              <button type="button" class="btn-agent-send" id="runAgentBtn" style="min-height:34px;padding:6px 14px;font-size:0.84rem;">
+                <span id="runAgentLabel">Send</span>
               </button>
             </div>
           </div>
@@ -1356,6 +1379,38 @@
       <div style="border-top:1px solid var(--border);padding-top:10px;">
         <div style="font-size:0.8rem;font-weight:700;color:var(--ink-3);margin-bottom:8px;">Try Sample Spoken Phrases (1-Tap Demo):</div>
         <div class="quick-prompts-row" id="quickPromptsRow" role="list" style="justify-content:flex-start;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 5: STT & MODEL ENGINE SETUP -->
+  <div class="modal-backdrop" id="modelSetupModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="modelSetupTitle" data-open="false">
+    <div class="modal-dialog">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h3 id="modelSetupTitle" style="font-size:1.05rem;">STT & AI Model Setup</h3>
+        <button type="button" class="btn-outline" id="modelSetupCloseBtn" style="min-height:32px;padding:4px 10px;">Close</button>
+      </div>
+      <div class="hitl-box">
+        <span class="hitl-label">Speech-to-Text (STT) Layer</span>
+        <select id="sttEngineSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
+          <option value="hybrid">Hybrid: Browser Web Speech Live (ta-IN/en-IN) + Wispr Flow</option>
+          <option value="wispr">Wispr Flow Hotkey System Dictation Only</option>
+          <option value="browser">Browser SpeechRecognition Only (ta-IN)</option>
+        </select>
+      </div>
+      <div class="hitl-box">
+        <span class="hitl-label">Reasoning & Dialect Model Layer</span>
+        <select id="llmEngineSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
+          <option value="offline">Built-in Tanglish Civic Engine (Zero Keys · Instant)</option>
+          <option value="ollama">Local Ollama (llama3 / gemma on localhost:11434)</option>
+          <option value="sarvam">Sarvam AI Saaras+Bulbul / Gemini Live (Optional Key in .env)</option>
+        </select>
+      </div>
+      <div style="font-size:0.84rem;color:var(--ink-2);" id="modelSetupStatus">
+        Active: Offline Tanglish Civic Engine (0 secret keys needed; works cleanly via Docker & file://).
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button type="button" class="btn-hitl-approve" id="modelSetupSaveBtn">Apply Voice Setup</button>
       </div>
     </div>
   </div>
@@ -1651,6 +1706,10 @@
       resolvedLandmark: null,
       attachmentInfo: null,
       showOnboarding: true,
+      callActive: false,
+      isMuted: false,
+      sttMode: "hybrid",
+      llmMode: "offline",
       historyItems: [
         { ticket_id: "#GCC-20491", ward: "Ward 178", service_id: "garbage_1100", agency: "GCC PGRS (1913)", summary: "Velachery Main Rd garbage overflow — marked Resolved without clearance", hours_ago: 14, status: "PREMATURELY_CLOSED" },
         { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
@@ -1658,6 +1717,9 @@
     };
 
     async function apiCall(path, opts = {}) {
+      if (window.location.protocol === "file:") {
+        return null;
+      }
       try {
         const res = await fetch(path, opts);
         if (!res.ok) return null;
@@ -1685,73 +1747,126 @@
     }
 
     /* ==========================================================================
-       ACOUSTIC ORB ENGINE (PORTED FROM azure-voice-live-agent/AcousticOrb.tsx)
-       3-Layer harmonic sine/cosine wave canvas keyed to Agent Phase + Urgency
+       RIVER-STONE WATER RIPPLE ORB (SUNLIT FOUNDRY LIQUID REFLECTION CANVAS)
+       Concentric stone-in-water ripples + oscillatory inner fluid wave
        ========================================================================== */
     let orbPhase = 0;
-    function drawOrb() {
+    let ripples = [
+      { r: 66, alpha: 0.22, speed: 0.65 },
+      { r: 88, alpha: 0.12, speed: 0.65 }
+    ];
+    let lastRippleTick = 0;
+
+    function spawnRipple(strong = false) {
+      ripples.push({ r: 58, alpha: strong ? 0.42 : 0.24, speed: strong ? 1.05 : 0.72 });
+      if (ripples.length > 7) ripples.shift();
+    }
+
+    function drawOrb(ts = 0) {
       const w = orbCanvas.width;
       const h = orbCanvas.height;
       const cx = w / 2;
       const cy = h / 2;
       orbCtx.clearRect(0, 0, w, h);
 
-      const palettes = {
-        idle: { amp: 2.5, speed: 0.015, glow: "rgba(15, 23, 42, 0.05)", ring: "rgba(15, 23, 42, 0.22)", core: "rgba(11, 107, 92, 0.10)" },
-        listening: { amp: 8.5, speed: 0.036, glow: "rgba(5, 150, 105, 0.16)", ring: "rgba(5, 150, 105, 0.85)", core: "rgba(5, 150, 105, 0.16)" },
-        thinking: { amp: 6.5, speed: 0.055, glow: "rgba(217, 119, 6, 0.16)", ring: "rgba(217, 119, 6, 0.82)", core: "rgba(217, 119, 6, 0.14)" },
-        clarifying: { amp: 5.5, speed: 0.032, glow: "rgba(154, 91, 0, 0.15)", ring: "rgba(154, 91, 0, 0.80)", core: "rgba(255, 248, 236, 0.55)" },
-        hitl_review: { amp: 4.0, speed: 0.025, glow: "rgba(14, 165, 233, 0.16)", ring: "rgba(11, 107, 92, 0.80)", core: "rgba(14, 165, 233, 0.12)" },
-        approved_dispatch: { amp: 4.5, speed: 0.024, glow: "rgba(21, 128, 61, 0.16)", ring: "rgba(21, 128, 61, 0.85)", core: "rgba(21, 128, 61, 0.14)" },
-        speaking: { amp: 11.0, speed: 0.05, glow: "rgba(11, 107, 92, 0.18)", ring: "rgba(11, 107, 92, 0.88)", core: "rgba(11, 107, 92, 0.18)" },
-        critical: { amp: 9.5, speed: 0.06, glow: "rgba(185, 28, 28, 0.16)", ring: "rgba(194, 59, 26, 0.88)", core: "rgba(225, 29, 72, 0.14)" }
-      };
+      const isActiveVoice = state.agentPhase === "listening" || state.agentPhase === "speaking";
+      const intervalMs = state.agentPhase === "speaking" ? 420 : state.agentPhase === "listening" ? 540 : 1800;
+      if (!state.lite && ts - lastRippleTick > intervalMs) {
+        spawnRipple(isActiveVoice);
+        lastRippleTick = ts;
+      }
 
-      const visualKey = (state.agentPhase === "hitl_review" && state.urgencyTier === "CRITICAL_SAFETY")
-        ? "critical"
-        : (palettes[state.agentPhase] ? state.agentPhase : "idle");
-      const cfg = palettes[visualKey];
-      if (!state.lite) orbPhase += cfg.speed;
+      const rgb = state.urgencyTier === "CRITICAL_SAFETY"
+        ? "194, 59, 26"
+        : state.agentPhase === "listening"
+          ? "11, 107, 92"
+          : "99, 102, 241";
 
-      const grad = orbCtx.createRadialGradient(cx, cy, 16, cx, cy, 138);
-      grad.addColorStop(0, cfg.glow);
-      grad.addColorStop(1, "rgba(0,0,0,0)");
-      orbCtx.fillStyle = grad;
-      orbCtx.beginPath();
-      orbCtx.arc(cx, cy, 138, 0, Math.PI * 2);
-      orbCtx.fill();
-
-      for (let layer = 0; layer < 3; layer++) {
-        const baseR = 72 + layer * 18;
-        const phase = orbPhase + layer * 1.4;
+      /* Concentric Water Ripples Expanding Across Calm Light Ground */
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        if (!state.lite) {
+          rp.r += rp.speed;
+          rp.alpha *= 0.976;
+        }
+        if (rp.alpha < 0.015 || rp.r > 122) {
+          ripples.splice(i, 1);
+          continue;
+        }
         orbCtx.beginPath();
-        const steps = 84;
-        for (let i = 0; i <= steps; i++) {
-          const angle = (i / steps) * Math.PI * 2;
-          const wave =
-            Math.sin(angle * 3 + phase) * cfg.amp * 0.6 +
-            Math.cos(angle * 5 - phase * 1.3) * cfg.amp * 0.4;
-          const rad = baseR + wave;
-          const x = cx + Math.cos(angle) * rad;
-          const y = cy + Math.sin(angle) * rad;
-          if (i === 0) orbCtx.moveTo(x, y);
+        for (let a = 0; a <= Math.PI * 2 + 0.08; a += 0.12) {
+          const osc = Math.sin(a * 4 + orbPhase * 1.1) * (isActiveVoice ? 2.6 : 0.8);
+          const rad = rp.r + osc;
+          const x = cx + Math.cos(a) * rad;
+          const y = cy + Math.sin(a) * rad;
+          if (a === 0) orbCtx.moveTo(x, y);
           else orbCtx.lineTo(x, y);
         }
         orbCtx.closePath();
-        orbCtx.strokeStyle = layer === 0 ? cfg.ring : cfg.glow.replace(/0\.\d+\)/, "0.45)");
-        orbCtx.lineWidth = layer === 0 ? 2.2 : 1.3;
+        orbCtx.strokeStyle = `rgba(${rgb}, ${rp.alpha.toFixed(3)})`;
+        orbCtx.lineWidth = 1.6;
         orbCtx.stroke();
-        if (layer === 0) {
-          orbCtx.fillStyle = cfg.core;
-          orbCtx.fill();
-        }
       }
+
+      /* Soft Outer Atmospheric Reflection Halo */
+      const speed = state.agentPhase === "speaking" ? 0.055 : state.agentPhase === "listening" ? 0.042 : 0.018;
+      const amp = state.agentPhase === "speaking" ? 11 : state.agentPhase === "listening" ? 8 : 3;
+      if (!state.lite) orbPhase += speed;
+
+      const halo = orbCtx.createRadialGradient(cx, cy, 38, cx, cy, 92);
+      halo.addColorStop(0, `rgba(${rgb}, 0.20)`);
+      halo.addColorStop(1, "rgba(255,255,255,0)");
+      orbCtx.fillStyle = halo;
+      orbCtx.beginPath();
+      orbCtx.arc(cx, cy, 92, 0, Math.PI * 2);
+      orbCtx.fill();
+
+      /* Core Translucent River-Glass Fluid Sphere (Clipped Inner Liquid Reflection) */
+      orbCtx.save();
+      orbCtx.beginPath();
+      orbCtx.arc(cx, cy, 56, 0, Math.PI * 2);
+      orbCtx.clip();
+
+      const sphereGrad = orbCtx.createLinearGradient(cx - 48, cy - 52, cx + 50, cy + 54);
+      if (state.urgencyTier === "CRITICAL_SAFETY") {
+        sphereGrad.addColorStop(0, "#FB7185");
+        sphereGrad.addColorStop(1, "#C23B1A");
+      } else if (state.agentPhase === "listening") {
+        sphereGrad.addColorStop(0, "#2DD4BF");
+        sphereGrad.addColorStop(1, "#0B6B5C");
+      } else {
+        sphereGrad.addColorStop(0, "#A78BFA");
+        sphereGrad.addColorStop(0.55, "#7C3AED");
+        sphereGrad.addColorStop(1, "#0EA5E9");
+      }
+      orbCtx.fillStyle = sphereGrad;
+      orbCtx.fillRect(cx - 60, cy - 60, 120, 120);
+
+      /* Oscillatory Liquid Wave Reflection Inside Sphere */
+      orbCtx.beginPath();
+      orbCtx.moveTo(cx - 60, cy + 60);
+      for (let x = -60; x <= 60; x += 4) {
+        const y = Math.sin(x * 0.07 + orbPhase * 1.4) * (amp * 0.65) + Math.cos(x * 0.04 - orbPhase) * (amp * 0.45);
+        orbCtx.lineTo(cx + x, cy + 4 + y);
+      }
+      orbCtx.lineTo(cx + 60, cy + 60);
+      orbCtx.closePath();
+      orbCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
+      orbCtx.fill();
+
+      /* Top Glass Highlight Arc */
+      const gloss = orbCtx.createRadialGradient(cx - 18, cy - 22, 4, cx - 12, cy - 18, 42);
+      gloss.addColorStop(0, "rgba(255, 255, 255, 0.55)");
+      gloss.addColorStop(1, "rgba(255, 255, 255, 0)");
+      orbCtx.fillStyle = gloss;
+      orbCtx.fillRect(cx - 58, cy - 58, 116, 116);
+      orbCtx.restore();
 
       if (!state.lite) {
         requestAnimationFrame(drawOrb);
       }
     }
-    drawOrb();
+    requestAnimationFrame(drawOrb);
 
     /* ==========================================================================
        SENTIMENT & URGENCY TRIAGE ENGINE
@@ -1797,7 +1912,7 @@
         clarifying: t.agentClarifying,
         hitl_review: t.agentHitl,
         approved_dispatch: t.agentApproved,
-        speaking: state.lang === "ta" ? "தமிழில் வாசிக்கிறது..." : "Speaking Tamil confirmation..."
+        speaking: state.lang === "ta" ? "நம்ம குரல் பேசுகிறது..." : "NammaKural is speaking..."
       };
       stateLabel.textContent = map[state.agentPhase] || t.agentReady;
       orbStage.setAttribute("data-agent-state", state.agentPhase);
@@ -1871,6 +1986,7 @@
       document.getElementById("savePhotoLabel").textContent = t.savePhoto;
       document.getElementById("drawerTitle").textContent = t.drawer;
       document.getElementById("hitlEditBtn").textContent = t.hitlEdit;
+      if (typeof updateCallDockUi === "function") updateCallDockUi();
       updateStatusPill();
     }
 
@@ -1982,12 +2098,44 @@
       }
     }
 
+    function renderParticulars() {
+      const strip = document.getElementById("particularsStrip");
+      if (!strip) return;
+      const userMsgs = state.turns.filter(t => t.role === "user" && !classifyConversationalGreeting(t.text)).map(t => t.text).join(" ");
+      const hasAnyContext = state.callActive || userMsgs.length > 0 || Boolean(state.gpsLandmarkName) || Boolean(state.attachmentInfo);
+      if (!hasAnyContext) {
+        strip.innerHTML = "";
+        return;
+      }
+      const combined = (userMsgs + (state.gpsLandmarkName ? ` ${state.gpsLandmarkName}` : "")).trim();
+      const parsed = combined ? detectIssueAndPlace(combined) : { hasIssue: false, hasPlace: false };
+      const svc = getService();
+      const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      const issueChip = parsed.hasIssue
+        ? `<span class="particular-chip" data-filled="true">Issue: ${state.lang === "ta" ? svc.titleTa : svc.titleEn}</span>`
+        : `<span class="particular-chip" data-filled="false">Issue: Listening...</span>`;
+      const placeLabel = parsed.hasPlace && !parsed.ambiguousArea
+        ? `${lm.ward} · ${lm.name.split("·")[0].trim()}`
+        : (state.gpsLandmarkName ? state.gpsLandmarkName.split("·")[0].trim() : "Asking area / GPS");
+      const placeFilled = (parsed.hasPlace && !parsed.ambiguousArea) || Boolean(state.gpsLandmarkName);
+      const locChip = `<span class="particular-chip" data-filled="${placeFilled}">Location: ${placeLabel}</span>`;
+      const urgText = state.urgencyMeta
+        ? (state.lang === "ta" ? state.urgencyMeta.badgeTa : state.urgencyMeta.badgeEn)
+        : "Urgency: Auto-Triage";
+      const urgChip = `<span class="particular-chip" data-filled="${Boolean(state.urgencyMeta)}">${urgText}</span>`;
+      const evChip = state.attachmentInfo || state.appendedNote
+        ? `<span class="particular-chip" data-filled="true">Evidence: ${state.attachmentInfo || state.appendedNote}</span>`
+        : "";
+      strip.innerHTML = issueChip + locChip + urgChip + evChip;
+    }
+
     function renderAll(animateReasoning = false) {
       const svc = getService();
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
       const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
       applyCopy();
       renderThread();
+      renderParticulars();
 
       /* 5 Compact Quick Scenarios */
       const qRow = document.getElementById("quickPromptsRow");
@@ -2157,9 +2305,20 @@
     function speakReply(text) {
       if (!state.autoSpeak || !("speechSynthesis" in window)) return;
       window.speechSynthesis.cancel();
+      const prevPhase = state.agentPhase;
+      state.agentPhase = "speaking";
+      updateStatusPill();
+      spawnRipple(true);
       const u = new SpeechSynthesisUtterance(text);
       u.lang = /[\u0B80-\u0BFF]/.test(text) ? "ta-IN" : "en-IN";
       u.rate = 0.96;
+      u.onend = () => {
+        if (state.agentPhase === "speaking") {
+          state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : prevPhase;
+          updateStatusPill();
+        }
+      };
+      u.onerror = u.onend;
       window.speechSynthesis.speak(u);
     }
 
@@ -2449,105 +2608,206 @@
 
     voiceInput.addEventListener("input", () => {
       const v = voiceInput.value.trim();
-      const bar = document.getElementById("liveTranscriptBar");
       const txtEl = document.getElementById("liveTranscriptText");
       if (v) {
-        bar.setAttribute("data-live", "true");
         txtEl.textContent = `Live Transcript: "${v}"`;
-      } else {
-        bar.setAttribute("data-live", "false");
-        txtEl.textContent = "Live Transcript: Waiting for voice or Wispr Flow dictation...";
+      } else if (!state.callActive) {
+        txtEl.textContent = "";
       }
     });
 
     document.getElementById("autoSpeakToggleBtn").addEventListener("click", (e) => {
       state.autoSpeak = !state.autoSpeak;
       e.currentTarget.setAttribute("aria-pressed", state.autoSpeak ? "true" : "false");
-      e.currentTarget.textContent = state.autoSpeak ? "Voice Reply: ON" : "Voice Reply: Muted";
+      e.currentTarget.textContent = state.autoSpeak ? "Voice: ON" : "Voice: Muted";
       if (!state.autoSpeak && "speechSynthesis" in window) window.speechSynthesis.cancel();
     });
 
     let liveRec = null;
     let callTimerInterval = null;
     let callSeconds = 0;
-    function setLiveMicUi(active) {
-      const btn = document.getElementById("liveMicToggleBtn");
+
+    function updateCallDockUi() {
+      const startBtn = document.getElementById("startCallBtn");
+      const startLbl = document.getElementById("startCallLabel");
+      const muteBtn = document.getElementById("muteMicBtn");
+      const muteLbl = document.getElementById("muteLabel");
+      const endBtn = document.getElementById("endCallBtn");
       const orbBtn = document.getElementById("orbMicBtn");
-      btn.textContent = active ? "Stop Live Mic" : "Start Live Mic";
-      orbBtn.setAttribute("data-state", active ? "listening" : "idle");
-      document.getElementById("liveTranscriptBar").setAttribute("data-live", active ? "true" : "false");
-      if (active) {
-        callSeconds = 0;
-        clearInterval(callTimerInterval);
-        callTimerInterval = setInterval(() => {
-          callSeconds++;
-          const m = String(Math.floor(callSeconds / 60)).padStart(2, "0");
-          const s = String(callSeconds % 60).padStart(2, "0");
-          document.getElementById("callTimer").textContent = `${m}:${s}`;
-        }, 1000);
-      } else {
-        clearInterval(callTimerInterval);
+
+      startBtn.setAttribute("data-active", state.callActive ? "true" : "false");
+      startLbl.textContent = state.callActive ? (state.lang === "ta" ? "அழைப்பில்" : "On Call") : (state.lang === "ta" ? "அழைப்பு" : "Call");
+      muteBtn.disabled = !state.callActive;
+      muteBtn.setAttribute("aria-pressed", state.isMuted ? "true" : "false");
+      muteLbl.textContent = state.isMuted ? (state.lang === "ta" ? "ஒலியடக்கப்பட்டது" : "Muted") : (state.lang === "ta" ? "அமைதி" : "Mute");
+      endBtn.disabled = !state.callActive;
+      orbBtn.setAttribute("data-state", (state.callActive && !state.isMuted) ? "listening" : "idle");
+    }
+
+    function stopSpeechCapture() {
+      if (liveRec) {
+        const ref = liveRec;
+        liveRec = null;
+        try { ref.stop(); } catch {}
       }
     }
 
-    function toggleLiveMic() {
+    function startSpeechCapture() {
+      stopSpeechCapture();
+      if (!state.callActive || state.isMuted) return;
+      if (state.sttMode === "wispr") {
+        document.getElementById("liveTranscriptText").textContent = "Wispr Flow active — press your dictation hotkey or type below.";
+        return;
+      }
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        voiceInput.focus();
-        state.agentPhase = "listening";
-        updateStatusPill();
-        showToast("Browser speech off — dictate cleanly using your Wispr Flow hotkey!");
+        document.getElementById("liveTranscriptText").textContent = "Mic stream unavailable here — use Wispr Flow hotkey or type below.";
         return;
       }
-      if (liveRec) {
-        liveRec.stop();
-        liveRec = null;
-        setLiveMicUi(false);
-        state.agentPhase = "idle";
-        updateStatusPill();
-        return;
-      }
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel(); // Talk to interrupt
-      liveRec = new SR();
-      liveRec.continuous = true;
-      liveRec.interimResults = true;
-      liveRec.lang = state.lang === "ta" ? "ta-IN" : "en-IN";
-      state.agentPhase = "listening";
-      updateStatusPill();
-      setLiveMicUi(true);
-
-      liveRec.onresult = (ev) => {
-        if ("speechSynthesis" in window) window.speechSynthesis.cancel(); // Instant barge-in!
-        let interim = "";
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const piece = ev.results[i][0].transcript;
-          if (ev.results[i].isFinal) {
-            document.getElementById("liveTranscriptText").textContent = `Heard: "${piece.trim()}"`;
-            handleAgentTurn(piece.trim());
-          } else {
-            interim += piece;
+      try {
+        liveRec = new SR();
+        liveRec.continuous = true;
+        liveRec.interimResults = true;
+        liveRec.lang = state.lang === "ta" ? "ta-IN" : "en-IN";
+        liveRec.onresult = (ev) => {
+          if ("speechSynthesis" in window) window.speechSynthesis.cancel(); // Instant barge-in!
+          let interim = "";
+          for (let i = ev.resultIndex; i < ev.results.length; i++) {
+            const piece = ev.results[i][0].transcript;
+            if (ev.results[i].isFinal) {
+              document.getElementById("liveTranscriptText").textContent = `Heard: "${piece.trim()}"`;
+              handleAgentTurn(piece.trim());
+            } else {
+              interim += piece;
+            }
           }
-        }
-        if (interim.trim()) {
-          document.getElementById("liveTranscriptText").textContent = `Hearing live: "${interim.trim()}..."`;
-          voiceInput.value = interim.trim();
-        }
-      };
-      liveRec.onerror = () => {
-        liveRec = null;
-        setLiveMicUi(false);
-        state.agentPhase = "idle";
-        updateStatusPill();
-      };
-      liveRec.onend = () => {
-        if (liveRec) {
+          if (interim.trim()) {
+            document.getElementById("liveTranscriptText").textContent = `Hearing live: "${interim.trim()}..."`;
+            voiceInput.value = interim.trim();
+            spawnRipple(false);
+          }
+        };
+        liveRec.onerror = () => {
           liveRec = null;
-          setLiveMicUi(false);
-        }
-      };
-      liveRec.start();
+          if (state.callActive) {
+            document.getElementById("liveTranscriptText").textContent = "Browser mic paused — dictate cleanly with Wispr Flow hotkey or type below.";
+          }
+        };
+        liveRec.onend = () => {
+          if (liveRec && state.callActive && !state.isMuted) {
+            try { liveRec.start(); } catch { liveRec = null; }
+          }
+        };
+        liveRec.start();
+      } catch {
+        liveRec = null;
+      }
     }
-    document.getElementById("liveMicToggleBtn").addEventListener("click", toggleLiveMic);
+
+    function startCall() {
+      if (state.callActive) {
+        if (state.isMuted) toggleMute();
+        voiceInput.focus();
+        return;
+      }
+      state.callActive = true;
+      state.isMuted = false;
+      state.agentPhase = "listening";
+      callSeconds = 0;
+      clearInterval(callTimerInterval);
+      callTimerInterval = setInterval(() => {
+        callSeconds++;
+        const m = String(Math.floor(callSeconds / 60)).padStart(2, "0");
+        const s = String(callSeconds % 60).padStart(2, "0");
+        document.getElementById("callTimer").textContent = `${m}:${s}`;
+      }, 1000);
+
+      spawnRipple(true);
+      if (state.turns.length === 0) {
+        const welcome = state.lang === "ta"
+          ? "வணக்கம்! நான் நம்ம குரல் — உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்."
+          : "Vanakkam! I am NammaKural, your civic voice agent. Tell me what needs fixing on your street and your nearest landmark — speak naturally in Tamil or Tanglish.";
+        state.turns.push({ role: "agent", text: welcome, needsInput: true });
+        renderAll(false);
+        speakReply(welcome);
+      } else {
+        renderParticulars();
+        updateStatusPill();
+      }
+      updateCallDockUi();
+      startSpeechCapture();
+      voiceInput.focus();
+    }
+
+    function toggleMute() {
+      if (!state.callActive) return;
+      state.isMuted = !state.isMuted;
+      if (state.isMuted) {
+        stopSpeechCapture();
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        state.agentPhase = "idle";
+        document.getElementById("liveTranscriptText").textContent = "Microphone muted — tap Mute again to resume.";
+        showToast("Mic muted");
+      } else {
+        state.agentPhase = "listening";
+        startSpeechCapture();
+        spawnRipple(true);
+        document.getElementById("liveTranscriptText").textContent = "Listening in Tanglish / Tamil...";
+        showToast("Mic unmuted");
+      }
+      updateCallDockUi();
+      updateStatusPill();
+    }
+
+    function endCall() {
+      if (!state.callActive && !liveRec) return;
+      stopSpeechCapture();
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      clearInterval(callTimerInterval);
+      state.callActive = false;
+      state.isMuted = false;
+      if (state.agentPhase === "listening" || state.agentPhase === "speaking") {
+        state.agentPhase = state.turns.some(t => t.role === "user") ? "hitl_review" : "idle";
+      }
+      document.getElementById("liveTranscriptText").textContent = state.turns.length
+        ? "Call ended — review your gathered details or transcript below."
+        : "";
+      updateCallDockUi();
+      updateStatusPill();
+    }
+
+    document.getElementById("startCallBtn").addEventListener("click", startCall);
+    document.getElementById("muteMicBtn").addEventListener("click", toggleMute);
+    document.getElementById("endCallBtn").addEventListener("click", endCall);
+
+    /* STT & AI Model Setup Modal */
+    document.getElementById("modelSetupOpenBtn").addEventListener("click", () => {
+      document.getElementById("sttEngineSelect").value = state.sttMode;
+      document.getElementById("llmEngineSelect").value = state.llmMode;
+      document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "true");
+    });
+    document.getElementById("modelSetupCloseBtn").addEventListener("click", () => {
+      document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "false");
+    });
+    document.getElementById("modelSetupSaveBtn").addEventListener("click", () => {
+      state.sttMode = document.getElementById("sttEngineSelect").value;
+      state.llmMode = document.getElementById("llmEngineSelect").value;
+      const sttLabels = {
+        hybrid: "Hybrid Web Speech + Wispr Flow",
+        wispr: "Wispr Flow Hotkey Only",
+        browser: "Browser SpeechRecognition (ta-IN)"
+      };
+      const llmLabels = {
+        offline: "Built-in Zero-Key Tanglish Engine",
+        ollama: "Local Ollama (localhost:11434 fallback to offline)",
+        sarvam: "Sarvam / Gemini Live (.env optional key fallback to offline)"
+      };
+      document.getElementById("modelSetupStatus").textContent =
+        `Active: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
+      document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "false");
+      if (state.callActive && !state.isMuted) startSpeechCapture();
+      showToast(`Voice setup updated (${sttLabels[state.sttMode]})`);
+    });
 
     document.getElementById("listenGuideBtn").addEventListener("click", () => {
       if ("speechSynthesis" in window) {
@@ -2731,6 +2991,7 @@
     });
 
     document.getElementById("newChatBtn").addEventListener("click", () => {
+      endCall();
       state.turns = [];
       state.clarifyOptions = [];
       state.appendedNote = "";
@@ -2745,15 +3006,18 @@
       state.agentPhase = "idle";
       state.needsSlot = null;
       voiceInput.value = "";
-      document.getElementById("liveTranscriptBar").setAttribute("data-live", "false");
-      document.getElementById("liveTranscriptText").textContent = "Live Transcript: Waiting for voice or Wispr Flow dictation...";
+      document.getElementById("liveTranscriptText").textContent = "";
       document.getElementById("callTimer").textContent = "00:00";
+      updateCallDockUi();
       voiceInput.focus();
       renderAll(false);
-      showToast("Cleared conversation — ready for fresh voice input");
+      showToast("Cleared conversation — tap Call or speak to begin");
     });
 
-    document.getElementById("orbMicBtn").addEventListener("click", toggleLiveMic);
+    document.getElementById("orbMicBtn").addEventListener("click", () => {
+      if (state.callActive) toggleMute();
+      else startCall();
+    });
 
     document.getElementById("photoStage").addEventListener("click", (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -2832,14 +3096,15 @@
       showToast(state.lite ? "2G Lite Mode active" : "Standard Voice Agent mode");
     });
 
-    /* Start pure and calm: only orb + single voice bar + 5 scenarios (Zero upfront forms) */
+    /* Start pure and sunlit: open canvas river-ripple orb + Call/Mute/Cut + single input */
+    updateCallDockUi();
     renderAll(false);
     apiCall("/api/health").then(info => {
-      const pill = document.getElementById("voiceModePill");
-      if (!info) return;
-      pill.textContent = info.voice_mode === "live-neural"
-        ? "Live Neural Voice Active · Optional Keys Set"
-        : "Offline Tanglish Engine Active (No API keys required)";
+      const statusEl = document.getElementById("modelSetupStatus");
+      if (!info || !statusEl) return;
+      statusEl.textContent = info.voice_mode === "live-neural"
+        ? "Active: Live Neural Voice + Optional Keys Detected on Backend"
+        : "Active: Offline Tanglish Civic Engine (0 secret keys needed; Docker / FastAPI Connected)";
     });
   </script>
 </body>

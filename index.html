@@ -1401,7 +1401,9 @@
       <div class="hitl-box">
         <span class="hitl-label">Reasoning & Dialect Model Layer</span>
         <select id="llmEngineSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
-          <option value="offline">Built-in Tanglish Civic Engine (Zero Keys · Instant)</option>
+          <option value="auto">Auto: Unsloth Local LLM (if running) → Offline Zero-Key Fallback</option>
+          <option value="unsloth">Unsloth Studio Local LLM (127.0.0.1:8888 · Gemma-4 / Nemotron)</option>
+          <option value="offline">Built-in Tanglish Civic Engine Only (Zero Keys · Instant)</option>
           <option value="ollama">Local Ollama (llama3 / gemma on localhost:11434)</option>
           <option value="sarvam">Sarvam AI Saaras+Bulbul / Gemini Live (Optional Key in .env)</option>
         </select>
@@ -1709,7 +1711,7 @@
       callActive: false,
       isMuted: false,
       sttMode: "hybrid",
-      llmMode: "offline",
+      llmMode: "auto",
       historyItems: [
         { ticket_id: "#GCC-20491", ward: "Ward 178", service_id: "garbage_1100", agency: "GCC PGRS (1913)", summary: "Velachery Main Rd garbage overflow — marked Resolved without clearance", hours_ago: 14, status: "PREMATURELY_CLOSED" },
         { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
@@ -2503,16 +2505,29 @@
       state.agentPhase = "hitl_review";
 
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx];
-      apiCall("/api/turn", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ combined_text: combined, latest_text: msg })
-      });
-
       const promptReply = state.lang === "ta"
         ? `${lm.ward} கண்டறியப்பட்டது (${urgency.badgeTa}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும் அல்லது சரிபார்ப்புப் பெட்டியைத் திறக்கவும்.`
         : `Resolved ${lm.ward} (${urgency.badgeEn}). Open Clarity Popup to confirm OTP & seal, or say 'Confirm, Confirm' ('உறுதி, உறுதி') twice.`;
-      state.turns.push({ role: "agent", text: promptReply, needsInput: false });
+      const replyIdx = state.turns.push({ role: "agent", text: promptReply, needsInput: false }) - 1;
+
+      if (!fromPreset && state.llmMode !== "offline") {
+        apiCall("/api/turn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            combined_text: combined,
+            latest_text: msg,
+            lang: state.lang,
+            llm_mode: state.llmMode,
+            history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text }))
+          })
+        }).then(res => {
+          if (res?.llm?.used && res.llm.reply && state.turns[replyIdx]) {
+            state.turns[replyIdx].text = `${res.llm.reply} (${lm.ward} · Say 'Confirm, Confirm' or open Clarity Popup)`;
+            renderThread();
+          }
+        });
+      }
 
       if (!fromPreset) voiceInput.value = "";
       renderAll(true);
@@ -2798,6 +2813,8 @@
         browser: "Browser SpeechRecognition (ta-IN)"
       };
       const llmLabels = {
+        auto: "Auto (Unsloth Local LLM if running → Offline Engine)",
+        unsloth: "Unsloth Studio Local LLM (127.0.0.1:8888)",
         offline: "Built-in Zero-Key Tanglish Engine",
         ollama: "Local Ollama (localhost:11434 fallback to offline)",
         sarvam: "Sarvam / Gemini Live (.env optional key fallback to offline)"
@@ -3102,9 +3119,13 @@
     apiCall("/api/health").then(info => {
       const statusEl = document.getElementById("modelSetupStatus");
       if (!info || !statusEl) return;
-      statusEl.textContent = info.voice_mode === "live-neural"
-        ? "Active: Live Neural Voice + Optional Keys Detected on Backend"
-        : "Active: Offline Tanglish Civic Engine (0 secret keys needed; Docker / FastAPI Connected)";
+      if (info.local_llm?.available) {
+        statusEl.textContent = `Active: Unsloth Local LLM (${info.local_llm.active_model}) + Deterministic Ward/HITL Router`;
+      } else if (info.voice_mode === "live-neural") {
+        statusEl.textContent = "Active: Live Neural Voice + Optional Keys Detected on Backend";
+      } else {
+        statusEl.textContent = "Active: Offline Tanglish Civic Engine (0 secret keys needed; Docker / FastAPI Connected)";
+      }
     });
   </script>
 </body>

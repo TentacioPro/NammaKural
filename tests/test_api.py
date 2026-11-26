@@ -9,13 +9,20 @@ from backend.main import app
 client = TestClient(app)
 
 
-def test_health_boots_without_secret_keys() -> None:
+def test_health_boots_without_secret_keys(monkeypatch) -> None:
     res = client.get("/api/health")
     assert res.status_code == 200
     body = res.json()
     assert body["status"] == "ok"
-    assert body["voice_mode"] in ("offline-tanglish-engine", "live-neural")
+    assert body["voice_mode"] in ("offline-tanglish-engine", "live-neural", "local-unsloth-llm")
     assert body["portals_mapped"] == 6
+
+    import backend.main as main_mod
+    monkeypatch.setattr(main_mod, "probe_local_llm", lambda: {"available": False, "provider": "offline-tanglish-engine", "active_model": "deterministic-tanglish-v1", "models": []})
+    monkeypatch.delenv("SARVAM_API_KEY", raising=False)
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    cold = client.get("/api/health").json()
+    assert cold["voice_mode"] == "offline-tanglish-engine"
 
 
 def test_critical_safety_spark_overrides_and_splits() -> None:
@@ -161,3 +168,52 @@ def test_reverse_gps_and_telemetry_pii_redaction() -> None:
     assert "testuser@example.com" not in note
     assert "[REDACTED_NUM]" in note
     assert "[REDACTED_EMAIL]" in note
+
+
+def test_llm_bridge_offline_fallback_and_mocked_unsloth_turn(monkeypatch) -> None:
+    import io
+    import json
+    from backend import llm_bridge
+
+    offline = client.post(
+        "/api/turn",
+        json={"combined_text": "Anna Nagar Tower Park streetlight eriyala", "llm_mode": "offline"},
+    ).json()
+    assert offline["llm"]["used"] is False
+
+    class _FakeResp(io.BytesIO):
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+
+    monkeypatch.setattr(
+        llm_bridge,
+        "probe_local_llm",
+        lambda: {"available": True, "provider": "unsloth-studio", "active_model": "gemma-4-E2B-it-Q4_K_M", "models": ["gemma-4-E2B-it-Q4_K_M"]},
+    )
+    monkeypatch.setattr(llm_bridge, "_read_env_value", lambda name, default="": "demo-token" if name == "UNSLOTH_API_KEY" else "http://127.0.0.1:8888")
+
+    fake_payload = json.dumps({
+        "choices": [{
+            "message": {
+                "content": json.dumps({
+                    "reply": "Purinjidhu! Anna Nagar Tower Park streetlight-ukku urgent report ready panren.",
+                    "service_hint": "streetlight_eb",
+                    "landmark_text": "Tower Park Vth Avenue",
+                    "urgency_hint": "P2"
+                })
+            }
+        }]
+    }).encode("utf-8")
+    monkeypatch.setattr(llm_bridge.urllib.request, "urlopen", lambda req, timeout=8.0: _FakeResp(fake_payload))
+
+    res = client.post(
+        "/api/turn",
+        json={"combined_text": "light eriyala pakkathula", "latest_text": "light eriyala pakkathula", "llm_mode": "unsloth"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["llm"]["used"] is True
+    assert body["llm"]["model"] == "gemma-4-E2B-it-Q4_K_M"
+    assert body["analysis"]["landmark"]["ward"] == "Ward 103"

@@ -10,8 +10,9 @@ from typing import Any
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from backend.llm_bridge import generate_civic_turn, probe_local_llm
 from backend.nlu import (
     SERVICE_CATALOG,
     analyze_turn,
@@ -46,6 +47,9 @@ class TurnRequest(BaseModel):
     gps_lat: float | None = None
     gps_lon: float | None = None
     assistant_speaking: bool = False
+    lang: str = "en"
+    llm_mode: str = "offline"
+    history: list[dict[str, str]] = Field(default_factory=list)
 
 
 class ReverseGeoRequest(BaseModel):
@@ -92,10 +96,19 @@ def health_check() -> dict[str, Any]:
     """Confirm app boots cleanly without required external secret keys."""
     sarvam_ready = bool(os.getenv("SARVAM_API_KEY", "").strip())
     gemini_ready = bool(os.getenv("GEMINI_API_KEY", "").strip())
+    local_llm = probe_local_llm()
+    if local_llm["available"]:
+        voice_mode = "local-unsloth-llm"
+    elif sarvam_ready or gemini_ready:
+        voice_mode = "live-neural"
+    else:
+        voice_mode = "offline-tanglish-engine"
     return {
         "status": "ok",
-        "voice_mode": "live-neural" if (sarvam_ready or gemini_ready) else "offline-tanglish-engine",
+        "voice_mode": voice_mode,
+        "local_llm": local_llm,
         "optional_keys": {
+            "UNSLOTH_API_KEY": "configured" if local_llm["available"] else "optional (offline Tanglish active)",
             "SARVAM_API_KEY": "configured" if sarvam_ready else "key not set (offline Tanglish active)",
             "GEMINI_API_KEY": "configured" if gemini_ready else "key not set (offline Tanglish active)",
         },
@@ -105,21 +118,32 @@ def health_check() -> dict[str, Any]:
 
 @app.post("/api/turn")
 def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
-    """Run Semantic VAD, natural greeting/mic-check handling, Tanglish NLU, GPS match, and cooldown."""
+    """Run Semantic VAD, natural greeting/mic-check handling, optional Local Unsloth LLM, Tanglish NLU & cooldown."""
     utterance = req.latest_text if req.latest_text is not None else req.combined_text
     vad = classify_semantic_vad(utterance, req.assistant_speaking)
     if vad["action"] == "not_turn":
         return {"vad": vad, "phase": "ignored_backchannel"}
 
+    llm_res = generate_civic_turn(
+        utterance=utterance,
+        combined_text=req.combined_text,
+        lang=req.lang,
+        history=req.history,
+        preferred_mode=req.llm_mode,
+    )
+
     chitchat = classify_conversational_chitchat(utterance)
     if chitchat is not None:
-        return {"vad": vad, "phase": "chitchat", "chitchat": chitchat}
+        return {"vad": vad, "phase": "chitchat", "chitchat": chitchat, "llm": llm_res or {"used": False}}
 
     gps_lm = None
     if req.gps_lat is not None and req.gps_lon is not None:
         gps_lm = resolve_gps_to_landmark(req.gps_lat, req.gps_lon)["landmark"]
 
     analysis = analyze_turn(req.combined_text, gps_lm)
+    if (not analysis["has_place"] or not analysis["has_issue"]) and llm_res and llm_res.get("landmark_text"):
+        analysis = analyze_turn(f"{req.combined_text} {llm_res['landmark_text']}".strip(), gps_lm)
+
     cooldown = check_cooldown(
         analysis["landmark"]["ward"],
         analysis["service_id"],
@@ -132,7 +156,13 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
             "ward": analysis["landmark"]["ward"],
         }
     )
-    return {"vad": vad, "phase": "civic", "analysis": analysis, "cooldown": cooldown}
+    return {
+        "vad": vad,
+        "phase": "civic",
+        "analysis": analysis,
+        "cooldown": cooldown,
+        "llm": llm_res or {"used": False, "provider": "offline-tanglish-engine"},
+    }
 
 
 @app.websocket("/ws/voice")

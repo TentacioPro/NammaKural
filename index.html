@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-a11y-large="false">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#F7F9FC">
+  <title>NammaKural (நம்ம குரல்) — Tamil Nadu Voice Civic Helper</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #F5F7FA;
+      --bg-card: #FFFFFF;
+      --bg-soft: #EDF2F7;
+      --bg-warm: #FFF8EB;
+      --bg-mint: #E8F5F1;
+
+      --ink: #111827;
+      --ink-2: #374151;
+      --ink-3: #5A6577;
+      --border: #D5DDE6;
+      --border-strong: #94A3B8;
+
+      /* Subtle Tamil Nadu Identity Accents on Light Surface */
+      --sengavi: #C23B1A;
+      --sengavi-hover: #A42E12;
+      --sengavi-soft: #FDF0EC;
+      --kaveri: #0B6B5C;
+      --kaveri-dark: #074A40;
+      --turmeric: #9A5B00;
+      --turmeric-border: #E2B466;
+      --whatsapp: #15803D;
+      --whatsapp-hover: #116630;
+
+      --font-sans: 'DM Sans', 'Anek Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    html[data-a11y-large="true"] {
+      font-size: 112.5%;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    ::selection {
+      background: var(--sengavi);
+      color: #FFFFFF;
+    }
+
+    html {
+      font-family: var(--font-sans);
+      background: var(--bg-page);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg-page);
+      padding-bottom: calc(36px + env(safe-area-inset-bottom));
+      min-height: 100vh;
+    }
+
+    :focus-visible {
+      outline: 2.5px solid var(--sengavi);
+      outline-offset: 2px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .num {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 1.9;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 8px;
+      z-index: 100;
+      background: var(--ink);
+      color: #FFFFFF;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .skip-link:focus { left: 16px; }
+
+    /* ==========================================================================
+       1. LIGHT, CLEAN HEADER & SIMPLE NAVIGATION
+       ========================================================================== */
+    .top-accent-line {
+      height: 4px;
+      background: var(--sengavi);
+    }
+
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: var(--sengavi);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      font-size: 0.85rem;
+      color: var(--ink-3);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .segmented-group {
+      display: inline-flex;
+      background: var(--bg-soft);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      gap: 2px;
+    }
+
+    .seg-btn {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--ink-2);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 7px 13px;
+      min-height: 38px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .seg-btn[aria-pressed="true"] {
+      background: var(--bg-card);
+      color: var(--ink);
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+
+    .btn-quiet {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      min-height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-quiet[aria-pressed="true"] {
+      background: var(--ink);
+      color: #FFFFFF;
+      border-color: var(--ink);
+    }
+
+    /* ==========================================================================
+       2. SERVICE PICKER STRIP (VISUAL THUMBNAILS FOR ALL TARGETED SERVICES)
+       ========================================================================== */
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 18px 20px 0;
+    }
+
+    .service-strip-label {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--ink-2);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .service-rail {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 1050px) {
+      .service-rail {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        scroll-snap-type: x mandatory;
+      }
+      .service-tile {
+        min-width: 215px;
+        scroll-snap-align: start;
+      }
+    }
+
+    .service-tile {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      border-radius: var(--radius);
+      padding: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      min-height: 64px;
+    }
+
+    .service-tile:hover {
+      border-color: var(--border-strong);
+      background: var(--bg-soft);
+    }
+
+    .service-tile[aria-current="true"] {
+      border: 2px solid var(--sengavi);
+      background: var(--sengavi-soft);
+    }
+
+    .service-thumb {
+      width: 64px;
+      height: 44px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .service-tile-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      line-height: 1.25;
+      display: block;
+    }
+
+    .service-tile-sub {
+      font-size: 0.78rem;
+      color: var(--ink-3);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ==========================================================================
+       3. MAIN WORKSPACE: CLEAN 2-COLUMN GUIDED FLOW
+       ========================================================================== */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: minmax(340px, 5fr) minmax(420px, 7fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 960px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+      .container, .header-inner {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+    }
+
+    .surface-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .step-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .step-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: #FFFFFF;
+      font-size: 0.8rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* Voice Input Box */
+    .voice-box {
+      width: 100%;
+      min-height: 98px;
+      padding: 12px 14px;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--ink);
+      background: var(--bg-page);
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      resize: vertical;
+    }
+
+    .voice-box:focus {
+      background: var(--bg-card);
+      border-color: var(--sengavi);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn-voice {
+      appearance: none;
+      border: 0;
+      background: var(--sengavi);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 0.94rem;
+      font-weight: 700;
+      padding: 11px 18px;
+      min-height: 46px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-voice:hover { background: var(--sengavi-hover); }
+    .btn-voice[data-listening="true"] { background: var(--ink); }
+
+    .btn-outline {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 14px;
+      min-height: 44px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+    }
+    .btn-outline:hover { background: var(--bg-soft); }
+
+    /* Landmark Disambiguator Pills */
+    .landmark-section {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .landmark-label {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--ink-2);
+    }
+
+    .landmark-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .landmark-btn {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-page);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 12px;
+      min-height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .landmark-btn[aria-pressed="true"] {
+      background: var(--kaveri);
+      border-color: var(--kaveri);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
+
+    .append-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .append-input {
+      flex: 1;
+      min-height: 42px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
+      color: var(--ink);
+      background: var(--bg-card);
+    }
+
+    /* ==========================================================================
+       4. REAL SERVICE PHOTO + TAP-TO-MARK HAZARD EVIDENCE STAGE
+       ========================================================================== */
+    .photo-stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-soft);
+      cursor: crosshair;
+      user-select: none;
+    }
+
+    .photo-stage img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .hazard-ring {
+      position: absolute;
+      width: 56px;
+      height: 56px;
+      border: 3.5px solid #EF4444;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 0 2px #FFFFFF;
+    }
+
+    .hazard-ring::after {
+      content: "";
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: 10px;
+      height: 10px;
+      background: #EF4444;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .photo-stamp-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(17, 24, 39, 0.88);
+      color: #FFFFFF;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+
+    .photo-stamp-ok {
+      color: #86EFAC;
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       5. RIGHT COLUMN: LIGHT LOCATION BANNER, 1-TAP WHATSAPP, CLEAN FORM FIELDS
+       ========================================================================== */
+    .right-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Light & Calm Confirmed Location Strip */
+    .location-banner {
+      background: var(--bg-mint);
+      border: 1px solid #99D5C4;
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+
+    .location-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .location-badge {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--kaveri-dark);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .location-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .loc-item {
+      background: var(--bg-card);
+      border: 1px solid #CBE7DF;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+    }
+
+    .loc-key {
+      display: block;
+      font-size: 0.76rem;
+      color: var(--ink-3);
+      font-weight: 600;
+    }
+
+    .loc-val {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+
+    /* 1-Tap Easy Send Bar (Warm Light Sand Surface) */
+    .easy-send-box {
+      background: var(--bg-warm);
+      border: 1px solid var(--turmeric-border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tamil-cue {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .easy-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+    }
+
+    .btn-whatsapp {
+      appearance: none;
+      border: 0;
+      background: var(--whatsapp);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 12px 16px;
+      min-height: 46px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-whatsapp:hover { background: var(--whatsapp-hover); }
+
+    /* Clean Portal Form Cards */
+    .portal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .portal-card-head {
+      padding: 14px 18px;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .portal-name {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .portal-status-line {
+      margin-top: 4px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-open { color: var(--kaveri-dark); }
+    .status-otp { color: var(--turmeric); }
+
+    .field-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 175px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .field-row:last-child { border-bottom: 0; }
+
+    .field-name {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--ink-2);
+    }
+
+    .field-value {
+      font-size: 0.93rem;
+      color: var(--ink);
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .char-note {
+      display: block;
+      margin-top: 3px;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--kaveri-dark);
+      font-weight: 600;
+    }
+
+    .btn-copy {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-page);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.84rem;
+      font-weight: 700;
+      padding: 7px 14px;
+      min-height: 38px;
+      min-width: 84px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .btn-copy:hover {
+      background: var(--ink);
+      color: #FFFFFF;
+      border-color: var(--ink);
+    }
+
+    .btn-copy[data-copied="true"] {
+      background: var(--kaveri);
+      border-color: var(--kaveri);
+      color: #FFFFFF;
+    }
+
+    .tech-details {
+      padding: 10px 18px;
+      background: var(--bg-page);
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--ink-3);
+    }
+
+    .tech-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ink-2);
+    }
+
+    @media (max-width: 680px) {
+      .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .btn-copy {
+        width: 100%;
+        min-height: 44px;
+      }
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 80;
+      background: var(--ink);
+      color: #FFFFFF;
+      padding: 11px 16px;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .toast[data-visible="true"] { display: inline-flex; }
+  </style>
+</head>
+<body>
+  <a href="#mainWorkspace" class="skip-link">Skip to complaint workspace</a>
+
+  <div id="toast" class="toast" role="status" aria-live="polite">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+    <span id="toastText">Copied</span>
+  </div>
+
+  <div class="top-accent-line" aria-hidden="true"></div>
+
+  <!-- 1. CLEAN LIGHT HEADER & EASY NAVIGATION -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">குரல்</div>
+        <div>
+          <h1>NammaKural <span style="font-weight:500;color:var(--ink-3)">· நம்ம குரல்</span></h1>
+          <p id="headerSub">Speak your street problem in Tanglish — get exact Ward &amp; 1-tap filing</p>
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <div class="segmented-group" role="group" aria-label="Task Mode">
+          <button type="button" class="seg-btn" id="modeNewBtn" aria-pressed="true">New Complaint</button>
+          <button type="button" class="seg-btn" id="modeEscalateBtn" aria-pressed="false">Reopen Closed (1100)</button>
+        </div>
+
+        <div class="segmented-group" role="group" aria-label="Interface Language">
+          <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">English</button>
+          <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
+        </div>
+
+        <button type="button" class="btn-quiet" id="a11yBtn" aria-pressed="false">A+ Large Text</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" id="mainWorkspace">
+    <!-- 2. VISUAL SERVICE PICKER STRIP (REAL SERVICE PHOTOS) -->
+    <div class="service-strip-label">
+      <span id="stripLabel">Choose a civic issue (or speak your own below):</span>
+      <span class="num" style="font-size:0.8rem;color:var(--kaveri-dark)">6 Tamil Nadu Portals · Offline-Ready</span>
+    </div>
+    <div class="service-rail" id="serviceRail" role="list"></div>
+
+    <!-- 3. TWO-COLUMN GUIDED FLOW -->
+    <div class="workspace-grid">
+
+      <!-- LEFT: STEP 1 (SPEAK) + STEP 2 (PHOTO MARKING) -->
+      <div style="display:flex;flex-direction:column;gap:18px;">
+
+        <!-- Step 1: Speak & Confirm Landmark -->
+        <section class="surface-panel" aria-labelledby="step1Title">
+          <div class="step-header">
+            <h2 class="step-title" id="step1Title">
+              <span class="step-num">1</span>
+              <span id="step1Heading">Speak or type your complaint</span>
+            </h2>
+            <span style="font-size:0.82rem;color:var(--ink-3)">Wispr Flow · Tanglish / தமிழ்</span>
+          </div>
+
+          <textarea id="voiceInput" class="voice-box" aria-label="Complaint voice input"></textarea>
+
+          <div class="btn-row">
+            <button type="button" class="btn-voice" id="micBtn" data-listening="false">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+              <span id="micLabel">Dictate with Wispr Flow</span>
+            </button>
+            <button type="button" class="btn-outline" id="resolveBtn">
+              <span id="resolveLabel">Find Ward &amp; Portals</span>
+            </button>
+          </div>
+
+          <div class="landmark-section">
+            <span class="landmark-label" id="landmarkLabel">Confirm nearby landmark:</span>
+            <div class="landmark-pills" id="landmarkPills"></div>
+            <div class="append-row">
+              <input type="text" id="detailInput" class="append-input" placeholder="Add pole #, door #, or days (e.g. Pole 42)">
+              <button type="button" class="btn-outline" id="appendBtn">+ Add</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2: Real Service-Specific Photo + Tap-to-Mark -->
+        <section class="surface-panel" aria-labelledby="step2Title">
+          <div class="step-header">
+            <h2 class="step-title" id="step2Title">
+              <span class="step-num">2</span>
+              <span id="step2Heading">Mark the issue on photo</span>
+            </h2>
+            <span class="num" style="font-size:0.8rem;color:var(--kaveri-dark);font-weight:600">&lt;1 MB Portal Ready</span>
+          </div>
+
+          <p id="photoHelp" style="font-size:0.86rem;color:var(--ink-3)">Tap anywhere on the photo to mark the exact problem spot. Your Ward &amp; Street ID are stamped automatically.</p>
+
+          <div class="photo-stage" id="photoStage" title="Tap on the problem area to move the marker">
+            <img id="servicePhoto" src="assets/streetlight_eb.jpg" alt="Street civic issue preview">
+            <div class="hazard-ring" id="hazardRing" style="left:56%;top:42%;"></div>
+            <div class="photo-stamp-bar">
+              <span id="photoStampText">Ward 103 · Vth Avenue (Road ID 76370)</span>
+              <span class="photo-stamp-ok">VERIFIED &lt;1 MB</span>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <label class="btn-outline" style="cursor:pointer">
+              <span id="uploadLabel">Upload Your Street Photo</span>
+              <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+            </label>
+            <button type="button" class="btn-outline" id="savePhotoBtn">
+              <span id="savePhotoLabel">Save Marked Photo</span>
+            </button>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT: STEP 3 (CONFIRMED LOCATION + 1-TAP WHATSAPP + CLEAN FORM FIELDS) -->
+      <div class="right-stack">
+
+        <!-- Light Confirmed Location Strip -->
+        <section class="location-banner" aria-labelledby="locTitle">
+          <div class="location-top">
+            <span class="location-badge" id="locTitle">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span id="locHeadingText">Verified Ward &amp; Street Details</span>
+            </span>
+            <span class="num" style="font-size:0.78rem;color:var(--kaveri-dark)">ArcGIS Street ID Verified</span>
+          </div>
+          <div class="location-grid" id="locationGrid"></div>
+        </section>
+
+        <!-- Step 3A: 1-Tap Easy Send (No Login / For All Citizens) -->
+        <section class="easy-send-box" aria-labelledby="step3Title">
+          <div class="step-header">
+            <h2 class="step-title" id="step3Title">
+              <span class="step-num">3</span>
+              <span id="step3Heading">Send in 1 tap (No web login needed)</span>
+            </h2>
+            <button type="button" class="btn-outline" id="speakTamilBtn">
+              <svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              <span id="speakBtnText">Listen in Tamil</span>
+            </button>
+          </div>
+
+          <div class="tamil-cue" id="tamilCue"></div>
+          <div class="easy-actions" id="easyActions"></div>
+        </section>
+
+        <!-- Step 3B: Portal-Ready Fields (If Filing on Government Website) -->
+        <div id="portalCardsWrap" style="display:flex;flex-direction:column;gap:14px;"></div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const UI_COPY = {
+      en: {
+        headerSub: "Speak your street problem in Tanglish — get exact Ward & 1-tap filing",
+        modeNew: "New Complaint",
+        modeEscalate: "Reopen Closed (1100)",
+        a11y: "A+ Large Text",
+        stripLabel: "Choose a civic issue (or speak your own below):",
+        step1Heading: "Speak or type your complaint",
+        micLabel: "Dictate with Wispr Flow",
+        resolveLabel: "Find Ward & Portals",
+        landmarkLabel: "Confirm nearby landmark:",
+        detailPlaceholder: "Add pole #, door #, or days (e.g. Pole 42)",
+        appendBtn: "+ Add",
+        step2Heading: "Mark the issue on photo",
+        photoHelp: "Tap anywhere on the photo to mark the exact problem spot. Your Ward & Street ID are stamped automatically.",
+        uploadLabel: "Upload Your Street Photo",
+        savePhotoLabel: "Save Marked Photo",
+        locHeadingText: "Verified Ward & Street Details",
+        step3Heading: "Send in 1 tap (No web login needed)",
+        speakBtnText: "Listen in Tamil",
+        copyBtn: "Copy",
+        copiedBtn: "Copied!",
+        copyAll: "Copy All",
+        openSite: "Open Portal"
+      },
+      ta: {
+        headerSub: "தமிழ் / Tanglish-ல் பேசுங்கள் — வார்டு எண் & நேரடிப் புகார் உடனே தயார்",
+        modeNew: "புதிய புகார்",
+        modeEscalate: "தீர்க்காத புகார் (1100)",
+        a11y: "A+ பெரிய எழுத்து",
+        stripLabel: "பிரச்சனை வகையைத் தேர்ந்தெடுக்கவும் (அல்லது கீழே பேசவும்):",
+        step1Heading: "உங்கள் புகாரைப் பேசுங்கள் அல்லது தட்டச்சு செய்க",
+        micLabel: "Wispr Flow குரல் பதிவு",
+        resolveLabel: "வார்டு & துறை காண்க",
+        landmarkLabel: "அருகிலுள்ள அடையாள இடத்தை உறுதி செய்க:",
+        detailPlaceholder: "கம்பம் எண் / கதவு எண் சேர்க்க (எ.கா. Pole 42)",
+        appendBtn: "+ சேர்",
+        step2Heading: "புகைப்படத்தில் இடத்தைக் குறிக்கவும்",
+        photoHelp: "பழுதான இடத்தின் மீது தட்டவும். வார்டு & சாலை எண் தானாகப் பதியப்படும்.",
+        uploadLabel: "உங்கள் புகைப்படம் இணைக்க",
+        savePhotoLabel: "படத்தைச் சேமிக்க",
+        locHeadingText: "உறுதிசெய்யப்பட்ட வார்டு & சாலை விவரம்",
+        step3Heading: "ஒரே தட்டில் அனுப்புக (உள்நுழைவு தேவையில்லை)",
+        speakBtnText: "தமிழில் கேட்க",
+        copyBtn: "நகலெடு",
+        copiedBtn: "நகலெடுக்கப்பட்டது!",
+        copyAll: "முழுவதும் நகலெடு",
+        openSite: "இணையதளம் திற"
+      }
+    };
+
+    const SERVICES = [
+      {
+        id: "streetlight_eb",
+        mode: "new",
+        titleEn: "Streetlight & EB Wire",
+        titleTa: "தெருவிளக்கு & மின் கம்பி",
+        sub: "GCC 1913 + TANGEDCO",
+        photo: "assets/streetlight_eb.jpg",
+        ringX: 48, ringY: 22,
+        utterance: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa spark aaguthu.",
+        tamilCue: "அண்ணா நகர் டவர் பார்க் பின்புறம் 5-வது அவென்யூ (மண்டலம் 08, வார்டு 103): தெருவிளக்கு எரியவில்லை (GCC 1913) மற்றும் டிரான்ஸ்பார்மர் கம்பி தளர்வு (TANGEDCO 1912).",
+        landmarks: [
+          { name: "Tower Park Back Side · Vth Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 103", depot: "Depot 103", street: "Vth Avenue", roadId: "76370", lat: "13.0850", lng: "80.2101" },
+          { name: "Anna Arch · IIIrd Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 102", depot: "Depot 102", street: "IIIrd Avenue", roadId: "76312", lat: "13.0745", lng: "80.2134" },
+          { name: "Chinthamani · IInd Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 103", depot: "Depot 103", street: "IInd Avenue", roadId: "76366", lat: "13.0838", lng: "80.2165" }
+        ],
+        portals: [
+          {
+            name: "GCC PGRS — Chennai Streetlight (1913)",
+            url: "https://gccservices.in/pgr/registercomplaints",
+            helpline: "1913",
+            whatsapp: "919445061913",
+            whatsappLabel: "WhatsApp GCC (+91 94450 61913)",
+            openNote: "Web form OPEN without login · Anonymous OK (Select Share Mobile = No)",
+            isOpen: true,
+            techNote: "Bypassed GCC Step-2 1000ms GIS timeout using pre-resolved Road ID 76370. Photo kept under 1 MB.",
+            fields: [
+              { label: "Location Search", dom: "#pac-input", val: "Vth Avenue, Anna Nagar Tower Park, Chennai" },
+              { label: "Official Street", dom: "#streetName / #streetId", val: "Vth Avenue (Road ID: 76370)" },
+              { label: "Category → Sub-Type", dom: "#specificComplaintType (10 -> 146)", val: "Street Light → Non burning of Street lights" },
+              { label: "Complaint Text (EN + TA)", dom: "#specificComplaintDetails", val: "Streetlight on Vth Avenue near Anna Nagar Tower Park (Zone 08, Ward 103) has not been burning for 5 days. / அண்ணா நகர் டவர் பார்க் 5-வது அவென்யூவில் 5 நாட்களாக தெருவிளக்கு எரியவில்லை." }
+            ]
+          },
+          {
+            name: "TANGEDCO — Minnagam Loose Wire (1912)",
+            url: "https://ccms.tangedco.org/tangedco-public/",
+            helpline: "9498794987",
+            whatsapp: "919498794987",
+            whatsappLabel: "WhatsApp Minnagam (94987 94987)",
+            openNote: "Web portal requires Mobile OTP + Captcha · Use 1-Tap WhatsApp or 94987 94987 instead",
+            isOpen: false,
+            techNote: "ccms.tangedco.org/tangedco-public/ gates form behind /login.xhtml PrimeFaces Captcha + OTP.",
+            fields: [
+              { label: "Fault Type", dom: "Service / General Fault", val: "Loose Overhead Transformer Wire / Spark Hazard" },
+              { label: "Location", dom: "Section / Landmark", val: "Anna Nagar West · Vth Avenue, Ward 103" },
+              { label: "Complaint Text (EN + TA)", dom: "Problem Description", val: "URGENT: Loose transformer wire sparking near Anna Nagar Tower Park on Vth Avenue (Ward 103). / அண்ணா நகர் 5-வது அவென்யூ டிரான்ஸ்பார்மர் கம்பி தளர்ந்து தீப்பொறி வருகிறது." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "sewage_pothole",
+        mode: "new",
+        titleEn: "Sewage & Pothole",
+        titleTa: "சாக்கடை & சாலை பள்ளம்",
+        sub: "CMWSSB 1916 + GCC",
+        photo: "assets/sewage_pothole.jpg",
+        ringX: 40, ringY: 60,
+        utterance: "Velachery Vijayanagar bus stand kitta 4 naala saakkadai thanni road full-aa overflow aaguthu, periya pothole vera irukku, door number 18.",
+        tamilCue: "வேளச்சேரி விஜயநகர் பேருந்து நிலையம் அருகில் (மண்டலம் 13, வார்டு 178): 4 நாட்களாக கழிவுநீர் வழிந்தோடல் (CMWSSB 1916) மற்றும் சாலை பள்ளம் (GCC 1913).",
+        landmarks: [
+          { name: "Vijayanagar Bus Stand · Main Rd", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 178", depot: "Depot 178", street: "Velachery Main Road", roadId: "91420", lat: "12.9784", lng: "80.2209" },
+          { name: "Phoenix Marketcity · North Rd", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 175", depot: "Depot 175", street: "Velachery Main Rd (N)", roadId: "91104", lat: "12.9915", lng: "80.2167" }
+        ],
+        portals: [
+          {
+            name: "CMWSSB Metro Water — Sewage (1916)",
+            url: "https://cms-cmwssb.tn.gov.in/#/portalcomplregistration",
+            helpline: "1916",
+            whatsapp: "918144930308",
+            whatsappLabel: "WhatsApp Metro Water (+91 81449 30308)",
+            openNote: "Web form requires Mobile OTP · WhatsApp +91 81449 30308 goes straight to CMWSSB desk",
+            isOpen: false,
+            techNote: "CMWSSB Angular form enforces a strict 200-character cap on complRemarks.",
+            fields: [
+              { label: "Complaint Type", dom: "complaintType", val: "Public Complaint (No CMC Consumer No. needed)" },
+              { label: "Area & Depot", dom: "complAreaName / depoStationCode", val: "Area XIII (Adyar) · Depot 178 · Door No. 18" },
+              { label: "Category", dom: "ccId / cscId", val: "Sewerage → Overflow on Road / Manhole Blockage (4 Days)" },
+              { label: "Short Remarks (200 cap)", dom: "complRemarks", val: "Sewage overflowing from manhole on Velachery Main Rd near Vijayanagar Bus Stand (Door 18, Ward 178) for 4 days. Urgent jetting clearance needed.", maxChars: 200 }
+            ]
+          },
+          {
+            name: "GCC PGRS — Road Pothole (1913)",
+            url: "https://gccservices.in/pgr/registercomplaints",
+            helpline: "1913",
+            whatsapp: "919445061913",
+            whatsappLabel: "WhatsApp GCC (+91 94450 61913)",
+            openNote: "Web form OPEN without login · Anonymous OK",
+            isOpen: true,
+            techNote: "Category 18 (Road and Footpath) -> Sub-Type 112.",
+            fields: [
+              { label: "Category → Sub-Type", dom: "#specificComplaintType (18 -> 112)", val: "Road and Footpath → Pot hole fill up" },
+              { label: "Complaint Text (EN + TA)", dom: "#specificComplaintDetails", val: "Deep waterlogged pothole on Velachery Main Road near Vijayanagar Bus Stand (Ward 178) causing accidents. / வேளச்சேரி விஜயநகர் பேருந்து நிலையம் அருகில் சாலையில் பெரிய பள்ளம் உள்ளது." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "water_pipe",
+        mode: "new",
+        titleEn: "Drinking Water Leak",
+        titleTa: "குடிநீர் குழாய் உடைப்பு",
+        sub: "TWAD PUNAL 1916",
+        photo: "assets/water_pipe_leak.jpg",
+        ringX: 50, ringY: 54,
+        utterance: "Madurai Anna Bus Stand opp Kuruvikaran Salai-la kudineer pipe உடைஞ்சு 3 naala thanni waste-aa poguthu, veetuku thanni varala.",
+        tamilCue: "மதுரை அண்ணா பேருந்து நிலையம் எதிரில் குருவிக்காரன் சாலை (வார்டு 44): குடிநீர் குழாய் உடைப்பு மற்றும் தண்ணீர் விநியோகத் தடை (TWAD புனல் 1916).",
+        landmarks: [
+          { name: "Anna Bus Stand · Kuruvikaran Salai", district: "Madurai", zone: "Zone II (North)", ward: "Ward 44", depot: "TWAD Madurai", street: "Kuruvikaran Salai", roadId: "MDU_44_09", lat: "9.9252", lng: "78.1455" }
+        ],
+        portals: [
+          {
+            name: "TWAD Board PUNAL — Drinking Water (1916)",
+            url: "https://punal.tn.gov.in/grievance/#/",
+            helpline: "1916",
+            whatsapp: "919499991916",
+            whatsappLabel: "WhatsApp PUNAL Bot (94999 91916)",
+            openNote: "Web portal requires Mobile OTP · Use WhatsApp 94999 91916 or Call 1916",
+            isOpen: false,
+            techNote: "Direct URL #/new-grievance redirects to /auth/404 without OTP session.",
+            fields: [
+              { label: "Location Tree", dom: "district_id -> corporation_id -> zone_ward_id", val: "Madurai → Madurai Corporation → Zone II → Ward 44" },
+              { label: "Category", dom: "type_id / complaint_type_id", val: "Drinking Water Supply → Pipeline Leakage & No Supply" },
+              { label: "Complaint Text (EN + TA)", dom: "model.description", val: "Main drinking water pipe broken opposite Anna Bus Stand on Kuruvikaran Salai (Ward 44) for 3 days. / மதுரை அண்ணா பேருந்து நிலையம் எதிரில் 3 நாட்களாக குடிநீர் குழாய் உடைந்து தண்ணீர் வீணாகிறது." }
+            ]
+          }
+        ]
+      },
+      {
+        id: "ration_tnpds",
+        mode: "new",
+        titleEn: "Ration Shop Issue",
+        titleTa: "ரேஷன் கடை புகார்",
+        sub: "TNPDS 1967",
+        photo: "assets/ration_shop_tnpds.jpg",
+        ringX: 50, ringY: 50,
+        utterance: "Coimbatore Gandhipuram 100 Feet Road ration kadai-la biometric fingerprint vizhala-nu arisi paruppu thara maatranga.",
+        tamilCue: "கோவை காந்திபுரம் 100 அடி சாலை நியாய விலைக் கடை (வார்டு 67): கைரேகை விழவில்லை எனக் கூறி ரேஷன் பொருட்கள் வழங்க மறுப்பு (TNPDS 1967).",
+        landmarks: [
+          { name: "Gandhipuram 100 Ft Rd · FPS 02AC049N", district: "Coimbatore", zone: "Central Zone", ward: "Ward 67", depot: "Shop 02AC049N", street: "100 Feet Road", roadId: "CBE_67_11", lat: "11.0183", lng: "76.9661" }
+        ],
+        portals: [
+          {
+            name: "TNPDS — Fair Price Shop (1967)",
+            url: "https://www.tnpds.gov.in/pages/feedback",
+            helpline: "1967",
+            email: "support@tnpds.com",
+            whatsappLabel: "Email TNPDS (support@tnpds.com)",
+            openNote: "Feedback form OPEN without OTP (/pages/feedback) · Formal complaint needs Ration-Card OTP",
+            isOpen: true,
+            techNote: "1000-character limit on feedbackSuggestions & problemDescription.",
+            fields: [
+              { label: "District & Shop", dom: "District / Taluk", val: "Coimbatore North · Gandhipuram 100 Ft Rd (Ward 67)" },
+              { label: "Issue Category", dom: "classification (categoryid=3)", val: "Fair Price Shop → Denial of Ration on Biometric Failure" },
+              { label: "Complaint Text (1000 cap)", dom: "feedbackSuggestions", val: "Staff at Gandhipuram 100 Ft Rd Fair Price Shop (Ward 67) refused monthly rice/dhal due to biometric fingerprint mismatch without offering iris/override. / கோவை காந்திபுரம் ரேஷன் கடையில் கைரேகை விழவில்லை என உணவுப் பொருள் வழங்க மறுக்கின்றனர்.", maxChars: 1000 }
+            ]
+          }
+        ]
+      },
+      {
+        id: "garbage_1100",
+        mode: "escalate",
+        titleEn: "Closed Without Fix",
+        titleTa: "தீர்க்காமல் மூடிய புகார்",
+        sub: "CM Helpline 1100",
+        photo: "assets/garbage_overflow.jpg",
+        ringX: 52, ringY: 56,
+        utterance: "Complaint ID GCC-20491 Velachery garbage overflow-a fix pannamaye 'Resolved'-nu false-aa close pannitanga, kuppai innum apdiye road-la irukku.",
+        tamilCue: "புகார் எண் GCC-20491 (வேளச்சேரி வார்டு 178): குப்பை அகற்றாமல் தவறாக மூடப்பட்டுள்ளது. முதலமைச்சரின் முகவரி (1100) மேல்முறையீடு தயார்.",
+        landmarks: [
+          { name: "Velachery Bus Stand · Bin Corner", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 178", depot: "Division 178", street: "Velachery Main Road", roadId: "91420", lat: "12.9784", lng: "80.2209" }
+        ],
+        portals: [
+          {
+            name: "Mudhalvarin Mugavari — CM Helpline (1100)",
+            url: "https://cmhelpline.tnega.org/portal/en/signin",
+            helpline: "1100",
+            email: "cmcell@tn.gov.in",
+            whatsappLabel: "Email CM Cell (cmcell@tn.gov.in)",
+            openNote: "Web portal requires OTP login · Direct Official Email (cmcell@tn.gov.in) & 1100 need NO login",
+            isOpen: false,
+            techNote: "Zoho Desk portal redirects /newticket to /signin; official homepage lists cmcell@tn.gov.in.",
+            fields: [
+              { label: "Old Ticket ID", dom: "Reference Grievance ID", val: "#GCC-20491 · Zone 13 · Ward 178 · Road ID 91420" },
+              { label: "Subject", dom: "Ticket Subject", val: "PREMATURE CLOSURE APPEAL: Ticket #GCC-20491 marked Resolved without clearing garbage (Ward 178)" },
+              { label: "Petition Text (EN + TA)", dom: "Grievance Description", val: "Respected Special Officer (1100), Ticket #GCC-20491 for overflowing garbage on Velachery Main Rd (Ward 178) was falsely closed as Resolved. Today's stamped photo proves garbage remains uncollected. Please reopen. / புகார் எண் GCC-20491 குப்பை அகற்றப்படாமலேயே தவறாக மூடப்பட்டுள்ளது. உடனே நடவடிக்கை எடுக்கவும்." }
+            ]
+          }
+        ]
+      }
+    ];
+
+    let state = {
+      serviceId: "streetlight_eb",
+      landmarkIdx: 0,
+      lang: "en",
+      appendedNote: "",
+      ringX: 48,
+      ringY: 22,
+      customPhotoUrl: null
+    };
+
+    const voiceInput = document.getElementById("voiceInput");
+    const serviceRail = document.getElementById("serviceRail");
+    const landmarkPills = document.getElementById("landmarkPills");
+    const servicePhoto = document.getElementById("servicePhoto");
+    const hazardRing = document.getElementById("hazardRing");
+    const photoStampText = document.getElementById("photoStampText");
+    const locationGrid = document.getElementById("locationGrid");
+    const tamilCue = document.getElementById("tamilCue");
+    const easyActions = document.getElementById("easyActions");
+    const portalCardsWrap = document.getElementById("portalCardsWrap");
+
+    function getService() {
+      return SERVICES.find(s => s.id === state.serviceId) || SERVICES[0];
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toast");
+      document.getElementById("toastText").textContent = msg;
+      el.setAttribute("data-visible", "true");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2000);
+    }
+
+    function applyLanguage() {
+      const t = UI_COPY[state.lang];
+      document.getElementById("langEnBtn").setAttribute("aria-pressed", state.lang === "en" ? "true" : "false");
+      document.getElementById("langTaBtn").setAttribute("aria-pressed", state.lang === "ta" ? "true" : "false");
+      document.getElementById("headerSub").textContent = t.headerSub;
+      document.getElementById("modeNewBtn").textContent = t.modeNew;
+      document.getElementById("modeEscalateBtn").textContent = t.modeEscalate;
+      document.getElementById("a11yBtn").textContent = t.a11y;
+      document.getElementById("stripLabel").textContent = t.stripLabel;
+      document.getElementById("step1Heading").textContent = t.step1Heading;
+      document.getElementById("micLabel").textContent = t.micLabel;
+      document.getElementById("resolveLabel").textContent = t.resolveLabel;
+      document.getElementById("landmarkLabel").textContent = t.landmarkLabel;
+      document.getElementById("detailInput").placeholder = t.detailPlaceholder;
+      document.getElementById("appendBtn").textContent = t.appendBtn;
+      document.getElementById("step2Heading").textContent = t.step2Heading;
+      document.getElementById("photoHelp").textContent = t.photoHelp;
+      document.getElementById("uploadLabel").textContent = t.uploadLabel;
+      document.getElementById("savePhotoLabel").textContent = t.savePhotoLabel;
+      document.getElementById("locHeadingText").textContent = t.locHeadingText;
+      document.getElementById("step3Heading").textContent = t.step3Heading;
+      document.getElementById("speakBtnText").textContent = t.speakBtnText;
+    }
+
+    function selectService(id) {
+      const svc = SERVICES.find(s => s.id === id) || SERVICES[0];
+      state.serviceId = svc.id;
+      state.landmarkIdx = 0;
+      state.appendedNote = "";
+      state.customPhotoUrl = null;
+      state.ringX = svc.ringX;
+      state.ringY = svc.ringY;
+      voiceInput.value = svc.utterance;
+      document.getElementById("modeNewBtn").setAttribute("aria-pressed", svc.mode === "new" ? "true" : "false");
+      document.getElementById("modeEscalateBtn").setAttribute("aria-pressed", svc.mode === "escalate" ? "true" : "false");
+      renderAll();
+    }
+
+    function renderServiceStrip() {
+      serviceRail.innerHTML = "";
+      SERVICES.forEach(s => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "service-tile";
+        btn.setAttribute("aria-current", s.id === state.serviceId ? "true" : "false");
+        const title = state.lang === "ta" ? s.titleTa : s.titleEn;
+        btn.innerHTML = `
+          <img class="service-thumb" src="${s.photo}" alt="${s.titleEn}">
+          <div>
+            <span class="service-tile-title">${title}</span>
+            <span class="service-tile-sub">${s.sub}</span>
+          </div>
+        `;
+        btn.addEventListener("click", () => selectService(s.id));
+        serviceRail.appendChild(btn);
+      });
+    }
+
+    function renderLandmarks(svc) {
+      landmarkPills.innerHTML = "";
+      svc.landmarks.forEach((lm, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "landmark-btn";
+        btn.setAttribute("aria-pressed", idx === state.landmarkIdx ? "true" : "false");
+        btn.textContent = `${lm.name} (${lm.ward})`;
+        btn.addEventListener("click", () => {
+          state.landmarkIdx = idx;
+          renderAll();
+          showToast(`Selected ${lm.ward} · ${lm.street}`);
+        });
+        landmarkPills.appendChild(btn);
+      });
+    }
+
+    function renderPhotoStage(svc, lm) {
+      servicePhoto.src = state.customPhotoUrl || svc.photo;
+      servicePhoto.alt = `${svc.titleEn} street photo at ${lm.street}, ${lm.ward}`;
+      hazardRing.style.left = `${state.ringX}%`;
+      hazardRing.style.top = `${state.ringY}%`;
+      photoStampText.textContent = `${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (ID: ${lm.roadId})`;
+    }
+
+    function renderLocationAndEasySend(svc, lm) {
+      const cells = [
+        { k: "District", v: lm.district },
+        { k: "Zone", v: lm.zone },
+        { k: "Ward / Depot", v: `${lm.ward} · ${lm.depot}`, mono: true },
+        { k: "Official Street", v: `${lm.street} (ID: ${lm.roadId})`, mono: true }
+      ];
+      locationGrid.innerHTML = cells.map(c => `
+        <div class="loc-item">
+          <span class="loc-key">${c.k}</span>
+          <span class="loc-val ${c.mono ? 'num' : ''}">${c.v}</span>
+        </div>
+      `).join("");
+
+      tamilCue.textContent = `“${svc.tamilCue}”`;
+
+      const waText = encodeURIComponent(
+        `[NammaKural Civic Complaint]\n${lm.district} | ${lm.zone} | ${lm.ward}\nStreet: ${lm.street} (Road ID: ${lm.roadId})\n\n${svc.utterance}${state.appendedNote ? ' (' + state.appendedNote + ')' : ''}\n\n${svc.tamilCue}`
+      );
+
+      let html = "";
+      svc.portals.forEach(p => {
+        if (p.whatsapp) {
+          html += `
+            <a class="btn-whatsapp" href="https://wa.me/${p.whatsapp}?text=${waText}" target="_blank" rel="noopener noreferrer">
+              <span>${p.whatsappLabel}</span>
+            </a>
+          `;
+        } else if (p.email) {
+          const subj = encodeURIComponent(`Civic Grievance — ${lm.ward} (${lm.street})`);
+          html += `
+            <a class="btn-whatsapp" href="mailto:${p.email}?subject=${subj}&body=${waText}">
+              <span>${p.whatsappLabel}</span>
+            </a>
+          `;
+        }
+      });
+
+      const helpline = svc.portals[0].helpline;
+      html += `
+        <a class="btn-outline" href="tel:${helpline}" style="justify-content:center">
+          <span>Call Toll-Free <strong class="num">${helpline}</strong></span>
+        </a>
+      `;
+      easyActions.innerHTML = html;
+    }
+
+    function renderPortalCards(svc, lm) {
+      const t = UI_COPY[state.lang];
+      portalCardsWrap.innerHTML = "";
+      svc.portals.forEach(p => {
+        const card = document.createElement("article");
+        card.className = "portal-card";
+
+        const rowsHtml = p.fields.map((f, idx) => {
+          let val = f.val
+            .replace(/Vth Avenue/g, lm.street)
+            .replace(/76370/g, lm.roadId)
+            .replace(/Ward 103/g, lm.ward);
+          if (state.appendedNote && idx === p.fields.length - 1) {
+            val += ` [${state.appendedNote}]`;
+          }
+          if (f.maxChars && val.length > f.maxChars) {
+            val = val.slice(0, f.maxChars - 1) + "…";
+          }
+          const counter = f.maxChars
+            ? `<span class="char-note">${val.length} / ${f.maxChars} chars max</span>`
+            : "";
+
+          return `
+            <div class="field-row">
+              <div class="field-name">${f.label}</div>
+              <div>
+                <div class="field-value">${val}</div>
+                ${counter}
+              </div>
+              <button type="button" class="btn-copy" data-val="${val.replace(/"/g, '&quot;')}">${t.copyBtn}</button>
+            </div>
+          `;
+        }).join("");
+
+        card.innerHTML = `
+          <div class="portal-card-head">
+            <div>
+              <h3 class="portal-name">${p.name}</h3>
+              <div class="portal-status-line">
+                <span class="${p.isOpen ? 'status-open' : 'status-otp'}">${p.openNote}</span>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button type="button" class="btn-outline copy-all-btn">${t.copyAll}</button>
+              <a class="btn-outline" href="${p.url}" target="_blank" rel="noopener noreferrer">${t.openSite} ↗</a>
+            </div>
+          </div>
+          <div class="field-list">${rowsHtml}</div>
+          <details class="tech-details">
+            <summary>Technical DOM Selectors &amp; Portal Notes</summary>
+            <div style="margin-top:6px;" class="num">${p.techNote}</div>
+            <div style="margin-top:4px;" class="num">${p.fields.map(f => `${f.label} -> ${f.dom}`).join(" | ")}</div>
+          </details>
+        `;
+
+        card.querySelectorAll(".btn-copy").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const v = btn.getAttribute("data-val");
+            navigator.clipboard?.writeText(v);
+            btn.setAttribute("data-copied", "true");
+            btn.textContent = t.copiedBtn;
+            showToast(`Copied: ${v.slice(0, 38)}...`);
+            setTimeout(() => {
+              btn.setAttribute("data-copied", "false");
+              btn.textContent = t.copyBtn;
+            }, 1400);
+          });
+        });
+
+        card.querySelector(".copy-all-btn").addEventListener("click", () => {
+          const allText = Array.from(card.querySelectorAll(".field-row"))
+            .map(r => `${r.querySelector(".field-name").textContent}: ${r.querySelector(".field-value").textContent}`)
+            .join("\n");
+          navigator.clipboard?.writeText(allText);
+          showToast(`Copied all fields for ${p.name}`);
+        });
+
+        portalCardsWrap.appendChild(card);
+      });
+    }
+
+    function renderAll() {
+      const svc = getService();
+      const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      applyLanguage();
+      renderServiceStrip();
+      renderLandmarks(svc);
+      renderPhotoStage(svc, lm);
+      renderLocationAndEasySend(svc, lm);
+      renderPortalCards(svc, lm);
+    }
+
+    /* Interactive Events */
+    document.getElementById("photoStage").addEventListener("click", (e) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      state.ringX = Math.max(8, Math.min(92, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+      state.ringY = Math.max(12, Math.min(82, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+      renderPhotoStage(getService(), getService().landmarks[state.landmarkIdx]);
+      showToast("Marked problem spot on photo");
+    });
+
+    document.getElementById("photoFileInput").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      state.customPhotoUrl = URL.createObjectURL(file);
+      renderPhotoStage(getService(), getService().landmarks[state.landmarkIdx]);
+      showToast("Loaded your street photo");
+    });
+
+    document.getElementById("savePhotoBtn").addEventListener("click", () => {
+      const lm = getService().landmarks[state.landmarkIdx];
+      const canvas = document.createElement("canvas");
+      canvas.width = 800;
+      canvas.height = 450;
+      const c = canvas.getContext("2d");
+      c.drawImage(servicePhoto, 0, 0, 800, 450);
+      const rx = (state.ringX / 100) * 800;
+      const ry = (state.ringY / 100) * 450;
+      c.strokeStyle = "#EF4444"; c.lineWidth = 4;
+      c.beginPath(); c.arc(rx, ry, 28, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = "rgba(17,24,39,0.9)"; c.fillRect(0, 404, 800, 46);
+      c.fillStyle = "#FFFFFF"; c.font = "bold 14px sans-serif";
+      c.fillText(`${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`, 14, 432);
+      try {
+        const link = document.createElement("a");
+        link.download = `NammaKural_${lm.roadId}.jpg`;
+        link.href = canvas.toDataURL("image/jpeg", 0.85);
+        link.click();
+        showToast("Saved <1 MB stamped JPEG photo");
+      } catch (err) {
+        showToast("Serve via http://localhost to export stamped JPEG");
+      }
+    });
+
+    document.getElementById("resolveBtn").addEventListener("click", () => {
+      const txt = voiceInput.value.toLowerCase();
+      if (txt.includes("close") || txt.includes("20491") || txt.includes("1100")) selectService("garbage_1100");
+      else if (txt.includes("ration") || txt.includes("arisi") || txt.includes("fingerprint")) selectService("ration_tnpds");
+      else if (txt.includes("madurai") || txt.includes("kudineer") || txt.includes("pipe")) selectService("water_pipe");
+      else if (txt.includes("velachery") || txt.includes("saakkadai") || txt.includes("sewage")) selectService("sewage_pothole");
+      else selectService("streetlight_eb");
+      showToast("Resolved Ward & matched civic portals");
+    });
+
+    document.getElementById("appendBtn").addEventListener("click", () => {
+      const inp = document.getElementById("detailInput");
+      const val = inp.value.trim();
+      if (!val) return;
+      state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${val}` : val;
+      voiceInput.value = `${voiceInput.value.trim()} (${val})`;
+      inp.value = "";
+      renderAll();
+      showToast(`Added "${val}" to complaint`);
+    });
+
+    document.getElementById("speakTamilBtn").addEventListener("click", () => {
+      const cue = getService().tamilCue;
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(cue);
+        u.lang = "ta-IN";
+        u.rate = 0.95;
+        window.speechSynthesis.speak(u);
+        showToast("Speaking Tamil summary aloud");
+      }
+    });
+
+    document.getElementById("micBtn").addEventListener("click", () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        voiceInput.focus();
+        showToast("Voice box ready — press your Wispr Flow hotkey");
+        return;
+      }
+      const btn = document.getElementById("micBtn");
+      const rec = new SR();
+      rec.lang = "ta-IN";
+      btn.setAttribute("data-listening", "true");
+      rec.onresult = (ev) => {
+        voiceInput.value = ev.results[0][0].transcript;
+        document.getElementById("resolveBtn").click();
+      };
+      rec.onend = () => btn.setAttribute("data-listening", "false");
+      rec.onerror = () => { btn.setAttribute("data-listening", "false"); voiceInput.focus(); };
+      rec.start();
+    });
+
+    document.getElementById("modeNewBtn").addEventListener("click", () => selectService("streetlight_eb"));
+    document.getElementById("modeEscalateBtn").addEventListener("click", () => selectService("garbage_1100"));
+    document.getElementById("langEnBtn").addEventListener("click", () => { state.lang = "en"; renderAll(); });
+    document.getElementById("langTaBtn").addEventListener("click", () => { state.lang = "ta"; renderAll(); });
+    document.getElementById("a11yBtn").addEventListener("click", (e) => {
+      const on = document.documentElement.getAttribute("data-a11y-large") === "true";
+      document.documentElement.setAttribute("data-a11y-large", on ? "false" : "true");
+      e.currentTarget.setAttribute("aria-pressed", on ? "false" : "true");
+      showToast(on ? "Normal text size" : "Large Text A11y enabled");
+    });
+
+    /* Initialize */
+    selectService("streetlight_eb");
+  </script>
+</body>
+</html>

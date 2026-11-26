@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "world": "Chennai Metro Enameled Civic Wayfinding & Dispatch Ledger",
+  "mode": "operate",
+  "tokens": {
+    "colors": {
+      "bgPaper": "#EDF1F5",
+      "bgSheet": "#FFFFFF",
+      "bgRecessed": "#DFE6ED",
+      "inkPrimary": "#0F1722",
+      "inkSecondary": "#2E3D52",
+      "inkMuted": "#4E5F75",
+      "ruleHairline": "#C5D1DD",
+      "ruleStrong": "#7F91A6",
+      "vermilion": "#C43B1A",
+      "kaveriTeal": "#096356",
+      "turmericAmber": "#8F4F00",
+      "whatsappGreen": "#11663E"
+    },
+    "fonts": {
+      "sans": "Atkinson Hyperlegible",
+      "tamil": "Noto Sans Tamil",
+      "mono": "JetBrains Mono"
+    }
+  }
+}

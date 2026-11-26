@@ -126,11 +126,9 @@
        1. CALM LIGHT HEADER
        ========================================================================== */
     .app-header {
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 40;
-      background: rgba(255, 255, 255, 0.92);
-      backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.96);
       border-bottom: 1px solid var(--border);
     }
 
@@ -238,19 +236,16 @@
     }
 
     /* ==========================================================================
-       2. VOICE AGENT VIEW (AZURE FOUNDRY STYLE — PLAIN, LIGHT, NEURAL ORB & STEPS)
+       2. PURE VOICE AGENT VIEW (AZURE VOICE LIVE / FOUNDRY INSPIRED)
        ========================================================================== */
     .agent-shell {
-      max-width: 860px;
+      max-width: 820px;
       margin: 0 auto;
-      padding: 26px 20px 10px;
+      padding: 28px 20px 18px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
     }
-
-    html[data-view="workbench"] .agent-shell { display: none; }
-    html[data-view="agent"] .workbench-shell { display: none; }
 
     /* Hero Voice Orb Stage */
     .orb-stage {
@@ -767,32 +762,120 @@
     }
 
     /* ==========================================================================
-       5. FULL WORKBENCH VIEW (PRESERVES CURRENT FLOW UNDISTURBED)
+       5. SENTIMENT / URGENCY BADGES, CLARIFIER & HITL FINAL CLARITY CHECK
        ========================================================================== */
-    .workbench-shell {
-      max-width: 1260px;
-      margin: 0 auto;
-      padding: 20px;
+    .urgency-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+    .urgency-pill[data-tier="CRITICAL_SAFETY"] {
+      background: #FEF2F2;
+      color: #B91C1C;
+      border-color: #FECACA;
+    }
+    .urgency-pill[data-tier="HIGH_ESCALATION"] {
+      background: #FFFBEB;
+      color: #9A5B00;
+      border-color: #FDE68A;
+    }
+    .urgency-pill[data-tier="STANDARD"] {
+      background: #E9F7F2;
+      color: var(--teal-dark);
+      border-color: #A7F3D0;
     }
 
-    .workbench-grid {
-      display: grid;
-      grid-template-columns: minmax(330px, 4.8fr) minmax(400px, 7.2fr);
-      gap: 20px;
-      align-items: start;
-    }
-    @media (max-width: 960px) {
-      .workbench-grid { grid-template-columns: 1fr; }
-    }
-
-    .wb-panel {
+    .hitl-card {
       background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px;
-      display: flex;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 18px;
+      padding: 20px 22px;
+      box-shadow: var(--shadow-soft);
+      display: none;
       flex-direction: column;
       gap: 14px;
+    }
+    .hitl-card[data-visible="true"] { display: flex; }
+    .hitl-card[data-approved="true"] {
+      border-color: var(--teal);
+      background: #FAFFFD;
+    }
+
+    .hitl-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 640px) {
+      .hitl-grid { grid-template-columns: 1fr; }
+    }
+
+    .hitl-box {
+      background: var(--bg-page);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .hitl-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--teal-dark);
+    }
+    .hitl-val {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .hitl-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-hitl-approve {
+      appearance: none;
+      border: 0;
+      background: var(--teal);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 11px 20px;
+      min-height: 46px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-hitl-approve:hover { background: var(--teal-dark); }
+    .btn-hitl-approve[disabled] {
+      background: #E9F7F2;
+      color: var(--teal-dark);
+      border: 1px solid #A7F3D0;
+      cursor: default;
+    }
+
+    .clarify-pills {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
     }
 
     /* Multi-turn Voice Conversation Thread */
@@ -829,39 +912,6 @@
     .thread-msg[data-needs-input="true"] {
       background: var(--bg-warm);
       border-color: var(--amber);
-    }
-
-    /* Per-Field Wispr Flow Form View */
-    .wb-field-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .wb-field-label {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--ink-2);
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .wb-wispr-input {
-      width: 100%;
-      padding: 10px 12px;
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      color: var(--ink);
-      background: var(--bg-page);
-      border: 1.5px solid var(--border-strong);
-      border-radius: 8px;
-    }
-
-    .wb-wispr-input:focus {
-      background: var(--bg-surface);
-      border-color: var(--accent);
-      outline: none;
     }
 
     .toast {
@@ -902,11 +952,6 @@
       </div>
 
       <div class="nav-controls">
-        <div class="segmented" role="group" aria-label="View Mode">
-          <button type="button" class="seg-btn" id="viewAgentBtn" aria-pressed="true">Voice Agent</button>
-          <button type="button" class="seg-btn" id="viewWorkbenchBtn" aria-pressed="false">Full Form View</button>
-        </div>
-
         <div class="segmented" role="group" aria-label="Language">
           <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">English</button>
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
@@ -920,7 +965,7 @@
 
   <main id="mainStage">
     <!-- ======================================================================
-         VIEW 1: AZURE-FOUNDRY-INSPIRED LIGHT VOICE AGENT PREVIEW (DEFAULT)
+         PURE VOICE-FIRST CIVIC AGENT (HITL CLARITY CHECK + SENTIMENT/URGENCY)
          ====================================================================== -->
     <section class="agent-shell" aria-label="Voice Civic Agent">
       <div class="orb-stage" id="orbStage" data-agent-state="ready">
@@ -929,8 +974,8 @@
           <span id="agentStateLabel">Agent Ready · Wispr Flow Tanglish / தமிழ்</span>
         </span>
 
-        <!-- Animated Neural Voice Bubble / Wave Canvas -->
-        <div class="orb-canvas-wrap" id="orbTrigger" title="Click to speak or run reasoning">
+        <!-- AcousticOrb (3-Layer Harmonic Neural Canvas) -->
+        <div class="orb-canvas-wrap" id="orbTrigger" title="Tap orb to speak via microphone or Wispr Flow">
           <canvas id="neuralOrbCanvas" class="orb-canvas" width="304" height="304" aria-hidden="true"></canvas>
           <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle" aria-label="Dictate with Wispr Flow or microphone">
             <svg class="icon" style="width:26px;height:26px" viewBox="0 0 24 24">
@@ -942,51 +987,94 @@
         </div>
 
         <div>
-          <h2 class="agent-headline" id="agentHeadline">Tell NammaKural what needs fixing on your street</h2>
-          <p class="agent-subline" id="agentSubline">Press your Wispr Flow hotkey and speak naturally in Tanglish or Tamil. The agent resolves your Ward, splits agencies, and prepares 1-tap filing.</p>
+          <h2 class="agent-headline" id="agentHeadline">Speak what needs fixing on your street</h2>
+          <p class="agent-subline" id="agentSubline">Speak once in Tanglish or Tamil. NammaKural detects urgency, asks only if a detail is missing, and waits for your approval before dispatch.</p>
         </div>
 
-        <!-- Multi-Turn Conversation Thread (Talk through until complete) -->
+        <!-- Multi-Turn Conversation Thread -->
         <div class="agent-thread" id="agentThread" aria-live="polite"></div>
 
-        <!-- Clean Wispr Flow Dictation Bar -->
+        <!-- Dynamic Clarifier Pills (Rendered ONLY when a detail/landmark needs disambiguation) -->
+        <div class="clarify-pills" id="clarifyPills" style="display:none;"></div>
+
+        <!-- Clean Single Wispr Flow Voice Bar -->
         <div class="wispr-input-bar">
-          <textarea id="voiceInput" class="wispr-textarea" rows="2" placeholder="Press Wispr Flow hotkey & speak in Tanglish/Tamil (e.g. 'Streetlight 5 naala eriyala' or 'Anna Nagar Tower Park...')" aria-label="Spoken complaint input"></textarea>
+          <textarea id="voiceInput" class="wispr-textarea" rows="2" placeholder="Press Wispr Flow hotkey & speak naturally (e.g. 'Streetlight 5 naala eriyala' or 'Anna Nagar Tower Park...')" aria-label="Spoken complaint input"></textarea>
           <div class="wispr-bar-footer">
             <span class="wispr-hint" id="wisprHint">
               <svg class="icon" style="width:15px;height:15px;color:var(--teal)" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              <span>Wispr Flow active · Talk turn-by-turn or clear to start fresh</span>
+              <span id="wisprHintText">No forms to fill · Speak naturally or pick an example below</span>
             </span>
             <div style="display:flex;gap:8px;align-items:center;">
-              <button type="button" class="btn-outline" id="newChatBtn" style="min-height:38px;padding:6px 12px;">New Chat</button>
+              <button type="button" class="btn-outline" id="newChatBtn" style="min-height:38px;padding:6px 12px;">Clear / New</button>
               <button type="button" class="btn-agent-send" id="runAgentBtn">
-                <span id="runAgentLabel">Send / Reply</span>
+                <span id="runAgentLabel">Send / Speak</span>
                 <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- 5 Quick Service Scenarios with Real Photos -->
+        <!-- 5 Compact Voice Demo Scenarios -->
         <div class="quick-prompts-row" id="quickPromptsRow" role="list"></div>
       </div>
 
-      <!-- Streaming Reasoning Steps -->
-      <section class="reasoning-card" aria-labelledby="reasoningTitle">
+      <!-- Streaming Reasoning Trace (Visible once active) -->
+      <section class="reasoning-card" id="reasoningCard" aria-labelledby="reasoningTitle" style="display:none;">
         <div class="reasoning-head">
-          <span id="reasoningTitle">Agent Reasoning Trace</span>
+          <span id="reasoningTitle">Agent Reasoning & Triage Trace</span>
           <span class="num" id="reasoningTime" style="color:var(--teal-dark)">4 steps · &lt;1s</span>
         </div>
         <div class="reasoning-steps" id="reasoningSteps"></div>
       </section>
 
-      <!-- Calm Outcome Card -->
-      <section class="agent-outcome" aria-labelledby="outcomeHeading">
+      <!-- Mandatory HITL Final Clarity Check (Before Dispatch!) -->
+      <section class="hitl-card" id="hitlCard" aria-labelledby="hitlTitle">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+          <div>
+            <div class="hitl-label" id="hitlKicker">Step 3 · Human-in-the-Loop Clarity Check</div>
+            <h3 id="hitlTitle" style="font-size:1.08rem;margin-top:2px;">Please verify before NammaKural prepares dispatch</h3>
+          </div>
+          <span class="urgency-pill" id="hitlUrgencyBadge" data-tier="STANDARD">Standard Civic Request</span>
+        </div>
+
+        <p id="hitlSummaryText" style="font-size:0.94rem;color:var(--ink-2);line-height:1.5;"></p>
+
+        <div class="hitl-grid">
+          <div class="hitl-box">
+            <span class="hitl-label" id="hitlLocLabel">Resolved Location & Ward</span>
+            <span class="hitl-val" id="hitlLocVal"></span>
+          </div>
+          <div class="hitl-box">
+            <span class="hitl-label" id="hitlAgencyLabel">Agencies & Portal Access</span>
+            <span class="hitl-val" id="hitlAgencyVal"></span>
+          </div>
+          <div class="hitl-box">
+            <span class="hitl-label" id="hitlUrgencyLabel">Sentiment & Urgency Action</span>
+            <span class="hitl-val" id="hitlUrgencyVal"></span>
+          </div>
+          <div class="hitl-box">
+            <span class="hitl-label" id="hitlNoteLabel">Privacy / Extra Context</span>
+            <span class="hitl-val" id="hitlNoteVal">Anonymous Web where supported · Ready</span>
+          </div>
+        </div>
+
+        <div class="landmark-bar" id="landmarkBar"></div>
+
+        <div class="hitl-actions">
+          <button type="button" class="btn-outline" id="hitlEditBtn">Speak / Type a Change</button>
+          <button type="button" class="btn-hitl-approve" id="hitlApproveBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            <span id="hitlApproveLabel">Approve & Prepare Dispatch</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Unlocked Dispatch Stage (Visible ONLY AFTER HITL Approval!) -->
+      <section class="agent-outcome" id="dispatchSection" aria-labelledby="outcomeJurisdictionTag" style="display:none;">
         <div class="outcome-top">
           <div>
-            <div style="font-size:0.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:4px;" id="outcomeJurisdictionTag">
-              Chennai · Zone 08 (Anna Nagar) · Ward 103 · Vth Avenue (Road ID 76370)
-            </div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:4px;" id="outcomeJurisdictionTag"></div>
             <p class="outcome-reply" id="outcomeReply"></p>
           </div>
           <button type="button" class="btn-outline" id="speakTamilBtn">
@@ -995,10 +1083,7 @@
           </button>
         </div>
 
-        <!-- Quick Landmark Confirm / Detail Append -->
-        <div class="landmark-bar" id="landmarkBar"></div>
-
-        <!-- Real Service Photo (Tap-to-Mark) + 1-Tap Official Actions -->
+        <!-- Stamped Street Evidence Photo (Tap-to-Mark) + Direct Official Dispatch -->
         <div class="outcome-media-split">
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div class="photo-stage" id="photoStage" title="Tap anywhere on photo to mark the hazard">
@@ -1023,85 +1108,42 @@
           <div class="send-stack" id="agentActionsStack"></div>
         </div>
 
-        <!-- Progressive Disclosure: Official Portal Copy Fields (Hidden until expanded!) -->
+        <!-- Optional Manual Web Portal Copy Drawer -->
         <details class="portal-drawer" id="portalDrawer">
           <summary>
-            <span id="drawerTitle">Need to paste into the government web portal? Show Exact Form Fields</span>
+            <span id="drawerTitle">Manual Government Web Portal Paste? Show Exact Fields</span>
             <span class="num" style="font-size:0.8rem;color:var(--accent);" id="drawerCount">2 Portals</span>
           </summary>
           <div id="portalCardsAgent"></div>
         </details>
       </section>
     </section>
-
-    <!-- ======================================================================
-         VIEW 2: FULL WORKBENCH VIEW (PRESERVED CURRENT FLOW UNDISTURBED)
-         ====================================================================== -->
-    <section class="workbench-shell" aria-label="Full Form Workbench View">
-      <div class="workbench-grid">
-        <div class="wb-panel">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-            <h2 style="font-size:1.05rem;">1. Dictate Any Field with Wispr Flow</h2>
-            <span style="font-size:0.78rem;color:var(--teal-dark);font-weight:600;">Click a field &rarr; press Wispr hotkey</span>
-          </div>
-
-          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="wbServiceButtons"></div>
-
-          <div class="wb-field-group">
-            <label class="wb-field-label" for="wbPlaceInput">
-              <span>Where is the problem? (Area / Landmark)</span>
-              <span style="font-weight:500;color:var(--ink-3);">Dictate landmark</span>
-            </label>
-            <input type="text" id="wbPlaceInput" class="wb-wispr-input" placeholder="e.g. Anna Nagar Tower Park back side, 5th Avenue">
-          </div>
-
-          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="wbLandmarkPills"></div>
-
-          <div class="wb-field-group">
-            <label class="wb-field-label" for="wbVoiceInput">
-              <span>What happened? (Speak in Tanglish / Tamil / English)</span>
-              <span style="font-weight:500;color:var(--ink-3);">Auto-splits agencies</span>
-            </label>
-            <textarea id="wbVoiceInput" class="wb-wispr-input" rows="3" placeholder="e.g. Streetlight 5 naala eriyala, transformer wire loose-aa irukku"></textarea>
-          </div>
-
-          <div class="wb-field-group">
-            <label class="wb-field-label" for="wbDetailInput">
-              <span>Door #, Pole #, or Days Pending (Optional)</span>
-              <span style="font-weight:500;color:var(--ink-3);">Updates drafts live</span>
-            </label>
-            <div style="display:flex;gap:8px;">
-              <input type="text" id="wbDetailInput" class="wb-wispr-input" placeholder="e.g. Pole 42, Door 18, 5 days">
-              <button type="button" class="btn-outline" id="wbAppendBtn">Apply</button>
-            </div>
-          </div>
-        </div>
-        <div class="wb-panel">
-          <h2 style="font-size:1.05rem;">2. Ready to Send (WhatsApp / Official Portal Fields)</h2>
-          <div id="wbActionsRow" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
-          <div id="wbPortalCards"></div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <script>
     const COPY = {
       en: {
-        headerSub: "Wispr Flow Voice Agent for Tamil Nadu Civic Portals",
-        viewAgent: "Voice Agent",
-        viewWorkbench: "Full Form View",
+        headerSub: "Wispr Flow Civic Voice Agent · Tamil Nadu",
         a11y: "A+ Text",
         lite: "2G Lite",
-        agentReady: "Agent Ready · Wispr Flow Tanglish / தமிழ்",
-        agentThinking: "Reasoning across Tamil Nadu civic agencies...",
-        headline: "Tell NammaKural what needs fixing on your street",
-        subline: "Press your Wispr Flow hotkey and speak naturally in Tanglish or Tamil. The agent resolves your Ward, splits agencies, and prepares 1-tap filing.",
-        runAgent: "Reason & Route",
+        agentReady: "Agent Ready · Speak in Tanglish / தமிழ்",
+        agentThinking: "Reasoning & checking urgency across TN portals...",
+        agentClarifying: "Need 1 quick detail before routing...",
+        agentHitl: "Final Clarity Check · Waiting for your approval",
+        agentApproved: "Approved · Ready for 1-Tap Official Dispatch",
+        headline: "Speak what needs fixing on your street",
+        subline: "Speak once in Tanglish or Tamil. NammaKural detects urgency, asks only if a detail is missing, and waits for your approval before dispatch.",
+        wisprHint: "No forms to fill · Speak naturally or pick an example below",
+        runAgent: "Send / Speak",
         speakBtn: "Listen in Tamil",
         upload: "Upload Photo",
         savePhoto: "Save Stamped Photo",
-        drawer: "Need to paste into the government web portal? Show Exact Form Fields",
+        drawer: "Manual Government Web Portal Paste? Show Exact Fields",
+        hitlKicker: "Step 3 · Human-in-the-Loop Clarity Check",
+        hitlTitle: "Please verify before NammaKural prepares dispatch",
+        hitlEdit: "Speak / Type a Change",
+        hitlApprove: "Approve & Prepare Dispatch",
+        hitlApprovedBtn: "Approved · Dispatch Unlocked",
         copy: "Copy",
         copied: "Copied!",
         copyAll: "Copy All",
@@ -1109,19 +1151,26 @@
       },
       ta: {
         headerSub: "தமிழ்நாடு மக்கள் குறைதீர் குரல் முகவர் (Wispr Flow)",
-        viewAgent: "குரல் முகவர்",
-        viewWorkbench: "முழு படிவம்",
         a11y: "A+ எழுத்து",
         lite: "2G எளியது",
         agentReady: "குரல் முகவர் தயார் · தமிழ் / Tanglish",
-        agentThinking: "வார்டு & அரசுத் துறைகளைக் கண்டறிகிறது...",
+        agentThinking: "அவசரநிலை & வார்டு விவரங்களை ஆராய்கிறது...",
+        agentClarifying: "அனுப்பும் முன் 1 சிறிய தகவல் தேவை...",
+        agentHitl: "இறுதி உறுதிப்படுத்தல் · உங்கள் அனுமதிக்காக காத்திருக்கிறது",
+        agentApproved: "அனுமதிக்கப்பட்டது · உடனே அனுப்பத் தயார்",
         headline: "உங்கள் தெருவில் உள்ள பிரச்சனையைச் சொல்லுங்கள்",
-        subline: "Wispr Flow மூலம் தமிழிலோ Tanglish-லோ பேசுங்கள். வார்டு எண், துறை பிரிப்பு மற்றும் வாட்ஸ்அப் மனு உடனே தயாராகும்.",
-        runAgent: "கண்டறி & அனுப்பு",
+        subline: "Wispr Flow மூலம் தமிழிலோ Tanglish-லோ பேசுங்கள். தேவையென்றால் மட்டும் கேள்வி கேட்டு, உங்கள் ஒப்புதலுக்குப் பிறகே அனுப்பும்.",
+        wisprHint: "படிவம் இல்லை · இயல்பாகப் பேசுங்கள் அல்லது கீழே உள்ளதைத் தேர்வு செய்யுங்கள்",
+        runAgent: "பேசு / அனுப்பு",
         speakBtn: "தமிழில் கேட்க",
         upload: "புகைப்படம் இணைக்க",
         savePhoto: "படத்தைச் சேமி",
         drawer: "அரசு இணையதளத்தில் ஒட்ட வேண்டுமா? படிவப் புலங்களைக் காட்டு",
+        hitlKicker: "படி 3 · இறுதி தெளிவுச் சரிபார்ப்பு (HITL)",
+        hitlTitle: "அனுப்பத் தயாரிக்கும் முன் சரிபார்க்கவும்",
+        hitlEdit: "திருத்தம் சொல்லவும் / தட்டச்சிடவும்",
+        hitlApprove: "சரி, அனுப்பத் தயாராக்கு",
+        hitlApprovedBtn: "உறுதிப்படுத்தப்பட்டது · தயார்",
         copy: "நகலெடு",
         copied: "நகலெடுக்கப்பட்டது!",
         copyAll: "முழுவதும் நகலெடு",
@@ -1339,20 +1388,22 @@
       serviceId: "streetlight_eb",
       landmarkIdx: 0,
       lang: "en",
-      view: "agent",
       appendedNote: "",
       ringX: 48,
       ringY: 22,
       customPhotoUrl: null,
       lite: false,
-      orbMode: "ready",
+      /* State machine: idle | listening | thinking | clarifying | hitl_review | approved_dispatch | speaking */
+      agentPhase: "idle",
+      urgencyTier: "STANDARD", // CRITICAL_SAFETY | HIGH_ESCALATION | STANDARD
+      urgencyMeta: null,
       turns: [],
-      conversationComplete: true,
-      needsSlot: null // null | "location" | "disambiguate" | "issue"
+      clarifyOptions: [],
+      needsSlot: null, // null | "issue" | "location" | "disambiguate" | "ticket"
+      ticketRef: "#GCC-20491"
     };
 
     const voiceInput = document.getElementById("voiceInput");
-    const wbVoiceInput = document.getElementById("wbVoiceInput");
     const orbStage = document.getElementById("orbStage");
     const orbCanvas = document.getElementById("neuralOrbCanvas");
     const orbCtx = orbCanvas.getContext("2d");
@@ -1366,11 +1417,12 @@
       document.getElementById("toastText").textContent = msg;
       el.setAttribute("data-visible", "true");
       clearTimeout(window.__tTimer);
-      window.__tTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2000);
+      window.__tTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2200);
     }
 
     /* ==========================================================================
-       SUBTLE LIGHT NEURAL VOICE ORB ANIMATION (AZURE FOUNDRY STYLE)
+       ACOUSTIC ORB ENGINE (PORTED FROM azure-voice-live-agent/AcousticOrb.tsx)
+       3-Layer harmonic sine/cosine wave canvas keyed to Agent Phase + Urgency
        ========================================================================== */
     let orbPhase = 0;
     function drawOrb() {
@@ -1380,29 +1432,56 @@
       const cy = h / 2;
       orbCtx.clearRect(0, 0, w, h);
 
-      const speed = state.orbMode === "thinking" ? 0.09 : state.orbMode === "listening" ? 0.13 : 0.028;
-      const amp = state.orbMode === "thinking" ? 9 : state.orbMode === "listening" ? 13 : 4;
-      if (!state.lite) orbPhase += speed;
+      const palettes = {
+        idle: { amp: 2.5, speed: 0.015, glow: "rgba(15, 23, 42, 0.05)", ring: "rgba(15, 23, 42, 0.22)", core: "rgba(11, 107, 92, 0.10)" },
+        listening: { amp: 8.5, speed: 0.036, glow: "rgba(5, 150, 105, 0.16)", ring: "rgba(5, 150, 105, 0.85)", core: "rgba(5, 150, 105, 0.16)" },
+        thinking: { amp: 6.5, speed: 0.055, glow: "rgba(217, 119, 6, 0.16)", ring: "rgba(217, 119, 6, 0.82)", core: "rgba(217, 119, 6, 0.14)" },
+        clarifying: { amp: 5.5, speed: 0.032, glow: "rgba(154, 91, 0, 0.15)", ring: "rgba(154, 91, 0, 0.80)", core: "rgba(255, 248, 236, 0.55)" },
+        hitl_review: { amp: 4.0, speed: 0.025, glow: "rgba(14, 165, 233, 0.16)", ring: "rgba(11, 107, 92, 0.80)", core: "rgba(14, 165, 233, 0.12)" },
+        approved_dispatch: { amp: 4.5, speed: 0.024, glow: "rgba(21, 128, 61, 0.16)", ring: "rgba(21, 128, 61, 0.85)", core: "rgba(21, 128, 61, 0.14)" },
+        speaking: { amp: 11.0, speed: 0.05, glow: "rgba(11, 107, 92, 0.18)", ring: "rgba(11, 107, 92, 0.88)", core: "rgba(11, 107, 92, 0.18)" },
+        critical: { amp: 9.5, speed: 0.06, glow: "rgba(185, 28, 28, 0.16)", ring: "rgba(194, 59, 26, 0.88)", core: "rgba(225, 29, 72, 0.14)" }
+      };
 
-      const rings = [
-        { r: 58, color: state.orbMode === "listening" ? "rgba(194, 59, 26, 0.20)" : "rgba(14, 165, 233, 0.18)", offset: 0 },
-        { r: 50, color: state.orbMode === "thinking" ? "rgba(194, 59, 26, 0.25)" : "rgba(11, 107, 92, 0.22)", offset: 2.1 }
-      ];
+      const visualKey = (state.agentPhase === "hitl_review" && state.urgencyTier === "CRITICAL_SAFETY")
+        ? "critical"
+        : (palettes[state.agentPhase] ? state.agentPhase : "idle");
+      const cfg = palettes[visualKey];
+      if (!state.lite) orbPhase += cfg.speed;
 
-      rings.forEach(ring => {
+      const grad = orbCtx.createRadialGradient(cx, cy, 16, cx, cy, 138);
+      grad.addColorStop(0, cfg.glow);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      orbCtx.fillStyle = grad;
+      orbCtx.beginPath();
+      orbCtx.arc(cx, cy, 138, 0, Math.PI * 2);
+      orbCtx.fill();
+
+      for (let layer = 0; layer < 3; layer++) {
+        const baseR = 72 + layer * 18;
+        const phase = orbPhase + layer * 1.4;
         orbCtx.beginPath();
-        for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.1) {
-          const wave = Math.sin(a * 4 + orbPhase + ring.offset) * amp + Math.cos(a * 3 - orbPhase) * (amp * 0.5);
-          const rad = ring.r + wave;
-          const x = cx + Math.cos(a) * rad;
-          const y = cy + Math.sin(a) * rad;
-          if (a === 0) orbCtx.moveTo(x, y);
+        const steps = 84;
+        for (let i = 0; i <= steps; i++) {
+          const angle = (i / steps) * Math.PI * 2;
+          const wave =
+            Math.sin(angle * 3 + phase) * cfg.amp * 0.6 +
+            Math.cos(angle * 5 - phase * 1.3) * cfg.amp * 0.4;
+          const rad = baseR + wave;
+          const x = cx + Math.cos(angle) * rad;
+          const y = cy + Math.sin(angle) * rad;
+          if (i === 0) orbCtx.moveTo(x, y);
           else orbCtx.lineTo(x, y);
         }
         orbCtx.closePath();
-        orbCtx.fillStyle = ring.color;
-        orbCtx.fill();
-      });
+        orbCtx.strokeStyle = layer === 0 ? cfg.ring : cfg.glow.replace(/0\.\d+\)/, "0.45)");
+        orbCtx.lineWidth = layer === 0 ? 2.2 : 1.3;
+        orbCtx.stroke();
+        if (layer === 0) {
+          orbCtx.fillStyle = cfg.core;
+          orbCtx.fill();
+        }
+      }
 
       if (!state.lite) {
         requestAnimationFrame(drawOrb);
@@ -1411,14 +1490,70 @@
     drawOrb();
 
     /* ==========================================================================
-       STREAMING AGENT REASONING TRACE
+       SENTIMENT & URGENCY TRIAGE ENGINE
        ========================================================================== */
-    function runReasoningSequence(svc, immediate = false) {
-      const stepsEl = document.getElementById("reasoningSteps");
+    function classifySentimentAndUrgency(txt) {
+      if (/(spark|fire|shock|live\s*wire|current|smoke|danger|explode|manhole|flood|child)/i.test(txt)) {
+        return {
+          tier: "CRITICAL_SAFETY",
+          badgeEn: "P1 Critical Safety · Urgent Hazard",
+          badgeTa: "P1 அவசர பாதுகாப்பு எச்சரிக்கை",
+          actionEn: "Live electrical/safety risk detected -> Prioritizing TANGEDCO 1912 emergency line + GCC split.",
+          actionTa: "உடனடி மின்/பாதுகாப்பு ஆபத்து -> TANGEDCO 1912 அவசர அழைப்பு முன்னுரிமை.",
+          prefix: "[P1 CRITICAL SAFETY HAZARD] "
+        };
+      }
+      if (/(close|reopen|1100|20491|fix\s*pannama|again|5\s*naal|days|week|month|varala|fraud|complaint)/i.test(txt)) {
+        return {
+          tier: "HIGH_ESCALATION",
+          badgeEn: "P2 High Urgency · Frustrated / Chronic",
+          badgeTa: "P2 அதிக அவசரம் · தொடர் புறக்கணிப்பு",
+          actionEn: "Multi-day delay / false closure detected -> Escalation tone enabled (+ CM Cell 1100 option).",
+          actionTa: "பல நாள் தாமதம் / தவறான முடிவு -> 1100 மேல்முறையீட்டுத் தொனி சேர்க்கப்பட்டது.",
+          prefix: "[P2 CHRONIC / ESCALATION] "
+        };
+      }
+      return {
+        tier: "STANDARD",
+        badgeEn: "P3 Standard Civic Request",
+        badgeTa: "P3 சாதாரண மக்கள் புகார்",
+        actionEn: "Clear civic service outage -> Routed cleanly to official no-login / WhatsApp queue.",
+        actionTa: "தெளிவான தெருப் பிரச்சனை -> சரியான துறை வாட்ஸ்அப் வரிசைக்கு மாற்றப்பட்டது.",
+        prefix: ""
+      };
+    }
+
+    function updateStatusPill() {
       const stateLabel = document.getElementById("agentStateLabel");
       const t = COPY[state.lang];
+      const map = {
+        idle: t.agentReady,
+        listening: state.lang === "ta" ? "கேட்டுக்கொண்டிருக்கிறது (தமிழ் / Tanglish)..." : "Listening in Tanglish / Tamil...",
+        thinking: t.agentThinking,
+        clarifying: t.agentClarifying,
+        hitl_review: t.agentHitl,
+        approved_dispatch: t.agentApproved,
+        speaking: state.lang === "ta" ? "தமிழில் வாசிக்கிறது..." : "Speaking Tamil confirmation..."
+      };
+      stateLabel.textContent = map[state.agentPhase] || t.agentReady;
+      orbStage.setAttribute("data-agent-state", state.agentPhase);
+    }
 
-      stepsEl.innerHTML = svc.steps.map((txt, i) => `
+    /* ==========================================================================
+       STREAMING AGENT REASONING TRACE
+       ========================================================================== */
+    function runReasoningSequence(svc, urgencyMeta, lm, immediate = false) {
+      const stepsEl = document.getElementById("reasoningSteps");
+      const dynamicSteps = [
+        `1. Voice & Sentiment Triage -> Classified as ${urgencyMeta.badgeEn}.`,
+        `2. GIS Landmark Match -> ${lm.district} · ${lm.zone} · ${lm.ward} (${lm.street}, Road ID ${lm.roadId}).`,
+        `3. Portal Gate Check & Split -> ${svc.portals.map(p => p.name.split("—")[0].trim()).join(" + ")}.`,
+        state.agentPhase === "approved_dispatch"
+          ? "4. Citizen HITL Approved -> Unlocked 1-tap official WhatsApp, Call & stamped <1 MB JPEG."
+          : "4. HITL Clarity Gate -> Waiting for citizen confirmation before unlocking dispatch."
+      ];
+
+      stepsEl.innerHTML = dynamicSteps.map((txt, i) => `
         <div class="reason-step" id="rStep_${i}" data-status="${immediate ? 'done' : 'pending'}">
           <span class="step-badge">${immediate ? '✓' : (i + 1)}</span>
           <span>${txt}</span>
@@ -1426,16 +1561,14 @@
       `).join("");
 
       if (immediate || state.lite) {
-        state.orbMode = "ready";
-        orbStage.setAttribute("data-agent-state", "ready");
-        stateLabel.textContent = t.agentReady;
+        updateStatusPill();
         return;
       }
 
       clearTimeout(window.__stepTimer);
-      state.orbMode = "thinking";
-      orbStage.setAttribute("data-agent-state", "thinking");
-      stateLabel.textContent = t.agentThinking;
+      const targetPhase = state.agentPhase;
+      state.agentPhase = "thinking";
+      updateStatusPill();
 
       let idx = 0;
       function advance() {
@@ -1446,15 +1579,14 @@
             prev.querySelector(".step-badge").textContent = "✓";
           }
         }
-        if (idx < svc.steps.length) {
+        if (idx < dynamicSteps.length) {
           const cur = document.getElementById(`rStep_${idx}`);
           if (cur) cur.setAttribute("data-status", "active");
           idx++;
-          window.__stepTimer = setTimeout(advance, 220);
+          window.__stepTimer = setTimeout(advance, 190);
         } else {
-          state.orbMode = "ready";
-          orbStage.setAttribute("data-agent-state", "ready");
-          stateLabel.textContent = t.agentReady;
+          state.agentPhase = targetPhase;
+          updateStatusPill();
         }
       }
       advance();
@@ -1464,52 +1596,49 @@
       const t = COPY[state.lang];
       document.getElementById("langEnBtn").setAttribute("aria-pressed", state.lang === "en" ? "true" : "false");
       document.getElementById("langTaBtn").setAttribute("aria-pressed", state.lang === "ta" ? "true" : "false");
-      document.getElementById("viewAgentBtn").textContent = t.viewAgent;
-      document.getElementById("viewWorkbenchBtn").textContent = t.viewWorkbench;
       document.getElementById("a11yBtn").textContent = t.a11y;
       document.getElementById("liteBtn").textContent = t.lite;
       document.getElementById("headerSub").textContent = t.headerSub;
       document.getElementById("agentHeadline").textContent = t.headline;
       document.getElementById("agentSubline").textContent = t.subline;
+      document.getElementById("wisprHintText").textContent = t.wisprHint;
       document.getElementById("runAgentLabel").textContent = t.runAgent;
       document.getElementById("speakBtnText").textContent = t.speakBtn;
       document.getElementById("uploadLabel").textContent = t.upload;
       document.getElementById("savePhotoLabel").textContent = t.savePhoto;
       document.getElementById("drawerTitle").textContent = t.drawer;
-      if (state.orbMode === "ready") {
-        document.getElementById("agentStateLabel").textContent = t.agentReady;
-      }
+      document.getElementById("hitlKicker").textContent = t.hitlKicker;
+      document.getElementById("hitlTitle").textContent = t.hitlTitle;
+      document.getElementById("hitlEditBtn").textContent = t.hitlEdit;
+      document.getElementById("hitlApproveLabel").textContent =
+        state.agentPhase === "approved_dispatch" ? t.hitlApprovedBtn : t.hitlApprove;
+      updateStatusPill();
     }
 
-    function selectService(id, animateReasoning = true) {
+    function selectScenarioPreset(id) {
       const svc = SERVICES.find(s => s.id === id) || SERVICES[0];
-      const lm = svc.landmarks[0];
-      state.serviceId = svc.id;
-      state.landmarkIdx = 0;
+      voiceInput.value = svc.utterance;
+      state.turns = [];
       state.appendedNote = "";
       state.customPhotoUrl = null;
-      state.ringX = svc.ringX;
-      state.ringY = svc.ringY;
-      state.needsSlot = null;
-      state.conversationComplete = true;
-      state.turns = [
-        { role: "user", text: svc.utterance },
-        { role: "agent", text: state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn, needsInput: false }
-      ];
-      voiceInput.value = svc.utterance;
-      wbVoiceInput.value = svc.utterance;
-      document.getElementById("wbPlaceInput").value = `${lm.name} (${lm.district})`;
-      renderAll(animateReasoning);
+      handleAgentTurn(svc.utterance, true);
     }
 
-    function buildPortalCardsHTML(container, svc, lm) {
+    function buildPortalCardsHTML(container, svc, lm, urgencyMeta) {
       const t = COPY[state.lang];
       container.innerHTML = "";
       svc.portals.forEach(p => {
         const card = document.createElement("article");
         card.className = "portal-card";
         const rowsHtml = p.fields.map((f, idx) => {
-          let val = f.val.replace(/Vth Avenue/g, lm.street).replace(/76370/g, lm.roadId).replace(/Ward 103/g, lm.ward);
+          let val = f.val
+            .replace(/Vth Avenue/g, lm.street)
+            .replace(/76370/g, lm.roadId)
+            .replace(/Ward 103/g, lm.ward)
+            .replace(/#GCC-20491/g, state.ticketRef);
+          if (idx === p.fields.length - 1 && urgencyMeta.prefix && !val.startsWith("[P")) {
+            val = urgencyMeta.prefix + val;
+          }
           if (state.appendedNote && idx === p.fields.length - 1) val += ` [${state.appendedNote}]`;
           if (f.maxChars && val.length > f.maxChars) val = val.slice(0, f.maxChars - 1) + "…";
           const note = f.maxChars ? `<span class="char-note">${val.length} / ${f.maxChars} chars max</span>` : "";
@@ -1570,48 +1699,80 @@
         div.textContent = t.text;
         threadEl.appendChild(div);
       });
+
+      const clarifyEl = document.getElementById("clarifyPills");
+      clarifyEl.innerHTML = "";
+      if (state.agentPhase === "clarifying" && state.clarifyOptions.length > 0) {
+        clarifyEl.style.display = "flex";
+        state.clarifyOptions.forEach(opt => {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "lm-pill";
+          b.textContent = opt.label;
+          b.addEventListener("click", () => handleAgentTurn(opt.value));
+          clarifyEl.appendChild(b);
+        });
+      } else {
+        clarifyEl.style.display = "none";
+      }
     }
 
     function renderAll(animateReasoning = false) {
       const svc = getService();
       const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
       applyCopy();
       renderThread();
 
-      /* Quick Service Chips (Agent View) */
+      /* 5 Compact Quick Scenarios */
       const qRow = document.getElementById("quickPromptsRow");
       qRow.innerHTML = "";
       SERVICES.forEach(s => {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "quick-chip";
-        b.setAttribute("aria-current", s.id === state.serviceId && state.conversationComplete ? "true" : "false");
+        const activeNow = s.id === state.serviceId && (state.agentPhase === "hitl_review" || state.agentPhase === "approved_dispatch");
+        b.setAttribute("aria-current", activeNow ? "true" : "false");
         b.innerHTML = `<img src="${s.photo}" alt=""><span>${state.lang === "ta" ? s.titleTa : s.titleEn}</span>`;
-        b.addEventListener("click", () => selectService(s.id, true));
+        b.addEventListener("click", () => selectScenarioPreset(s.id));
         qRow.appendChild(b);
       });
 
-      /* Show Reasoning & Outcome only once conversation has enough context (or while resolving) */
-      const reasoningCard = document.querySelector(".reasoning-card");
-      const outcomeCard = document.querySelector(".agent-outcome");
-      if (!state.conversationComplete) {
-        reasoningCard.style.display = "none";
-        outcomeCard.style.display = "none";
-      } else {
-        reasoningCard.style.display = "flex";
-        outcomeCard.style.display = "flex";
-        runReasoningSequence(svc, !animateReasoning);
+      const showAnalysis = state.agentPhase === "hitl_review" || state.agentPhase === "approved_dispatch";
+      const showDispatch = state.agentPhase === "approved_dispatch";
+      document.getElementById("reasoningCard").style.display = showAnalysis ? "flex" : "none";
+      document.getElementById("hitlCard").setAttribute("data-visible", showAnalysis ? "true" : "false");
+      document.getElementById("hitlCard").setAttribute("data-approved", showDispatch ? "true" : "false");
+      document.getElementById("hitlApproveBtn").disabled = showDispatch;
+      document.getElementById("dispatchSection").style.display = showDispatch ? "flex" : "none";
+
+      if (!showAnalysis) {
+        return;
       }
 
-      /* Outcome Header & Reply */
-      document.getElementById("outcomeJurisdictionTag").textContent =
-        `${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`;
-      document.getElementById("outcomeReply").textContent =
-        state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn;
+      runReasoningSequence(svc, urgency, lm, !animateReasoning);
 
-      /* Landmark Bar + Inline Append */
+      /* Populate HITL Final Clarity Check Card */
+      const badge = document.getElementById("hitlUrgencyBadge");
+      badge.setAttribute("data-tier", urgency.tier);
+      badge.textContent = state.lang === "ta" ? urgency.badgeTa : urgency.badgeEn;
+
+      document.getElementById("hitlSummaryText").textContent =
+        state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn;
+      document.getElementById("hitlLocVal").textContent =
+        `${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`;
+      document.getElementById("hitlAgencyVal").textContent =
+        svc.portals.map(p => `${p.name} (${p.access.split("·")[0].trim()})`).join(" + ");
+      document.getElementById("hitlUrgencyVal").textContent =
+        state.lang === "ta" ? urgency.actionTa : urgency.actionEn;
+      document.getElementById("hitlNoteVal").textContent =
+        state.appendedNote
+          ? `Added context: "${state.appendedNote}"`
+          : (svc.portals[0].access.includes("Anonymous") ? "Anonymous Web filing supported (No phone needed)" : "Direct Official WhatsApp / Helpline bypasses OTP");
+
+      /* Landmark Quick Confirm Pills inside HITL */
       const lmBar = document.getElementById("landmarkBar");
-      lmBar.innerHTML = `<span style="font-size:0.8rem;font-weight:700;color:var(--ink-3);">Landmark:</span>`;
+      lmBar.innerHTML = `<span style="font-size:0.8rem;font-weight:700;color:var(--ink-3);">Landmark Confirm:</span>`;
       svc.landmarks.forEach((item, idx) => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -1621,97 +1782,120 @@
         btn.addEventListener("click", () => {
           state.landmarkIdx = idx;
           renderAll(false);
-          showToast(`Confirmed ${item.ward}`);
+          showToast(`Updated landmark to ${item.ward}`);
         });
         lmBar.appendChild(btn);
       });
 
-      /* Service Photo + Hazard Marker */
+      if (!showDispatch) {
+        return;
+      }
+
+      /* Populate Unlocked Dispatch Stage */
+      document.getElementById("outcomeJurisdictionTag").textContent =
+        `Approved · ${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`;
+      document.getElementById("outcomeReply").textContent =
+        state.lang === "ta"
+          ? "வாட்ஸ்அப், உதவி எண் மற்றும் <1 MB புகைப்படம் தயார் — கீழே தட்டி அனுப்பவும்."
+          : (urgency.tier === "CRITICAL_SAFETY"
+              ? "Urgent safety hazard prioritized — dial 1912 or send both official WhatsApp reports below."
+              : "Dispatch unlocked — tap an official WhatsApp / helpline action below, or mark & save your <1 MB street photo.");
+
       document.getElementById("servicePhoto").src = state.customPhotoUrl || svc.photo;
       document.getElementById("hazardRing").style.left = `${state.ringX}%`;
       document.getElementById("hazardRing").style.top = `${state.ringY}%`;
       document.getElementById("photoStampText").textContent = `${lm.ward} · ${lm.street} (ID ${lm.roadId})`;
 
-      /* 1-Tap Official Actions */
+      const userCombined = state.turns.filter(t => t.role === "user").map(t => t.text).join(" ");
       const waPayload = encodeURIComponent(
-        `[NammaKural Civic Complaint]\n${lm.district} | ${lm.zone} | ${lm.ward}\nStreet: ${lm.street} (Road ID: ${lm.roadId})\n\n${svc.utterance}${state.appendedNote ? ' (' + state.appendedNote + ')' : ''}\n\n${svc.tamilCue}`
+        `[NammaKural Civic Complaint · ${urgency.badgeEn}]\n${lm.district} | ${lm.zone} | ${lm.ward}\nStreet: ${lm.street} (Road ID: ${lm.roadId})\nRef: ${state.ticketRef}\n\n${urgency.prefix}${userCombined || svc.utterance}${state.appendedNote ? ' (' + state.appendedNote + ')' : ''}\n\n${svc.tamilCue}`
       );
+
       const actionsStack = document.getElementById("agentActionsStack");
       let actHtml = "";
+      /* Critical safety elevates Emergency Dial above routine links */
+      if (urgency.tier === "CRITICAL_SAFETY") {
+        actHtml += `<a class="btn-whatsapp" style="background:var(--accent);" href="tel:1912">Emergency TANGEDCO Line <strong class="num">1912</strong></a>`;
+      }
       svc.portals.forEach(p => {
         if (p.whatsapp) {
           actHtml += `<a class="btn-whatsapp" href="https://wa.me/${p.whatsapp}?text=${waPayload}" target="_blank" rel="noopener noreferrer">${p.whatsappLabel}</a>`;
         } else if (p.email) {
-          const subj = encodeURIComponent(`Civic Grievance — ${lm.ward} (${lm.street})`);
+          const subj = encodeURIComponent(`${urgency.prefix}Civic Grievance — ${lm.ward} (${lm.street})`);
           actHtml += `<a class="btn-whatsapp" href="mailto:${p.email}?subject=${subj}&body=${waPayload}">${p.whatsappLabel}</a>`;
         }
       });
-      actHtml += `<a class="btn-outline" href="tel:${svc.portals[0].helpline}">Call Helpline <strong class="num">${svc.portals[0].helpline}</strong></a>`;
+      if (urgency.tier !== "CRITICAL_SAFETY") {
+        actHtml += `<a class="btn-outline" href="tel:${svc.portals[0].helpline}">Call Helpline <strong class="num">${svc.portals[0].helpline}</strong></a>`;
+      }
       actionsStack.innerHTML = actHtml;
 
-      /* Drawer Count & Portal Cards */
       document.getElementById("drawerCount").textContent = `${svc.portals.length} Portal${svc.portals.length > 1 ? 's' : ''}`;
-      buildPortalCardsHTML(document.getElementById("portalCardsAgent"), svc, lm);
-
-      /* Sync Full Workbench View (Undisturbed) */
-      const wbSvc = document.getElementById("wbServiceButtons");
-      wbSvc.innerHTML = "";
-      SERVICES.forEach(s => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "lm-pill";
-        b.setAttribute("aria-pressed", s.id === state.serviceId ? "true" : "false");
-        b.textContent = s.titleEn;
-        b.addEventListener("click", () => selectService(s.id, false));
-        wbSvc.appendChild(b);
-      });
-      const wbLm = document.getElementById("wbLandmarkPills");
-      wbLm.innerHTML = lmBar.innerHTML;
-      document.getElementById("wbActionsRow").innerHTML = actHtml;
-      buildPortalCardsHTML(document.getElementById("wbPortalCards"), svc, lm);
+      buildPortalCardsHTML(document.getElementById("portalCardsAgent"), svc, lm, urgency);
     }
 
+    /* ==========================================================================
+       CONVERSATIONAL NLU + CLARIFICATION ONLY WHEN NEEDED + HITL GATE
+       ========================================================================== */
     function detectIssueAndPlace(combinedText) {
       const txt = combinedText.toLowerCase();
       const hasPlace = /(anna\s*nagar|tower\s*park|arch|velachery|vijaya\s*nagar|phoenix|madurai|kuruvikaran|coimbatore|gandhipuram|100\s*feet|அண்ணா|வேளச்சேரி|மதுரை|கோவை)/.test(txt);
-      const hasIssue = /(streetlight|light|eriyala|wire|transformer|sewage|saakkadai|pothole|water|kudineer|pipe|ration|arisi|garbage|kuppai|close|20491|தெருவிளக்கு|சாக்கடை|குடிநீர்|ரேஷன்|குப்பை)/.test(txt);
+      const hasIssue = /(streetlight|light|eriyala|wire|transformer|spark|sewage|saakkadai|pothole|water|kudineer|pipe|ration|arisi|fingerprint|garbage|kuppai|close|20491|1100|தெருவிளக்கு|சாக்கடை|குடிநீர்|ரேஷன்|குப்பை)/.test(txt);
+
+      const hasVelacheryBroad = /\bvelachery\b|வேளச்சேரி/.test(txt) && !/(vijaya\s*nagar|phoenix|bus\s*stand|20491|close|garbage|kuppai)/.test(txt);
+      const hasAnnaBroad = /\banna\s*nagar\b|அண்ணா/.test(txt) && !/(tower\s*park|arch|5th|3rd|iii)/.test(txt);
+
       let svcId = "streetlight_eb";
       if (txt.includes("close") || txt.includes("20491") || txt.includes("1100")) svcId = "garbage_1100";
       else if (txt.includes("ration") || txt.includes("arisi") || txt.includes("fingerprint") || txt.includes("ரேஷன்")) svcId = "ration_tnpds";
       else if (txt.includes("madurai") || txt.includes("kudineer") || txt.includes("pipe") || txt.includes("குடிநீர்")) svcId = "water_pipe";
       else if (txt.includes("velachery") || txt.includes("saakkadai") || txt.includes("sewage") || txt.includes("pothole") || txt.includes("சாக்கடை")) svcId = "sewage_pothole";
-      return { hasPlace, hasIssue, svcId, txt };
+
+      const ticketMatch = combinedText.match(/#?[A-Z]{2,5}-?\d{4,6}/i);
+      return {
+        hasPlace,
+        hasIssue,
+        ambiguousArea: hasVelacheryBroad ? "velachery" : (hasAnnaBroad ? "anna_nagar" : null),
+        ticketRef: ticketMatch ? ticketMatch[0].toUpperCase() : null,
+        svcId,
+        txt
+      };
     }
 
-    function handleAgentTurn(raw) {
-      const msg = raw.trim();
+    function handleAgentTurn(raw, fromPreset = false) {
+      const msg = (raw || "").trim();
       if (!msg) {
         voiceInput.focus();
         showToast("Speak or type your street problem first");
         return;
       }
 
-      /* If user is adding a pole/door/detail after conversation completed */
-      if (state.conversationComplete && state.turns.length > 0 && /(pole|door|days|naal|number|#|\d+)/i.test(msg) && msg.length < 45) {
+      /* Spoken quick detail added during HITL review or edit */
+      if ((state.agentPhase === "hitl_review" || state.agentPhase === "approved_dispatch") && /(pole|door|pillar|shop|add\s|note\s)/i.test(msg) && msg.length < 48) {
         state.turns.push({ role: "user", text: msg });
         state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${msg}` : msg;
-        state.turns.push({ role: "agent", text: `Added "${msg}" to your complaint drafts and photo stamp.`, needsInput: false });
+        state.turns.push({ role: "agent", text: `Updated clarity summary with "${msg}". Please review and approve when ready.`, needsInput: false });
+        state.agentPhase = "hitl_review";
         voiceInput.value = "";
         renderAll(false);
         return;
       }
 
-      /* Combine conversation user turns so multi-turn talk-through remembers context */
       state.turns.push({ role: "user", text: msg });
       const combined = state.turns.filter(t => t.role === "user").map(t => t.text).join(" ");
       const parsed = detectIssueAndPlace(combined);
 
       if (!parsed.hasIssue) {
-        state.conversationComplete = false;
+        state.agentPhase = "clarifying";
         state.needsSlot = "issue";
+        state.clarifyOptions = [
+          { label: "Streetlight + Loose Wire", value: "Streetlight not working and transformer wire is sparking" },
+          { label: "Sewage Overflow + Pothole", value: "Sewage overflowing with a deep pothole" },
+          { label: "False Closure (1100)", value: "Complaint #GCC-20491 closed without fixing garbage" }
+        ];
         const ask = state.lang === "ta"
-          ? "என்ன பிரச்சனை (தெருவிளக்கு, சாக்கடை, குடிநீர், ரேஷன், குப்பை) என்று சொல்லுங்கள்?"
-          : "I heard the location. What needs fixing there (e.g. streetlight out, sewage leak, pothole, water pipe)?";
+          ? "என்ன பிரச்சனை (தெருவிளக்கு, மின் கம்பி, சாக்கடை, குடிநீர், ரேஷன்) என்று சொல்லுங்கள்?"
+          : "Got the location. What civic issue needs fixing there?";
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         voiceInput.focus();
@@ -1720,11 +1904,16 @@
       }
 
       if (!parsed.hasPlace) {
-        state.conversationComplete = false;
+        state.agentPhase = "clarifying";
         state.needsSlot = "location";
+        state.clarifyOptions = [
+          { label: "Anna Nagar Tower Park", value: "Anna Nagar Tower Park back side 5th Avenue" },
+          { label: "Velachery Vijayanagar", value: "Velachery Vijayanagar Bus Stand main road" },
+          { label: "Madurai Kuruvikaran Salai", value: "Madurai Kuruvikaran Salai near Anna Bus Stand" }
+        ];
         const ask = state.lang === "ta"
-          ? "பிரச்சனை புரிந்தது. இது எந்தப் பகுதி அல்லது அடையாள இடம் (எ.கா. Anna Nagar Tower Park / Velachery Vijayanagar)?"
-          : "Got it! Where is this happening? Speak your neighborhood or a nearby landmark (e.g. 'Anna Nagar Tower Park' or 'Velachery Vijayanagar').";
+          ? "பிரச்சனை புரிந்தது. இது எந்தப் பகுதி அல்லது அடையாள இடம் என்று சொல்லுங்கள்?"
+          : "Understood the issue. Which neighborhood or nearby landmark is this at?";
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         voiceInput.focus();
@@ -1732,27 +1921,95 @@
         return;
       }
 
-      /* Broad area without specific landmark (Velachery) -> ask 1 quick clarifier or let them confirm */
+      if (parsed.ambiguousArea === "velachery") {
+        state.agentPhase = "clarifying";
+        state.needsSlot = "disambiguate";
+        state.clarifyOptions = [
+          { label: "Vijayanagar Bus Stand (Ward 178)", value: "Vijayanagar Bus Stand" },
+          { label: "Phoenix Marketcity (Ward 175)", value: "Phoenix Marketcity" }
+        ];
+        const ask = state.lang === "ta"
+          ? "வேளச்சேரி 2 வார்டுகளில் உள்ளது. எது அருகில் உள்ளது — விஜயநகர் பேருந்து நிலையம் (வார்டு 178) அல்லது பீனிக்ஸ் மால் (வார்டு 175)?"
+          : "Velachery spans multiple Wards. Which landmark is closest — Vijayanagar Bus Stand (Ward 178) or Phoenix Marketcity (Ward 175)?";
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        voiceInput.value = "";
+        voiceInput.focus();
+        renderAll(false);
+        return;
+      }
+
+      if (parsed.ambiguousArea === "anna_nagar") {
+        state.agentPhase = "clarifying";
+        state.needsSlot = "disambiguate";
+        state.clarifyOptions = [
+          { label: "Tower Park Back Side (Ward 103)", value: "Tower Park 5th Avenue" },
+          { label: "Anna Arch (Ward 102)", value: "Anna Arch IIIrd Avenue" }
+        ];
+        const ask = state.lang === "ta"
+          ? "அண்ணா நகர் மண்டலம் 08-ல் சரியான இடம் எது — டவர் பார்க் (வார்டு 103) அல்லது அண்ணா ஆர்ச் (வார்டு 102)?"
+          : "Anna Nagar Zone 08 spans multiple Wards. Which landmark is closer — Tower Park (Ward 103) or Anna Arch (Ward 102)?";
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        voiceInput.value = "";
+        voiceInput.focus();
+        renderAll(false);
+        return;
+      }
+
       const svc = SERVICES.find(s => s.id === parsed.svcId) || SERVICES[0];
       state.serviceId = svc.id;
-      state.landmarkIdx = parsed.txt.includes("phoenix") || parsed.txt.includes("arch") ? Math.min(1, svc.landmarks.length - 1) : 0;
+      state.landmarkIdx = (parsed.txt.includes("phoenix") || parsed.txt.includes("arch")) ? Math.min(1, svc.landmarks.length - 1) : 0;
       state.ringX = svc.ringX;
       state.ringY = svc.ringY;
       state.needsSlot = null;
-      state.conversationComplete = true;
+      state.clarifyOptions = [];
+      state.ticketRef = parsed.ticketRef || "#GCC-20491";
+
+      const urgency = classifySentimentAndUrgency(combined);
+      state.urgencyTier = urgency.tier;
+      state.urgencyMeta = urgency;
+      state.agentPhase = "hitl_review";
+
       const lm = svc.landmarks[state.landmarkIdx];
-      document.getElementById("wbPlaceInput").value = `${lm.name} (${lm.district})`;
-      wbVoiceInput.value = combined;
       state.turns.push({
         role: "agent",
-        text: state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn,
+        text: state.lang === "ta"
+          ? `${lm.ward} கண்டறியப்பட்டது (${urgency.badgeTa}). கீழே உள்ள இறுதிச் சரிபார்ப்பை உறுதிப்படுத்தவும்.`
+          : `Resolved ${lm.ward} (${urgency.badgeEn}). Review the Final Clarity Check below and tap Approve to prepare dispatch.`,
         needsInput: false
       });
-      voiceInput.value = "";
+
+      if (!fromPreset) voiceInput.value = "";
       renderAll(true);
     }
 
-    /* Event Handlers */
+    /* HITL Approval & Edit Handlers */
+    document.getElementById("hitlApproveBtn").addEventListener("click", () => {
+      state.agentPhase = "approved_dispatch";
+      state.turns.push({
+        role: "agent",
+        text: state.lang === "ta"
+          ? "உறுதிப்படுத்தப்பட்டது! வாட்ஸ்அப் மற்றும் உதவி எண் இணைப்புகள் தயாராக உள்ளன."
+          : "Approved! Direct WhatsApp, helpline dial, stamped street photo, and optional portal fields are ready below.",
+        needsInput: false
+      });
+      renderAll(false);
+      showToast("Approved — Dispatch tools unlocked");
+    });
+
+    document.getElementById("hitlEditBtn").addEventListener("click", () => {
+      state.agentPhase = "clarifying";
+      state.turns.push({
+        role: "agent",
+        text: state.lang === "ta"
+          ? "எதை மாற்ற வேண்டும் என்று பேசுங்கள் அல்லது தட்டச்சிடுங்கள் (எ.கா. 'Pole 42 சேர்க்கவும்' அல்லது 'Anna Arch')."
+          : "Speak or type what to change (e.g. 'Add Pole 42' or 'Change landmark to Anna Arch').",
+        needsInput: true
+      });
+      renderAll(false);
+      voiceInput.focus();
+    });
+
+    /* Core Interaction Listeners */
     document.getElementById("runAgentBtn").addEventListener("click", () => handleAgentTurn(voiceInput.value));
     voiceInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
@@ -1763,37 +2020,25 @@
 
     document.getElementById("newChatBtn").addEventListener("click", () => {
       state.turns = [];
+      state.clarifyOptions = [];
       state.appendedNote = "";
-      state.conversationComplete = false;
-      state.needsSlot = "issue";
+      state.customPhotoUrl = null;
+      state.urgencyTier = "STANDARD";
+      state.urgencyMeta = null;
+      state.agentPhase = "idle";
+      state.needsSlot = null;
       voiceInput.value = "";
       voiceInput.focus();
       renderAll(false);
-      showToast("Started fresh voice conversation — speak now!");
+      showToast("Cleared conversation — ready for fresh voice input");
     });
-
-    /* Full Form View: Intuitive Per-Field Wispr Flow Live Sync */
-    function syncFromWorkbenchInputs() {
-      const combined = `${document.getElementById("wbPlaceInput").value} ${wbVoiceInput.value}`;
-      const parsed = detectIssueAndPlace(combined);
-      const svc = SERVICES.find(s => s.id === parsed.svcId) || SERVICES[0];
-      state.serviceId = svc.id;
-      state.landmarkIdx = parsed.txt.includes("phoenix") || parsed.txt.includes("arch") ? Math.min(1, svc.landmarks.length - 1) : 0;
-      state.appendedNote = document.getElementById("wbDetailInput").value.trim();
-      state.conversationComplete = true;
-      renderAll(false);
-    }
-
-    document.getElementById("wbPlaceInput").addEventListener("input", syncFromWorkbenchInputs);
-    wbVoiceInput.addEventListener("input", syncFromWorkbenchInputs);
 
     document.getElementById("orbMicBtn").addEventListener("click", () => {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
         voiceInput.focus();
-        state.orbMode = "listening";
-        orbStage.setAttribute("data-agent-state", "listening");
-        document.getElementById("agentStateLabel").textContent = "Wispr Flow Ready — Speak into the focused box!";
+        state.agentPhase = "listening";
+        updateStatusPill();
         showToast("Dictate with your Wispr Flow hotkey now");
         return;
       }
@@ -1801,15 +2046,25 @@
       const rec = new SR();
       rec.lang = "ta-IN";
       btn.setAttribute("data-state", "listening");
-      state.orbMode = "listening";
-      orbStage.setAttribute("data-agent-state", "listening");
-      document.getElementById("agentStateLabel").textContent = "Listening in Tanglish / Tamil...";
+      state.agentPhase = "listening";
+      updateStatusPill();
       rec.onresult = (ev) => {
         voiceInput.value = ev.results[0][0].transcript;
         handleAgentTurn(voiceInput.value);
       };
-      rec.onend = () => { btn.setAttribute("data-state", "idle"); };
-      rec.onerror = () => { btn.setAttribute("data-state", "idle"); voiceInput.focus(); };
+      rec.onend = () => {
+        btn.setAttribute("data-state", "idle");
+        if (state.agentPhase === "listening") {
+          state.agentPhase = "idle";
+          updateStatusPill();
+        }
+      };
+      rec.onerror = () => {
+        btn.setAttribute("data-state", "idle");
+        state.agentPhase = "idle";
+        updateStatusPill();
+        voiceInput.focus();
+      };
       rec.start();
     });
 
@@ -1861,31 +2116,15 @@
         const u = new SpeechSynthesisUtterance(cue);
         u.lang = "ta-IN";
         u.rate = 0.95;
+        state.agentPhase = "speaking";
+        updateStatusPill();
+        u.onend = () => {
+          state.agentPhase = "approved_dispatch";
+          updateStatusPill();
+        };
         window.speechSynthesis.speak(u);
         showToast("Speaking Tamil confirmation aloud");
       }
-    });
-
-    document.getElementById("wbAppendBtn").addEventListener("click", () => {
-      const v = document.getElementById("wbDetailInput").value.trim();
-      if (!v) return;
-      state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${v}` : v;
-      document.getElementById("wbDetailInput").value = "";
-      renderAll(false);
-    });
-
-    document.getElementById("viewAgentBtn").addEventListener("click", () => {
-      state.view = "agent";
-      document.documentElement.setAttribute("data-view", "agent");
-      document.getElementById("viewAgentBtn").setAttribute("aria-pressed", "true");
-      document.getElementById("viewWorkbenchBtn").setAttribute("aria-pressed", "false");
-    });
-
-    document.getElementById("viewWorkbenchBtn").addEventListener("click", () => {
-      state.view = "workbench";
-      document.documentElement.setAttribute("data-view", "workbench");
-      document.getElementById("viewAgentBtn").setAttribute("aria-pressed", "false");
-      document.getElementById("viewWorkbenchBtn").setAttribute("aria-pressed", "true");
     });
 
     document.getElementById("langEnBtn").addEventListener("click", () => { state.lang = "en"; renderAll(false); });
@@ -1906,7 +2145,8 @@
       showToast(state.lite ? "2G Lite Mode active" : "Standard Voice Agent mode");
     });
 
-    selectService("streetlight_eb", false);
+    /* Start pure and calm: only orb + single voice bar + 5 scenarios (Zero upfront forms) */
+    renderAll(false);
   </script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+# LOG — NammaKural (Append-Only Ledger)
+<!-- Append 1 line per completed work unit. Format: YYYY-MM-DD HH:MM IST | agent=... | spec=... | did=... | files=... | gate=... -->
+2026-11-26 16:45 IST | agent=antigravity | spec=discovery | did=Inspected live DOM/ArcGIS schemas & OTP/anonymity gates across 6 TN portals | files=docs/TN_CIVIC_PORTALS.md | gate=PASS browser-inspect
+2026-11-26 18:55 IST | agent=antigravity | spec=assets | did=Generated 5 compressed 800x450 TN street hazard JPEGs and isolated codex experiments | files=assets/*.jpg,codex-experiment/* | gate=PASS file-size-check
+2026-11-26 20:16 IST | agent=antigravity | spec=ui-v1 | did=Built light Voice Agent v1 + Full Form View in index.html | files=index.html,DESIGN.md,PRODUCT.md | gate=PASS impeccable+playwright
+2026-11-27 03:12 IST | agent=antigravity | spec=voice-agent-hitl | did=Refactored index.html to pure Voice Agent with AcousticOrb, slot clarifier, sentiment/urgency triage & HITL approval gate; synced Activity 02 prompt (657 words) | files=index.html,docs/ROUND1_SUBMISSIONS.md | gate=PASS impeccable[]+playwright(0err,0ov)
+2026-11-27 03:50 IST | agent=antigravity | spec=md-specs-arch | did=Overhauled spec-driven MD system (AGENTS/DESIGN/CONTEXT/TODO/LOG/specs 001-005), authored VOICE_AGENT_ARCHITECTURE.md & README.md | files=AGENTS.md,DESIGN.md,CONTEXT.md,TODO.md,LOG.md,specs/*,docs/architecture/*,README.md | gate=PASS link-check+pii-clean

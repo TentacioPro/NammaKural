@@ -3,37 +3,32 @@
 <!-- impeccable:design-schema 1 -->
 
 ## Visual World & Thesis
+**Sunlit Voice-First Civic Companion (Azure Foundry Voice Live Minimalism × Tamil Wayfinding Clarity).**
+Inspired directly by `microsoft/voice-agent` (`samples/foundry_voice_webrtc` + Foundry Agent Preview runtime canvas) and `TentacioPro/azure-voice-live-agent` (`AcousticOrb.tsx`), NammaKural replaces static government form walls with one calm light canvas dominated by a reactive acoustic orb, short conversational clarification only when required, urgency-aware triage, and a clean Human-in-the-Loop (HITL) approval gate.
 
-**Chennai Metro / Southern Railway Enameled Civic Wayfinding & Dispatch Ledger.**
-Built for bright tropical daylight and congested 3G/4G street conditions, NammaKural rejects every trope of the 6 government portals it bridges (no multi-step grey Bootstrap forms, no hexagonal splash art, no floating social sidebars, no tiny cramped dropdowns).
-
-## Color Tokens
-
-- `--bg-paper`: `#EDF1F5` (Cool Mineral Slate Mist — page ground)
-- `--bg-sheet`: `#FFFFFF` (Pure Enameled Ledger Sheet — active panels)
-- `--bg-recessed`: `#DFE6ED` (Recessed Header / Control Well)
-- `--bg-rail`: `#CFD9E3` (Inactive Tab / Divider Rail)
-- `--ink-primary`: `#0F1722` (Deep Indigo-Slate Ink — primary copy & 1.5px structural borders)
-- `--ink-secondary`: `#2E3D52` (Secondary label ink, contrast ≥ 8.5:1)
-- `--ink-muted`: `#4E5F75` (DOM field IDs & metadata, contrast ≥ 5.2:1)
-- `--rule-hairline`: `#C5D1DD` (1px inner table ledger lines)
-- `--rule-strong`: `#7F91A6` (Control & chip borders)
-- `--vermilion`: `#C43B1A` (Chola Terracotta Vermilion — reserved strictly for primary voice dictation & matched portal pills)
-- `--kaveri-teal`: `#096356` (Kaveri Teal — verified ArcGIS jurisdiction locks & copy confirmations)
-- `--turmeric-amber`: `#8F4F00` (Turmeric Amber — landmark disambiguation & OTP gate warnings)
-- `--whatsapp-green`: `#11663E` (Zero-Copy-Paste Official WhatsApp Bot trigger)
+## Color Tokens (`index.html`)
+- `--bg-page`: `#F7FAFC` (Sunlit Cool Surface — daylight high-visibility background)
+- `--bg-surface`: `#FFFFFF` (Orb Stage, HITL Clarity Card, Outcome Card)
+- `--bg-subtle`: `#F0F4F8` / `--bg-mint`: `#E9F7F2` / `--bg-warm`: `#FFF8EC`
+- `--ink`: `#0F172A` · `--ink-2`: `#334155` · `--ink-3`: `#5B687A` (Contrast `>= 5.5:1`)
+- `--accent`: `#C23B1A` (Chola Vermilion — P1 hazard highlight & focus rings)
+- `--teal`: `#0B6B5C` / `--teal-dark`: `#074A40` (HITL approval, verified Ward badges, speaking state)
+- `--whatsapp`: `#15803D` (1-Tap Official WhatsApp / Email / Dial actions)
+- `--amber`: `#9A5B00` (Clarification / P2 chronic escalation state)
 
 ## Typography
+- **Latin UI:** `DM Sans` (`400`, `500`, `600`, `700`) with `A+ Text` root scaling (`112.5%`).
+- **Tamil Script (*தமிழ்*):** `Anek Tamil` (`500`, `600`, `700`) for balanced legibility alongside Latin Tanglish.
+- **Road IDs, Helplines & Timers:** `JetBrains Mono` (`font-variant-numeric: tabular-nums`).
 
-- **Primary UI & Latin Display:** `Atkinson Hyperlegible` (`400`, `700`) — engineered for high-glare legibility and elder/low-vision accessibility.
-- **Tamil Script (*தமிழ்*):** `Noto Sans Tamil` (`500`, `600`, `700`) — balanced at equal optical cap-height alongside Latin headings.
-- **Tabular Data, GIS Road IDs, Helplines & Character Counters:** `JetBrains Mono` (`500`, `600`) with `font-variant-numeric: tabular-nums`.
+## Voice Agent State Visuals (`AcousticOrb`)
+- `idle`: Soft slate harmonic rings (`amp 2.5`)
+- `listening`: Active emerald rings (`amp 8.5`, speed `0.036`)
+- `thinking`: Amber orbital sweep (`amp 6.5`, speed `0.055`)
+- `clarifying`: Warm amber ring + inline disambiguation pills (visible ONLY when a slot/ward is ambiguous)
+- `hitl_review` (`critical` override if P1 hazard): Shows `#hitlCard` summary + Urgent/Sentiment pill; keeps `#dispatchSection` locked
+- `approved_dispatch`: Green/teal calm glow; unlocks 1-tap WhatsApp / Emergency Dial `1912` / `<1 MB` Tap-to-Mark JPEG stamper / collapsible portal fields
 
-## Layout Architecture (Master · Mid · Inner)
-
-1. **Master Layout (`.master-header` + `.master-shell`):** Sticky `1.5px`-bordered top wayfinding bar containing bilingual identity, task mode segmented switch (`New Street Grievance` vs `Closed Without Fix 1100`), and 2G/3G Lite Mode telemetry toggle (`14 KB · <5ms`).
-2. **Mid Layout (`.mid-workbench`, switchable via `?variant=A|B|C`):**
-   - **Variant A (`Split Civic Workbench`):** 12-column asymmetric split (`5fr` Voice & Evidence Intake Dock | `7fr` GIS Jurisdiction Strip + Zero-Copy Assisted Bar + Split Portal Schema Sheets).
-   - **Variant B (`Single-Column Assisted Stream`):** Thumb-first vertical flow (`max-width: 760px`) for 1-handed mobile street use and elder/volunteer assisted filing.
-   - **Variant C (`3-Pane Command Triage Matrix`):** High-density desktop dispatch grid (`Voice & Photo Dock` | `GIS Telemetry + Zero-Copy Assisted Bar` | `Split Portal Schema Inspector`).
-3. **Inner Layout (`.ledger-panel`, `.gis-strip`, `.inclusive-bar`, `.portal-sheet`, `.field-row`):** Crisp `1.5px` structural borders (zero diffuse shadows on bordered cards), stepped portal filter tabs, 3-column field copy rows (`Label + DOM ID` | `Resolved Value + Character Counter` | `1-Tap Copy Button`), and an interactive HTML5 Canvas `<1 MB` Evidence Photo Stamper.
+## Round 2 Visual Polish Target (Microsoft Foundry Orb Reference)
+- Keep initial `idle` canvas ultra-clean: centered undulating orb + concise state text (`Speaking...` / `Listening...` / `Talk to interrupt` hint) + compact bottom call strip (`Mic | Language/Captions | Waveform/Timer | End/Clear`) + top `+ New` action.
+- Preserve strict `2G Lite Mode` (`data-lite="true"` disables ambient radial gradients and canvas animation frames) and `0` horizontal overflow down to `320px–390px`.

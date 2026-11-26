@@ -45,20 +45,18 @@ Step 3 (Service Photo Tap-to-Mark & Voice Slot-Filling):
 Step 4 (Premature-Closure 1100 Voice Escalation):
 - User says: "Complaint GCC-20491 fix pannama close pannitanga," and attaches a current photo. Agent drafts a Mudhalvarin Mugavari (1100) reopen petition.
 
-What the product says or shows back (No Dense Form Wall):
-1. Calm Agent Outcome Card & Tamil Audio Read-Back: Speaks confirmation aloud in conversational Tamil (ta-IN TTS) so blind, elder, and low-literacy users verify Ward and Department by ear.
-2. Zero-Copy-Paste Assisted Actions (bypasses OTP/CAPTCHA gates):
-   - "1-Tap Official WhatsApp / Email": Deep-links to official TN queues (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD PUNAL +91-9499991916, TANGEDCO 9498794987, CM Cell cmcell@tn.gov.in, TNPDS support@tnpds.com) pre-filled with resolved bilingual text.
-   - "1-Tap Helpline Dial": Calls 1913, 1100, 1916, 1912, or 1967.
-3. Collapsible Portal Form Drawer (plus a "Full Form View" toggle): Expands per-field Copy cards matching inner DOM schemas—GCC PGRS (open 4-step wizard, anonymous mode, 17 types), CMWSSB (200-char cap), TWAD PUNAL (urban/rural tree), TANGEDCO, Mudhalvarin Mugavari, and TNPDS.
+What the product says or shows back (Pure Voice Agent — No Form Wall + HITL Clarity Check):
+1. Sentiment & Urgency Triage: Detects urgency/sentiment from spoken Tanglish—elevating sparking/live transformer wires to P1 Critical Safety (prioritizing TANGEDCO 1912 emergency dial) and chronic delays/false closures to P2 High Urgency Escalation (enabling 1100 escalation tone).
+2. Mandatory Final Clarity Check (HITL Gate): Before unlocking dispatch, presents a concise confirmation card with understood issue(s), urgency tier, resolved Zone/Ward, and agencies—with explicit Approve & Prepare Dispatch vs. Speak/Type a Change buttons.
+3. Post-Approval Dispatch & Tamil Read-Back: Speaks confirmation aloud in Tamil (ta-IN TTS), reveals 1-Tap Official WhatsApp / CM Cell Email (cmcell@tn.gov.in) / Helpline Call (1913, 1100, 1916, 1912, 1967), Tap-to-Mark <1MB photo stamper, and a collapsible portal copy drawer.
 
 Noise, accents, mixed languages and misheard input:
-1. Street Noise & Cut-Off Speech: Retains partial transcripts and lets users append missing pole/door numbers without restarting.
+1. Street Noise & Cut-Off Speech: Retains conversation memory turn-by-turn and asks ONLY for genuinely missing or ambiguous details.
 2. Accents & Tanglish Variants: Phonetic matcher normalizes dialect variants ("eriyala/light podala", "thanni varala/kudineer", "saakkadai", "kuppai") and Tamil Unicode.
-3. Misheard Landmarks: Shows top-3 closest landmark pills for 1-tap correction.
+3. Misheard Landmarks: Shows quick landmark confirmation pills for 1-tap correction.
 
 Enough detail to build:
-Build a sunlit, light-mode Voice Agent UI (inspired by Azure AI Foundry Agent Preview) with an HTML5 Canvas animated neural orb, clean Wispr Flow bar, 5 photo-thumbnail service pills, 4-step streaming reasoning trace, Outcome Card with Tamil TTS + 1-tap WhatsApp + Tap-to-Mark photo stamper, collapsible portal copy drawer, `English | தமிழ்` switcher, `A+` large-text toggle, and `2G Lite` mode. Embed real Chennai ArcGIS Zone/Ward/Street data and bilingual templates so it runs 100% offline.
+Build a sunlit, light-mode Pure Voice Agent UI (inspired by Azure AI Foundry / Voice Live AcousticOrb) with a 3-layer harmonic Canvas orb, clean Wispr Flow bar, 5 quick voice scenarios, streaming reasoning trace, Sentiment/Urgency triage, HITL Clarity Check approval gate, post-approval Tamil TTS + 1-tap WhatsApp + Tap-to-Mark photo stamper, `English | தமிழ்` switcher, `A+` large-text toggle, and `2G Lite` mode—powered offline by embedded Chennai ArcGIS Zone/Ward/Street data.
 ```
 
 ---

@@ -1,47 +1,51 @@
 <!DOCTYPE html>
-<html lang="en" data-lang="en" data-a11y-large="false">
+<html lang="en" data-lang="en" data-view="agent" data-a11y-large="false" data-lite="false">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#F7F9FC">
-  <title>NammaKural (நம்ம குரல்) — Tamil Nadu Voice Civic Helper</title>
+  <meta name="theme-color" content="#F7FAFC">
+  <title>NammaKural (நம்ம குரல்) — Voice-First Tamil Nadu Civic Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-page: #F5F7FA;
-      --bg-card: #FFFFFF;
-      --bg-soft: #EDF2F7;
-      --bg-warm: #FFF8EB;
-      --bg-mint: #E8F5F1;
+      --bg-page: #F7FAFC;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #F0F4F8;
+      --bg-mint: #E9F7F2;
+      --bg-warm: #FFF8EC;
 
-      --ink: #111827;
-      --ink-2: #374151;
-      --ink-3: #5A6577;
-      --border: #D5DDE6;
-      --border-strong: #94A3B8;
+      --ink: #0F172A;
+      --ink-2: #334155;
+      --ink-3: #5B687A;
+      --border: #DCE4EE;
+      --border-strong: #9FB0C4;
 
-      /* Subtle Tamil Nadu Identity Accents on Light Surface */
-      --sengavi: #C23B1A;
-      --sengavi-hover: #A42E12;
-      --sengavi-soft: #FDF0EC;
-      --kaveri: #0B6B5C;
-      --kaveri-dark: #074A40;
-      --turmeric: #9A5B00;
-      --turmeric-border: #E2B466;
+      --accent: #C23B1A;
+      --accent-hover: #A42E12;
+      --accent-soft: #FDF0EC;
+      --teal: #0B6B5C;
+      --teal-dark: #074A40;
       --whatsapp: #15803D;
       --whatsapp-hover: #116630;
+      --amber: #9A5B00;
 
       --font-sans: 'DM Sans', 'Anek Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
 
-      --radius: 10px;
-      --radius-sm: 6px;
+      --radius: 14px;
+      --radius-sm: 8px;
+      --shadow-soft: 0 12px 32px -12px rgba(15, 23, 42, 0.08);
     }
 
-    html[data-a11y-large="true"] {
-      font-size: 112.5%;
+    html[data-a11y-large="true"] { font-size: 112.5%; }
+
+    html[data-lite="true"] *,
+    html[data-lite="true"] *::before,
+    html[data-lite="true"] *::after {
+      transition: none !important;
+      animation: none !important;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -54,7 +58,7 @@
     *, *::before, *::after { box-sizing: border-box; }
 
     ::selection {
-      background: var(--sengavi);
+      background: var(--accent);
       color: #FFFFFF;
     }
 
@@ -62,19 +66,27 @@
       font-family: var(--font-sans);
       background: var(--bg-page);
       color: var(--ink);
-      line-height: 1.5;
+      line-height: 1.55;
       -webkit-text-size-adjust: 100%;
     }
 
     body {
       margin: 0;
-      background: var(--bg-page);
-      padding-bottom: calc(36px + env(safe-area-inset-bottom));
       min-height: 100vh;
+      background-color: var(--bg-page);
+      background-image:
+        radial-gradient(circle at 22% 14%, rgba(14, 165, 233, 0.08), transparent 44%),
+        radial-gradient(circle at 78% 18%, rgba(194, 59, 26, 0.06), transparent 42%),
+        radial-gradient(circle at 50% 60%, rgba(11, 107, 92, 0.05), transparent 55%);
+      padding-bottom: calc(48px + env(safe-area-inset-bottom));
+    }
+
+    html[data-lite="true"] body {
+      background-image: none;
     }
 
     :focus-visible {
-      outline: 2.5px solid var(--sengavi);
+      outline: 2.5px solid var(--accent);
       outline-offset: 2px;
     }
 
@@ -111,76 +123,72 @@
     .skip-link:focus { left: 16px; }
 
     /* ==========================================================================
-       1. LIGHT, CLEAN HEADER & SIMPLE NAVIGATION
+       1. CALM LIGHT HEADER
        ========================================================================== */
-    .top-accent-line {
-      height: 4px;
-      background: var(--sengavi);
-    }
-
     .app-header {
       position: sticky;
       top: 0;
       z-index: 40;
-      background: var(--bg-card);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
     }
 
     .header-inner {
-      max-width: 1320px;
+      max-width: 1260px;
       margin: 0 auto;
-      padding: 12px 20px;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 14px;
       flex-wrap: wrap;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 11px;
     }
 
     .brand-mark {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background: var(--sengavi);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: var(--accent);
       color: #FFFFFF;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       flex-shrink: 0;
     }
 
     .brand h1 {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.02em;
       line-height: 1.15;
     }
 
-    .brand p {
-      font-size: 0.85rem;
+    .brand-tag {
+      font-size: 0.8rem;
       color: var(--ink-3);
     }
 
-    .nav-right {
+    .nav-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
-    .segmented-group {
+    .segmented {
       display: inline-flex;
-      background: var(--bg-soft);
+      background: var(--bg-subtle);
       padding: 3px;
-      border-radius: 8px;
+      border-radius: 9px;
       border: 1px solid var(--border);
       gap: 2px;
     }
@@ -191,11 +199,11 @@
       background: transparent;
       color: var(--ink-2);
       font-family: var(--font-sans);
-      font-size: 0.875rem;
+      font-size: 0.84rem;
       font-weight: 600;
-      padding: 7px 13px;
-      min-height: 38px;
-      border-radius: 6px;
+      padding: 6px 12px;
+      min-height: 36px;
+      border-radius: 7px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -203,156 +211,172 @@
     }
 
     .seg-btn[aria-pressed="true"] {
-      background: var(--bg-card);
+      background: var(--bg-surface);
       color: var(--ink);
       font-weight: 700;
       border: 1px solid var(--border);
     }
 
-    .btn-quiet {
+    .btn-pill-quiet {
       appearance: none;
       border: 1px solid var(--border);
-      background: var(--bg-card);
-      color: var(--ink);
+      background: var(--bg-surface);
+      color: var(--ink-2);
       font-family: var(--font-sans);
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      padding: 7px 12px;
-      min-height: 38px;
-      border-radius: 8px;
+      padding: 6px 11px;
+      min-height: 36px;
+      border-radius: 9px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
     }
 
-    .btn-quiet[aria-pressed="true"] {
+    .btn-pill-quiet[aria-pressed="true"] {
       background: var(--ink);
       color: #FFFFFF;
       border-color: var(--ink);
     }
 
     /* ==========================================================================
-       2. SERVICE PICKER STRIP (VISUAL THUMBNAILS FOR ALL TARGETED SERVICES)
+       2. VOICE AGENT VIEW (AZURE FOUNDRY STYLE — PLAIN, LIGHT, NEURAL ORB & STEPS)
        ========================================================================== */
-    .container {
-      max-width: 1320px;
+    .agent-shell {
+      max-width: 860px;
       margin: 0 auto;
-      padding: 18px 20px 0;
+      padding: 26px 20px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
-    .service-strip-label {
-      font-size: 0.875rem;
-      font-weight: 700;
-      color: var(--ink-2);
-      margin-bottom: 10px;
+    html[data-view="workbench"] .agent-shell { display: none; }
+    html[data-view="agent"] .workbench-shell { display: none; }
+
+    /* Hero Voice Orb Stage */
+    .orb-stage {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px 22px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .orb-canvas-wrap {
+      position: relative;
+      width: 152px;
+      height: 152px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
+      justify-content: center;
+      cursor: pointer;
     }
 
-    .service-rail {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
+    .orb-canvas {
+      position: absolute;
+      inset: 0;
+      width: 152px;
+      height: 152px;
     }
 
-    @media (max-width: 1050px) {
-      .service-rail {
-        display: flex;
-        overflow-x: auto;
-        padding-bottom: 6px;
-        scroll-snap-type: x mandatory;
-      }
-      .service-tile {
-        min-width: 215px;
-        scroll-snap-align: start;
-      }
-    }
-
-    .service-tile {
-      appearance: none;
-      border: 1px solid var(--border);
-      background: var(--bg-card);
-      border-radius: var(--radius);
-      padding: 8px;
+    .orb-core-btn {
+      position: relative;
+      z-index: 2;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 0;
+      background: linear-gradient(135deg, #0EA5E9 0%, #0B6B5C 60%, #C23B1A 100%);
+      color: #FFFFFF;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 10px;
-      text-align: left;
-      font-family: var(--font-sans);
-      color: var(--ink);
-      min-height: 64px;
+      justify-content: center;
+      box-shadow: 0 10px 24px -6px rgba(11, 107, 92, 0.38);
+      transition: transform 180ms ease;
     }
 
-    .service-tile:hover {
-      border-color: var(--border-strong);
-      background: var(--bg-soft);
+    .orb-core-btn:hover { transform: scale(1.04); }
+    .orb-core-btn[data-state="listening"] {
+      background: linear-gradient(135deg, #C23B1A 0%, #EA580C 100%);
     }
 
-    .service-tile[aria-current="true"] {
-      border: 2px solid var(--sengavi);
-      background: var(--sengavi-soft);
+    .agent-state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      color: var(--ink-2);
+      font-size: 0.8rem;
+      font-weight: 600;
     }
 
-    .service-thumb {
-      width: 64px;
-      height: 44px;
-      object-fit: cover;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      flex-shrink: 0;
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--teal);
     }
 
-    .service-tile-title {
-      font-size: 0.88rem;
+    .orb-stage[data-agent-state="thinking"] .pulse-dot,
+    .orb-stage[data-agent-state="listening"] .pulse-dot {
+      background: var(--accent);
+    }
+
+    .agent-headline {
+      font-size: 1.45rem;
       font-weight: 700;
-      line-height: 1.25;
-      display: block;
+      letter-spacing: -0.025em;
+      color: var(--ink);
     }
 
-    .service-tile-sub {
-      font-size: 0.78rem;
+    .agent-subline {
+      font-size: 0.94rem;
       color: var(--ink-3);
-      display: block;
-      margin-top: 2px;
+      max-width: 56ch;
     }
 
-    /* ==========================================================================
-       3. MAIN WORKSPACE: CLEAN 2-COLUMN GUIDED FLOW
-       ========================================================================== */
-    .workspace-grid {
-      display: grid;
-      grid-template-columns: minmax(340px, 5fr) minmax(420px, 7fr);
-      gap: 20px;
-      align-items: start;
-    }
-
-    @media (max-width: 960px) {
-      .workspace-grid {
-        grid-template-columns: 1fr;
-      }
-      .container, .header-inner {
-        padding-left: 14px;
-        padding-right: 14px;
-      }
-    }
-
-    .surface-panel {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 18px 20px;
+    /* Clean Dictation Input Pill inside Orb Stage */
+    .wispr-input-bar {
+      width: 100%;
+      max-width: 700px;
+      background: var(--bg-page);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
+      text-align: left;
     }
 
-    .step-header {
+    .wispr-input-bar:focus-within {
+      background: var(--bg-surface);
+      border-color: var(--teal);
+    }
+
+    .wispr-textarea {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      line-height: 1.45;
+      color: var(--ink);
+      resize: none;
+      outline: none;
+      min-height: 52px;
+    }
+
+    .wispr-bar-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -360,164 +384,234 @@
       flex-wrap: wrap;
     }
 
-    .step-title {
-      font-size: 1.05rem;
+    .wispr-hint {
+      font-size: 0.8rem;
+      color: var(--ink-3);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-agent-send {
+      appearance: none;
+      border: 0;
+      background: var(--ink);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 0.88rem;
       font-weight: 700;
+      padding: 9px 16px;
+      min-height: 40px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn-agent-send:hover { background: var(--accent); }
+
+    /* Compact Quick-Try Service Pills (with mini photo thumbnails!) */
+    .quick-prompts-row {
       display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .quick-chip {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-page);
+      color: var(--ink-2);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 5px 11px 5px 6px;
+      min-height: 38px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
     }
 
-    .step-num {
-      width: 24px;
-      height: 24px;
+    .quick-chip:hover { border-color: var(--border-strong); background: var(--bg-subtle); }
+    .quick-chip[aria-current="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    .quick-chip img {
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: var(--ink);
-      color: #FFFFFF;
-      font-size: 0.8rem;
+      object-fit: cover;
+      border: 1px solid var(--border);
+    }
+
+    /* ==========================================================================
+       3. AGENTIC REASONING TRACE (STEP-BY-STEP STREAMING STEPS)
+       ========================================================================== */
+    .reasoning-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .reasoning-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--ink-2);
+    }
+
+    .reasoning-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .reason-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: var(--bg-page);
+      font-size: 0.88rem;
+      color: var(--ink-2);
+      opacity: 0.45;
+      transition: opacity 220ms ease, background 220ms ease;
+    }
+
+    .reason-step[data-status="active"] {
+      opacity: 1;
+      background: var(--bg-warm);
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .reason-step[data-status="done"] {
+      opacity: 1;
+      background: var(--bg-mint);
+      color: var(--ink);
+    }
+
+    .step-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--ink);
+      font-size: 0.72rem;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      margin-top: 2px;
     }
 
-    /* Voice Input Box */
-    .voice-box {
-      width: 100%;
-      min-height: 98px;
-      padding: 12px 14px;
-      font-family: var(--font-sans);
-      font-size: 1rem;
-      line-height: 1.5;
-      color: var(--ink);
-      background: var(--bg-page);
-      border: 1.5px solid var(--border-strong);
-      border-radius: var(--radius-sm);
-      resize: vertical;
-    }
-
-    .voice-box:focus {
-      background: var(--bg-card);
-      border-color: var(--sengavi);
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    .btn-voice {
-      appearance: none;
-      border: 0;
-      background: var(--sengavi);
+    .reason-step[data-status="done"] .step-badge {
+      background: var(--teal);
       color: #FFFFFF;
-      font-family: var(--font-sans);
-      font-size: 0.94rem;
-      font-weight: 700;
-      padding: 11px 18px;
-      min-height: 46px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn-voice:hover { background: var(--sengavi-hover); }
-    .btn-voice[data-listening="true"] { background: var(--ink); }
-
-    .btn-outline {
-      appearance: none;
-      border: 1px solid var(--border-strong);
-      background: var(--bg-card);
-      color: var(--ink);
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      font-weight: 600;
-      padding: 10px 14px;
-      min-height: 44px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      text-decoration: none;
-    }
-    .btn-outline:hover { background: var(--bg-soft); }
-
-    /* Landmark Disambiguator Pills */
-    .landmark-section {
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
     }
 
-    .landmark-label {
-      font-size: 0.86rem;
-      font-weight: 700;
-      color: var(--ink-2);
-    }
-
-    .landmark-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .landmark-btn {
-      appearance: none;
-      border: 1px solid var(--border-strong);
-      background: var(--bg-page);
-      color: var(--ink);
-      font-family: var(--font-sans);
-      font-size: 0.85rem;
-      font-weight: 600;
-      padding: 8px 12px;
-      min-height: 40px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .landmark-btn[aria-pressed="true"] {
-      background: var(--kaveri);
-      border-color: var(--kaveri);
+    .reason-step[data-status="active"] .step-badge {
+      background: var(--accent);
       color: #FFFFFF;
-      font-weight: 700;
-    }
-
-    .append-row {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .append-input {
-      flex: 1;
-      min-height: 42px;
-      padding: 8px 12px;
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      font-family: var(--font-sans);
-      font-size: 0.88rem;
-      color: var(--ink);
-      background: var(--bg-card);
     }
 
     /* ==========================================================================
-       4. REAL SERVICE PHOTO + TAP-TO-MARK HAZARD EVIDENCE STAGE
+       4. CALM AGENT OUTCOME CARD (SPEECH + PHOTO + 1-TAP SEND + COLLAPSIBLE FIELDS)
        ========================================================================== */
+    .agent-outcome {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .outcome-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .outcome-reply {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.5;
+      max-width: 60ch;
+    }
+
+    .landmark-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--bg-page);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .lm-pill {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 6px 11px;
+      min-height: 36px;
+      border-radius: 7px;
+      cursor: pointer;
+    }
+
+    .lm-pill[aria-pressed="true"] {
+      background: var(--teal);
+      border-color: var(--teal);
+      color: #FFFFFF;
+    }
+
+    .outcome-media-split {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 720px) {
+      .outcome-media-split { grid-template-columns: 1fr; }
+    }
+
     .photo-stage {
       position: relative;
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: var(--radius-sm);
+      border-radius: 10px;
       overflow: hidden;
       border: 1px solid var(--border-strong);
-      background: var(--bg-soft);
+      background: var(--bg-subtle);
       cursor: crosshair;
       user-select: none;
     }
@@ -531,136 +625,31 @@
 
     .hazard-ring {
       position: absolute;
-      width: 56px;
-      height: 56px;
-      border: 3.5px solid #EF4444;
+      width: 52px;
+      height: 52px;
+      border: 3px solid #EF4444;
       border-radius: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
       box-shadow: 0 0 0 2px #FFFFFF;
     }
 
-    .hazard-ring::after {
-      content: "";
-      position: absolute;
-      inset: 50% auto auto 50%;
-      width: 10px;
-      height: 10px;
-      background: #EF4444;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
-
     .photo-stamp-bar {
       position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(17, 24, 39, 0.88);
+      left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.88);
       color: #FFFFFF;
-      padding: 8px 12px;
-      font-size: 0.78rem;
+      padding: 6px 10px;
+      font-size: 0.76rem;
       display: flex;
-      align-items: center;
       justify-content: space-between;
       gap: 8px;
-      flex-wrap: wrap;
       pointer-events: none;
     }
 
-    .photo-stamp-ok {
-      color: #86EFAC;
-      font-family: var(--font-mono);
-      font-weight: 600;
-    }
-
-    /* ==========================================================================
-       5. RIGHT COLUMN: LIGHT LOCATION BANNER, 1-TAP WHATSAPP, CLEAN FORM FIELDS
-       ========================================================================== */
-    .right-stack {
+    .send-stack {
       display: flex;
       flex-direction: column;
-      gap: 18px;
-    }
-
-    /* Light & Calm Confirmed Location Strip */
-    .location-banner {
-      background: var(--bg-mint);
-      border: 1px solid #99D5C4;
-      border-radius: var(--radius);
-      padding: 16px 18px;
-    }
-
-    .location-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .location-badge {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--kaveri-dark);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .location-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 10px;
-    }
-
-    .loc-item {
-      background: var(--bg-card);
-      border: 1px solid #CBE7DF;
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-    }
-
-    .loc-key {
-      display: block;
-      font-size: 0.76rem;
-      color: var(--ink-3);
-      font-weight: 600;
-    }
-
-    .loc-val {
-      display: block;
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: var(--ink);
-      margin-top: 2px;
-    }
-
-    /* 1-Tap Easy Send Bar (Warm Light Sand Surface) */
-    .easy-send-box {
-      background: var(--bg-warm);
-      border: 1px solid var(--turmeric-border);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .tamil-cue {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 14px;
-      font-size: 0.96rem;
-      font-weight: 600;
-      color: var(--ink);
-    }
-
-    .easy-actions {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 10px;
     }
 
@@ -670,11 +659,11 @@
       background: var(--whatsapp);
       color: #FFFFFF;
       font-family: var(--font-sans);
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      padding: 12px 16px;
+      padding: 11px 14px;
       min-height: 46px;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       text-decoration: none;
       display: inline-flex;
@@ -684,80 +673,77 @@
     }
     .btn-whatsapp:hover { background: var(--whatsapp-hover); }
 
-    /* Clean Portal Form Cards */
+    .btn-outline {
+      appearance: none;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-surface);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 0.86rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      min-height: 42px;
+      border-radius: 9px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      text-decoration: none;
+    }
+    .btn-outline:hover { background: var(--bg-subtle); }
+
+    /* Collapsible Portal Fields Drawer (Zero Visual Noise Until Needed) */
+    .portal-drawer {
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    .portal-drawer summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--ink);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 4px;
+    }
+
     .portal-card {
-      background: var(--bg-card);
+      background: var(--bg-page);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 10px;
       overflow: hidden;
+      margin-top: 12px;
     }
 
     .portal-card-head {
-      padding: 14px 18px;
-      background: var(--bg-soft);
+      padding: 12px 16px;
+      background: var(--bg-subtle);
       border-bottom: 1px solid var(--border);
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .portal-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .portal-status-line {
-      margin-top: 4px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      display: flex;
-      flex-wrap: wrap;
       gap: 10px;
-    }
-
-    .status-open { color: var(--kaveri-dark); }
-    .status-otp { color: var(--turmeric); }
-
-    .field-list {
-      display: flex;
-      flex-direction: column;
+      flex-wrap: wrap;
     }
 
     .field-row {
       display: grid;
-      grid-template-columns: 175px 1fr auto;
-      gap: 12px;
+      grid-template-columns: 165px 1fr auto;
+      gap: 10px;
       align-items: center;
-      padding: 12px 18px;
+      padding: 10px 16px;
       border-bottom: 1px solid var(--border);
+      background: var(--bg-surface);
     }
-
     .field-row:last-child { border-bottom: 0; }
 
-    .field-name {
-      font-size: 0.86rem;
-      font-weight: 700;
-      color: var(--ink-2);
-    }
-
-    .field-value {
-      font-size: 0.93rem;
-      color: var(--ink);
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
-
-    .char-note {
-      display: block;
-      margin-top: 3px;
-      font-family: var(--font-mono);
-      font-size: 0.78rem;
-      color: var(--kaveri-dark);
-      font-weight: 600;
-    }
+    .field-name { font-size: 0.84rem; font-weight: 700; color: var(--ink-2); }
+    .field-value { font-size: 0.9rem; color: var(--ink); word-break: break-word; }
+    .char-note { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: 0.76rem; color: var(--teal-dark); }
 
     .btn-copy {
       appearance: none;
@@ -765,50 +751,117 @@
       background: var(--bg-page);
       color: var(--ink);
       font-family: var(--font-sans);
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 700;
-      padding: 7px 14px;
-      min-height: 38px;
-      min-width: 84px;
+      padding: 6px 12px;
+      min-height: 36px;
+      min-width: 78px;
       border-radius: 6px;
       cursor: pointer;
     }
-
-    .btn-copy:hover {
-      background: var(--ink);
-      color: #FFFFFF;
-      border-color: var(--ink);
-    }
-
-    .btn-copy[data-copied="true"] {
-      background: var(--kaveri);
-      border-color: var(--kaveri);
-      color: #FFFFFF;
-    }
-
-    .tech-details {
-      padding: 10px 18px;
-      background: var(--bg-page);
-      border-top: 1px solid var(--border);
-      font-size: 0.82rem;
-      color: var(--ink-3);
-    }
-
-    .tech-details summary {
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--ink-2);
-    }
+    .btn-copy[data-copied="true"] { background: var(--teal); border-color: var(--teal); color: #FFFFFF; }
 
     @media (max-width: 680px) {
-      .field-row {
-        grid-template-columns: 1fr;
-        gap: 6px;
-      }
-      .btn-copy {
-        width: 100%;
-        min-height: 44px;
-      }
+      .field-row { grid-template-columns: 1fr; gap: 6px; }
+      .btn-copy { width: 100%; min-height: 42px; }
+    }
+
+    /* ==========================================================================
+       5. FULL WORKBENCH VIEW (PRESERVES CURRENT FLOW UNDISTURBED)
+       ========================================================================== */
+    .workbench-shell {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .workbench-grid {
+      display: grid;
+      grid-template-columns: minmax(330px, 4.8fr) minmax(400px, 7.2fr);
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .workbench-grid { grid-template-columns: 1fr; }
+    }
+
+    .wb-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Multi-turn Voice Conversation Thread */
+    .agent-thread {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 700px;
+      text-align: left;
+    }
+
+    .thread-msg {
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      max-width: 92%;
+    }
+
+    .thread-msg[data-role="user"] {
+      align-self: flex-end;
+      background: var(--ink);
+      color: #FFFFFF;
+    }
+
+    .thread-msg[data-role="agent"] {
+      align-self: flex-start;
+      background: var(--bg-subtle);
+      color: var(--ink);
+      border: 1px solid var(--border);
+    }
+
+    .thread-msg[data-needs-input="true"] {
+      background: var(--bg-warm);
+      border-color: var(--amber);
+    }
+
+    /* Per-Field Wispr Flow Form View */
+    .wb-field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .wb-field-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--ink-2);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .wb-wispr-input {
+      width: 100%;
+      padding: 10px 12px;
+      font-family: var(--font-sans);
+      font-size: 0.94rem;
+      color: var(--ink);
+      background: var(--bg-page);
+      border: 1.5px solid var(--border-strong);
+      border-radius: 8px;
+    }
+
+    .wb-wispr-input:focus {
+      background: var(--bg-surface);
+      border-color: var(--accent);
+      outline: none;
     }
 
     .toast {
@@ -818,9 +871,9 @@
       z-index: 80;
       background: var(--ink);
       color: #FFFFFF;
-      padding: 11px 16px;
-      border-radius: 8px;
-      font-size: 0.88rem;
+      padding: 10px 16px;
+      border-radius: 9px;
+      font-size: 0.86rem;
       font-weight: 600;
       display: none;
       align-items: center;
@@ -830,276 +883,322 @@
   </style>
 </head>
 <body>
-  <a href="#mainWorkspace" class="skip-link">Skip to complaint workspace</a>
+  <a href="#mainStage" class="skip-link">Skip to voice civic agent</a>
 
   <div id="toast" class="toast" role="status" aria-live="polite">
     <svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
     <span id="toastText">Copied</span>
   </div>
 
-  <div class="top-accent-line" aria-hidden="true"></div>
-
-  <!-- 1. CLEAN LIGHT HEADER & EASY NAVIGATION -->
+  <!-- CALM LIGHT HEADER -->
   <header class="app-header">
     <div class="header-inner">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">குரல்</div>
         <div>
           <h1>NammaKural <span style="font-weight:500;color:var(--ink-3)">· நம்ம குரல்</span></h1>
-          <p id="headerSub">Speak your street problem in Tanglish — get exact Ward &amp; 1-tap filing</p>
+          <p class="brand-tag" id="headerSub">Wispr Flow Voice Agent for Tamil Nadu Civic Portals</p>
         </div>
       </div>
 
-      <div class="nav-right">
-        <div class="segmented-group" role="group" aria-label="Task Mode">
-          <button type="button" class="seg-btn" id="modeNewBtn" aria-pressed="true">New Complaint</button>
-          <button type="button" class="seg-btn" id="modeEscalateBtn" aria-pressed="false">Reopen Closed (1100)</button>
+      <div class="nav-controls">
+        <div class="segmented" role="group" aria-label="View Mode">
+          <button type="button" class="seg-btn" id="viewAgentBtn" aria-pressed="true">Voice Agent</button>
+          <button type="button" class="seg-btn" id="viewWorkbenchBtn" aria-pressed="false">Full Form View</button>
         </div>
 
-        <div class="segmented-group" role="group" aria-label="Interface Language">
+        <div class="segmented" role="group" aria-label="Language">
           <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">English</button>
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
         </div>
 
-        <button type="button" class="btn-quiet" id="a11yBtn" aria-pressed="false">A+ Large Text</button>
+        <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+ Text</button>
+        <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G Lite</button>
       </div>
     </div>
   </header>
 
-  <main class="container" id="mainWorkspace">
-    <!-- 2. VISUAL SERVICE PICKER STRIP (REAL SERVICE PHOTOS) -->
-    <div class="service-strip-label">
-      <span id="stripLabel">Choose a civic issue (or speak your own below):</span>
-      <span class="num" style="font-size:0.8rem;color:var(--kaveri-dark)">6 Tamil Nadu Portals · Offline-Ready</span>
-    </div>
-    <div class="service-rail" id="serviceRail" role="list"></div>
+  <main id="mainStage">
+    <!-- ======================================================================
+         VIEW 1: AZURE-FOUNDRY-INSPIRED LIGHT VOICE AGENT PREVIEW (DEFAULT)
+         ====================================================================== -->
+    <section class="agent-shell" aria-label="Voice Civic Agent">
+      <div class="orb-stage" id="orbStage" data-agent-state="ready">
+        <span class="agent-state-pill">
+          <span class="pulse-dot"></span>
+          <span id="agentStateLabel">Agent Ready · Wispr Flow Tanglish / தமிழ்</span>
+        </span>
 
-    <!-- 3. TWO-COLUMN GUIDED FLOW -->
-    <div class="workspace-grid">
+        <!-- Animated Neural Voice Bubble / Wave Canvas -->
+        <div class="orb-canvas-wrap" id="orbTrigger" title="Click to speak or run reasoning">
+          <canvas id="neuralOrbCanvas" class="orb-canvas" width="304" height="304" aria-hidden="true"></canvas>
+          <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle" aria-label="Dictate with Wispr Flow or microphone">
+            <svg class="icon" style="width:26px;height:26px" viewBox="0 0 24 24">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          </button>
+        </div>
 
-      <!-- LEFT: STEP 1 (SPEAK) + STEP 2 (PHOTO MARKING) -->
-      <div style="display:flex;flex-direction:column;gap:18px;">
+        <div>
+          <h2 class="agent-headline" id="agentHeadline">Tell NammaKural what needs fixing on your street</h2>
+          <p class="agent-subline" id="agentSubline">Press your Wispr Flow hotkey and speak naturally in Tanglish or Tamil. The agent resolves your Ward, splits agencies, and prepares 1-tap filing.</p>
+        </div>
 
-        <!-- Step 1: Speak & Confirm Landmark -->
-        <section class="surface-panel" aria-labelledby="step1Title">
-          <div class="step-header">
-            <h2 class="step-title" id="step1Title">
-              <span class="step-num">1</span>
-              <span id="step1Heading">Speak or type your complaint</span>
-            </h2>
-            <span style="font-size:0.82rem;color:var(--ink-3)">Wispr Flow · Tanglish / தமிழ்</span>
-          </div>
+        <!-- Multi-Turn Conversation Thread (Talk through until complete) -->
+        <div class="agent-thread" id="agentThread" aria-live="polite"></div>
 
-          <textarea id="voiceInput" class="voice-box" aria-label="Complaint voice input"></textarea>
-
-          <div class="btn-row">
-            <button type="button" class="btn-voice" id="micBtn" data-listening="false">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-              <span id="micLabel">Dictate with Wispr Flow</span>
-            </button>
-            <button type="button" class="btn-outline" id="resolveBtn">
-              <span id="resolveLabel">Find Ward &amp; Portals</span>
-            </button>
-          </div>
-
-          <div class="landmark-section">
-            <span class="landmark-label" id="landmarkLabel">Confirm nearby landmark:</span>
-            <div class="landmark-pills" id="landmarkPills"></div>
-            <div class="append-row">
-              <input type="text" id="detailInput" class="append-input" placeholder="Add pole #, door #, or days (e.g. Pole 42)">
-              <button type="button" class="btn-outline" id="appendBtn">+ Add</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Step 2: Real Service-Specific Photo + Tap-to-Mark -->
-        <section class="surface-panel" aria-labelledby="step2Title">
-          <div class="step-header">
-            <h2 class="step-title" id="step2Title">
-              <span class="step-num">2</span>
-              <span id="step2Heading">Mark the issue on photo</span>
-            </h2>
-            <span class="num" style="font-size:0.8rem;color:var(--kaveri-dark);font-weight:600">&lt;1 MB Portal Ready</span>
-          </div>
-
-          <p id="photoHelp" style="font-size:0.86rem;color:var(--ink-3)">Tap anywhere on the photo to mark the exact problem spot. Your Ward &amp; Street ID are stamped automatically.</p>
-
-          <div class="photo-stage" id="photoStage" title="Tap on the problem area to move the marker">
-            <img id="servicePhoto" src="assets/streetlight_eb.jpg" alt="Street civic issue preview">
-            <div class="hazard-ring" id="hazardRing" style="left:56%;top:42%;"></div>
-            <div class="photo-stamp-bar">
-              <span id="photoStampText">Ward 103 · Vth Avenue (Road ID 76370)</span>
-              <span class="photo-stamp-ok">VERIFIED &lt;1 MB</span>
-            </div>
-          </div>
-
-          <div class="btn-row">
-            <label class="btn-outline" style="cursor:pointer">
-              <span id="uploadLabel">Upload Your Street Photo</span>
-              <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none">
-            </label>
-            <button type="button" class="btn-outline" id="savePhotoBtn">
-              <span id="savePhotoLabel">Save Marked Photo</span>
-            </button>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- RIGHT: STEP 3 (CONFIRMED LOCATION + 1-TAP WHATSAPP + CLEAN FORM FIELDS) -->
-      <div class="right-stack">
-
-        <!-- Light Confirmed Location Strip -->
-        <section class="location-banner" aria-labelledby="locTitle">
-          <div class="location-top">
-            <span class="location-badge" id="locTitle">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span id="locHeadingText">Verified Ward &amp; Street Details</span>
+        <!-- Clean Wispr Flow Dictation Bar -->
+        <div class="wispr-input-bar">
+          <textarea id="voiceInput" class="wispr-textarea" rows="2" placeholder="Press Wispr Flow hotkey & speak in Tanglish/Tamil (e.g. 'Streetlight 5 naala eriyala' or 'Anna Nagar Tower Park...')" aria-label="Spoken complaint input"></textarea>
+          <div class="wispr-bar-footer">
+            <span class="wispr-hint" id="wisprHint">
+              <svg class="icon" style="width:15px;height:15px;color:var(--teal)" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span>Wispr Flow active · Talk turn-by-turn or clear to start fresh</span>
             </span>
-            <span class="num" style="font-size:0.78rem;color:var(--kaveri-dark)">ArcGIS Street ID Verified</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button type="button" class="btn-outline" id="newChatBtn" style="min-height:38px;padding:6px 12px;">New Chat</button>
+              <button type="button" class="btn-agent-send" id="runAgentBtn">
+                <span id="runAgentLabel">Send / Reply</span>
+                <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><line x1="5" x2="19" y1="12" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="location-grid" id="locationGrid"></div>
-        </section>
+        </div>
 
-        <!-- Step 3A: 1-Tap Easy Send (No Login / For All Citizens) -->
-        <section class="easy-send-box" aria-labelledby="step3Title">
-          <div class="step-header">
-            <h2 class="step-title" id="step3Title">
-              <span class="step-num">3</span>
-              <span id="step3Heading">Send in 1 tap (No web login needed)</span>
-            </h2>
-            <button type="button" class="btn-outline" id="speakTamilBtn">
-              <svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-              <span id="speakBtnText">Listen in Tamil</span>
-            </button>
-          </div>
-
-          <div class="tamil-cue" id="tamilCue"></div>
-          <div class="easy-actions" id="easyActions"></div>
-        </section>
-
-        <!-- Step 3B: Portal-Ready Fields (If Filing on Government Website) -->
-        <div id="portalCardsWrap" style="display:flex;flex-direction:column;gap:14px;"></div>
-
+        <!-- 5 Quick Service Scenarios with Real Photos -->
+        <div class="quick-prompts-row" id="quickPromptsRow" role="list"></div>
       </div>
-    </div>
+
+      <!-- Streaming Reasoning Steps -->
+      <section class="reasoning-card" aria-labelledby="reasoningTitle">
+        <div class="reasoning-head">
+          <span id="reasoningTitle">Agent Reasoning Trace</span>
+          <span class="num" id="reasoningTime" style="color:var(--teal-dark)">4 steps · &lt;1s</span>
+        </div>
+        <div class="reasoning-steps" id="reasoningSteps"></div>
+      </section>
+
+      <!-- Calm Outcome Card -->
+      <section class="agent-outcome" aria-labelledby="outcomeHeading">
+        <div class="outcome-top">
+          <div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:4px;" id="outcomeJurisdictionTag">
+              Chennai · Zone 08 (Anna Nagar) · Ward 103 · Vth Avenue (Road ID 76370)
+            </div>
+            <p class="outcome-reply" id="outcomeReply"></p>
+          </div>
+          <button type="button" class="btn-outline" id="speakTamilBtn">
+            <svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            <span id="speakBtnText">Listen in Tamil</span>
+          </button>
+        </div>
+
+        <!-- Quick Landmark Confirm / Detail Append -->
+        <div class="landmark-bar" id="landmarkBar"></div>
+
+        <!-- Real Service Photo (Tap-to-Mark) + 1-Tap Official Actions -->
+        <div class="outcome-media-split">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="photo-stage" id="photoStage" title="Tap anywhere on photo to mark the hazard">
+              <img id="servicePhoto" src="assets/streetlight_eb.jpg" alt="Civic issue photo">
+              <div class="hazard-ring" id="hazardRing" style="left:48%;top:22%;"></div>
+              <div class="photo-stamp-bar">
+                <span id="photoStampText">Ward 103 · Vth Avenue</span>
+                <span style="color:#86EFAC;font-family:var(--font-mono);">&lt;1 MB</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <label class="btn-outline" style="cursor:pointer;flex:1;">
+                <span id="uploadLabel">Upload Photo</span>
+                <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none">
+              </label>
+              <button type="button" class="btn-outline" id="savePhotoBtn" style="flex:1;">
+                <span id="savePhotoLabel">Save Stamped Photo</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="send-stack" id="agentActionsStack"></div>
+        </div>
+
+        <!-- Progressive Disclosure: Official Portal Copy Fields (Hidden until expanded!) -->
+        <details class="portal-drawer" id="portalDrawer">
+          <summary>
+            <span id="drawerTitle">Need to paste into the government web portal? Show Exact Form Fields</span>
+            <span class="num" style="font-size:0.8rem;color:var(--accent);" id="drawerCount">2 Portals</span>
+          </summary>
+          <div id="portalCardsAgent"></div>
+        </details>
+      </section>
+    </section>
+
+    <!-- ======================================================================
+         VIEW 2: FULL WORKBENCH VIEW (PRESERVED CURRENT FLOW UNDISTURBED)
+         ====================================================================== -->
+    <section class="workbench-shell" aria-label="Full Form Workbench View">
+      <div class="workbench-grid">
+        <div class="wb-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h2 style="font-size:1.05rem;">1. Dictate Any Field with Wispr Flow</h2>
+            <span style="font-size:0.78rem;color:var(--teal-dark);font-weight:600;">Click a field &rarr; press Wispr hotkey</span>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="wbServiceButtons"></div>
+
+          <div class="wb-field-group">
+            <label class="wb-field-label" for="wbPlaceInput">
+              <span>Where is the problem? (Area / Landmark)</span>
+              <span style="font-weight:500;color:var(--ink-3);">Dictate landmark</span>
+            </label>
+            <input type="text" id="wbPlaceInput" class="wb-wispr-input" placeholder="e.g. Anna Nagar Tower Park back side, 5th Avenue">
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="wbLandmarkPills"></div>
+
+          <div class="wb-field-group">
+            <label class="wb-field-label" for="wbVoiceInput">
+              <span>What happened? (Speak in Tanglish / Tamil / English)</span>
+              <span style="font-weight:500;color:var(--ink-3);">Auto-splits agencies</span>
+            </label>
+            <textarea id="wbVoiceInput" class="wb-wispr-input" rows="3" placeholder="e.g. Streetlight 5 naala eriyala, transformer wire loose-aa irukku"></textarea>
+          </div>
+
+          <div class="wb-field-group">
+            <label class="wb-field-label" for="wbDetailInput">
+              <span>Door #, Pole #, or Days Pending (Optional)</span>
+              <span style="font-weight:500;color:var(--ink-3);">Updates drafts live</span>
+            </label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="wbDetailInput" class="wb-wispr-input" placeholder="e.g. Pole 42, Door 18, 5 days">
+              <button type="button" class="btn-outline" id="wbAppendBtn">Apply</button>
+            </div>
+          </div>
+        </div>
+        <div class="wb-panel">
+          <h2 style="font-size:1.05rem;">2. Ready to Send (WhatsApp / Official Portal Fields)</h2>
+          <div id="wbActionsRow" style="display:flex;gap:10px;flex-wrap:wrap;"></div>
+          <div id="wbPortalCards"></div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
-    const UI_COPY = {
+    const COPY = {
       en: {
-        headerSub: "Speak your street problem in Tanglish — get exact Ward & 1-tap filing",
-        modeNew: "New Complaint",
-        modeEscalate: "Reopen Closed (1100)",
-        a11y: "A+ Large Text",
-        stripLabel: "Choose a civic issue (or speak your own below):",
-        step1Heading: "Speak or type your complaint",
-        micLabel: "Dictate with Wispr Flow",
-        resolveLabel: "Find Ward & Portals",
-        landmarkLabel: "Confirm nearby landmark:",
-        detailPlaceholder: "Add pole #, door #, or days (e.g. Pole 42)",
-        appendBtn: "+ Add",
-        step2Heading: "Mark the issue on photo",
-        photoHelp: "Tap anywhere on the photo to mark the exact problem spot. Your Ward & Street ID are stamped automatically.",
-        uploadLabel: "Upload Your Street Photo",
-        savePhotoLabel: "Save Marked Photo",
-        locHeadingText: "Verified Ward & Street Details",
-        step3Heading: "Send in 1 tap (No web login needed)",
-        speakBtnText: "Listen in Tamil",
-        copyBtn: "Copy",
-        copiedBtn: "Copied!",
+        headerSub: "Wispr Flow Voice Agent for Tamil Nadu Civic Portals",
+        viewAgent: "Voice Agent",
+        viewWorkbench: "Full Form View",
+        a11y: "A+ Text",
+        lite: "2G Lite",
+        agentReady: "Agent Ready · Wispr Flow Tanglish / தமிழ்",
+        agentThinking: "Reasoning across Tamil Nadu civic agencies...",
+        headline: "Tell NammaKural what needs fixing on your street",
+        subline: "Press your Wispr Flow hotkey and speak naturally in Tanglish or Tamil. The agent resolves your Ward, splits agencies, and prepares 1-tap filing.",
+        runAgent: "Reason & Route",
+        speakBtn: "Listen in Tamil",
+        upload: "Upload Photo",
+        savePhoto: "Save Stamped Photo",
+        drawer: "Need to paste into the government web portal? Show Exact Form Fields",
+        copy: "Copy",
+        copied: "Copied!",
         copyAll: "Copy All",
         openSite: "Open Portal"
       },
       ta: {
-        headerSub: "தமிழ் / Tanglish-ல் பேசுங்கள் — வார்டு எண் & நேரடிப் புகார் உடனே தயார்",
-        modeNew: "புதிய புகார்",
-        modeEscalate: "தீர்க்காத புகார் (1100)",
-        a11y: "A+ பெரிய எழுத்து",
-        stripLabel: "பிரச்சனை வகையைத் தேர்ந்தெடுக்கவும் (அல்லது கீழே பேசவும்):",
-        step1Heading: "உங்கள் புகாரைப் பேசுங்கள் அல்லது தட்டச்சு செய்க",
-        micLabel: "Wispr Flow குரல் பதிவு",
-        resolveLabel: "வார்டு & துறை காண்க",
-        landmarkLabel: "அருகிலுள்ள அடையாள இடத்தை உறுதி செய்க:",
-        detailPlaceholder: "கம்பம் எண் / கதவு எண் சேர்க்க (எ.கா. Pole 42)",
-        appendBtn: "+ சேர்",
-        step2Heading: "புகைப்படத்தில் இடத்தைக் குறிக்கவும்",
-        photoHelp: "பழுதான இடத்தின் மீது தட்டவும். வார்டு & சாலை எண் தானாகப் பதியப்படும்.",
-        uploadLabel: "உங்கள் புகைப்படம் இணைக்க",
-        savePhotoLabel: "படத்தைச் சேமிக்க",
-        locHeadingText: "உறுதிசெய்யப்பட்ட வார்டு & சாலை விவரம்",
-        step3Heading: "ஒரே தட்டில் அனுப்புக (உள்நுழைவு தேவையில்லை)",
-        speakBtnText: "தமிழில் கேட்க",
-        copyBtn: "நகலெடு",
-        copiedBtn: "நகலெடுக்கப்பட்டது!",
+        headerSub: "தமிழ்நாடு மக்கள் குறைதீர் குரல் முகவர் (Wispr Flow)",
+        viewAgent: "குரல் முகவர்",
+        viewWorkbench: "முழு படிவம்",
+        a11y: "A+ எழுத்து",
+        lite: "2G எளியது",
+        agentReady: "குரல் முகவர் தயார் · தமிழ் / Tanglish",
+        agentThinking: "வார்டு & அரசுத் துறைகளைக் கண்டறிகிறது...",
+        headline: "உங்கள் தெருவில் உள்ள பிரச்சனையைச் சொல்லுங்கள்",
+        subline: "Wispr Flow மூலம் தமிழிலோ Tanglish-லோ பேசுங்கள். வார்டு எண், துறை பிரிப்பு மற்றும் வாட்ஸ்அப் மனு உடனே தயாராகும்.",
+        runAgent: "கண்டறி & அனுப்பு",
+        speakBtn: "தமிழில் கேட்க",
+        upload: "புகைப்படம் இணைக்க",
+        savePhoto: "படத்தைச் சேமி",
+        drawer: "அரசு இணையதளத்தில் ஒட்ட வேண்டுமா? படிவப் புலங்களைக் காட்டு",
+        copy: "நகலெடு",
+        copied: "நகலெடுக்கப்பட்டது!",
         copyAll: "முழுவதும் நகலெடு",
-        openSite: "இணையதளம் திற"
+        openSite: "இணையதளம்"
       }
     };
 
     const SERVICES = [
       {
         id: "streetlight_eb",
-        mode: "new",
-        titleEn: "Streetlight & EB Wire",
-        titleTa: "தெருவிளக்கு & மின் கம்பி",
-        sub: "GCC 1913 + TANGEDCO",
+        titleEn: "Streetlight & EB",
+        titleTa: "தெருவிளக்கு & EB",
         photo: "assets/streetlight_eb.jpg",
         ringX: 48, ringY: 22,
         utterance: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa spark aaguthu.",
+        agentReplyEn: "I spotted 2 separate issues near Anna Nagar Tower Park (Ward 103): a dead streetlight (GCC) and a sparking transformer wire (TANGEDCO). Send both in 1 tap below.",
+        agentReplyTa: "அண்ணா நகர் டவர் பார்க் பின்புறம் (வார்டு 103) 2 பிரச்சனைகள் கண்டறியப்பட்டன: தெருவிளக்கு பழுது (GCC) மற்றும் டிரான்ஸ்பார்மர் கம்பி தளர்வு (TANGEDCO).",
         tamilCue: "அண்ணா நகர் டவர் பார்க் பின்புறம் 5-வது அவென்யூ (மண்டலம் 08, வார்டு 103): தெருவிளக்கு எரியவில்லை (GCC 1913) மற்றும் டிரான்ஸ்பார்மர் கம்பி தளர்வு (TANGEDCO 1912).",
+        steps: [
+          "1. Heard Tanglish -> Extracted 2 issues: 'streetlight not burning (5 days)' + 'loose sparking transformer wire'.",
+          "2. GIS Landmark Match -> Anna Nagar Tower Park back side = Zone 08 · Ward 103 · Vth Avenue (Road ID 76370).",
+          "3. Agency Split -> GCC PGRS (Open Web + WhatsApp 94450 61913) & TANGEDCO Minnagam (Web OTP -> use WhatsApp 94987 94987).",
+          "4. Ready -> Stamped <1 MB photo and prepared bilingual EN + தமிழ் payloads."
+        ],
         landmarks: [
-          { name: "Tower Park Back Side · Vth Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 103", depot: "Depot 103", street: "Vth Avenue", roadId: "76370", lat: "13.0850", lng: "80.2101" },
-          { name: "Anna Arch · IIIrd Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 102", depot: "Depot 102", street: "IIIrd Avenue", roadId: "76312", lat: "13.0745", lng: "80.2134" },
-          { name: "Chinthamani · IInd Avenue", district: "Chennai", zone: "Zone 08 (Anna Nagar)", ward: "Ward 103", depot: "Depot 103", street: "IInd Avenue", roadId: "76366", lat: "13.0838", lng: "80.2165" }
+          { name: "Tower Park Back Side · Vth Ave", district: "Chennai", zone: "Zone 08", ward: "Ward 103", street: "Vth Avenue", roadId: "76370" },
+          { name: "Anna Arch · IIIrd Ave", district: "Chennai", zone: "Zone 08", ward: "Ward 102", street: "IIIrd Avenue", roadId: "76312" }
         ],
         portals: [
           {
-            name: "GCC PGRS — Chennai Streetlight (1913)",
+            name: "GCC PGRS — Streetlight (1913)",
             url: "https://gccservices.in/pgr/registercomplaints",
             helpline: "1913",
             whatsapp: "919445061913",
             whatsappLabel: "WhatsApp GCC (+91 94450 61913)",
-            openNote: "Web form OPEN without login · Anonymous OK (Select Share Mobile = No)",
-            isOpen: true,
-            techNote: "Bypassed GCC Step-2 1000ms GIS timeout using pre-resolved Road ID 76370. Photo kept under 1 MB.",
+            access: "Web OPEN without login · Anonymous OK",
             fields: [
-              { label: "Location Search", dom: "#pac-input", val: "Vth Avenue, Anna Nagar Tower Park, Chennai" },
-              { label: "Official Street", dom: "#streetName / #streetId", val: "Vth Avenue (Road ID: 76370)" },
-              { label: "Category → Sub-Type", dom: "#specificComplaintType (10 -> 146)", val: "Street Light → Non burning of Street lights" },
-              { label: "Complaint Text (EN + TA)", dom: "#specificComplaintDetails", val: "Streetlight on Vth Avenue near Anna Nagar Tower Park (Zone 08, Ward 103) has not been burning for 5 days. / அண்ணா நகர் டவர் பார்க் 5-வது அவென்யூவில் 5 நாட்களாக தெருவிளக்கு எரியவில்லை." }
+              { label: "Location Search", val: "Vth Avenue, Anna Nagar Tower Park, Chennai" },
+              { label: "GIS Street", val: "Vth Avenue (Road ID: 76370)" },
+              { label: "Category -> Sub-Type", val: "Street Light (10) -> Non burning of Street lights (146)" },
+              { label: "Complaint (EN + TA)", val: "Streetlight on Vth Avenue near Anna Nagar Tower Park (Zone 08, Ward 103) has not been burning for 5 days. / அண்ணா நகர் 5-வது அவென்யூவில் 5 நாட்களாக தெருவிளக்கு எரியவில்லை." }
             ]
           },
           {
-            name: "TANGEDCO — Minnagam Loose Wire (1912)",
+            name: "TANGEDCO — Minnagam Wire (1912)",
             url: "https://ccms.tangedco.org/tangedco-public/",
             helpline: "9498794987",
             whatsapp: "919498794987",
             whatsappLabel: "WhatsApp Minnagam (94987 94987)",
-            openNote: "Web portal requires Mobile OTP + Captcha · Use 1-Tap WhatsApp or 94987 94987 instead",
-            isOpen: false,
-            techNote: "ccms.tangedco.org/tangedco-public/ gates form behind /login.xhtml PrimeFaces Captcha + OTP.",
+            access: "Web requires OTP + Captcha -> WhatsApp recommended",
             fields: [
-              { label: "Fault Type", dom: "Service / General Fault", val: "Loose Overhead Transformer Wire / Spark Hazard" },
-              { label: "Location", dom: "Section / Landmark", val: "Anna Nagar West · Vth Avenue, Ward 103" },
-              { label: "Complaint Text (EN + TA)", dom: "Problem Description", val: "URGENT: Loose transformer wire sparking near Anna Nagar Tower Park on Vth Avenue (Ward 103). / அண்ணா நகர் 5-வது அவென்யூ டிரான்ஸ்பார்மர் கம்பி தளர்ந்து தீப்பொறி வருகிறது." }
+              { label: "Fault Type", val: "Loose Overhead Transformer Wire / Spark Hazard" },
+              { label: "Location", val: "Anna Nagar West · Vth Avenue, Ward 103" },
+              { label: "Complaint (EN + TA)", val: "URGENT: Loose transformer wire sparking near Anna Nagar Tower Park on Vth Avenue (Ward 103). / டிரான்ஸ்பார்மர் கம்பி தளர்ந்து தீப்பொறி வருகிறது." }
             ]
           }
         ]
       },
       {
         id: "sewage_pothole",
-        mode: "new",
         titleEn: "Sewage & Pothole",
-        titleTa: "சாக்கடை & சாலை பள்ளம்",
-        sub: "CMWSSB 1916 + GCC",
+        titleTa: "சாக்கடை & பள்ளம்",
         photo: "assets/sewage_pothole.jpg",
         ringX: 40, ringY: 60,
         utterance: "Velachery Vijayanagar bus stand kitta 4 naala saakkadai thanni road full-aa overflow aaguthu, periya pothole vera irukku, door number 18.",
+        agentReplyEn: "Velachery spans multiple wards—I matched Vijayanagar Bus Stand to Ward 178 / Depot 178 and split sewage (CMWSSB, trimmed to its 200-char limit) from the pothole (GCC).",
+        agentReplyTa: "வேளச்சேரி விஜயநகர் பேருந்து நிலையம் (வார்டு 178 / பணிமனை 178): கழிவுநீர் வழிந்தோடல் (CMWSSB 200-எழுத்து வரம்பு) மற்றும் சாலைப் பள்ளம் (GCC) எனப் பிரிக்கப்பட்டுள்ளது.",
         tamilCue: "வேளச்சேரி விஜயநகர் பேருந்து நிலையம் அருகில் (மண்டலம் 13, வார்டு 178): 4 நாட்களாக கழிவுநீர் வழிந்தோடல் (CMWSSB 1916) மற்றும் சாலை பள்ளம் (GCC 1913).",
+        steps: [
+          "1. Heard Tanglish -> Extracted 'sewage overflow (4 days)' + 'deep pothole' + 'Door No. 18'.",
+          "2. Disambiguated Velachery -> Vijayanagar Bus Stand = Zone 13 · Ward 178 · Depot 178 (Road ID 91420).",
+          "3. Enforced CMWSSB's strict 200-char remark cap & split pothole to GCC PGRS.",
+          "4. Ready -> WhatsApp CMWSSB (+91 81449 30308) & GCC (+91 94450 61913) links armed."
+        ],
         landmarks: [
-          { name: "Vijayanagar Bus Stand · Main Rd", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 178", depot: "Depot 178", street: "Velachery Main Road", roadId: "91420", lat: "12.9784", lng: "80.2209" },
-          { name: "Phoenix Marketcity · North Rd", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 175", depot: "Depot 175", street: "Velachery Main Rd (N)", roadId: "91104", lat: "12.9915", lng: "80.2167" }
+          { name: "Vijayanagar Bus Stand · Main Rd", district: "Chennai", zone: "Zone 13", ward: "Ward 178", street: "Velachery Main Rd", roadId: "91420" },
+          { name: "Phoenix Marketcity · North Rd", district: "Chennai", zone: "Zone 13", ward: "Ward 175", street: "Velachery Main Rd (N)", roadId: "91104" }
         ],
         portals: [
           {
@@ -1108,44 +1207,45 @@
             helpline: "1916",
             whatsapp: "918144930308",
             whatsappLabel: "WhatsApp Metro Water (+91 81449 30308)",
-            openNote: "Web form requires Mobile OTP · WhatsApp +91 81449 30308 goes straight to CMWSSB desk",
-            isOpen: false,
-            techNote: "CMWSSB Angular form enforces a strict 200-character cap on complRemarks.",
+            access: "Web requires OTP · WhatsApp +91 81449 30308 goes straight to #/whatsappNew",
             fields: [
-              { label: "Complaint Type", dom: "complaintType", val: "Public Complaint (No CMC Consumer No. needed)" },
-              { label: "Area & Depot", dom: "complAreaName / depoStationCode", val: "Area XIII (Adyar) · Depot 178 · Door No. 18" },
-              { label: "Category", dom: "ccId / cscId", val: "Sewerage → Overflow on Road / Manhole Blockage (4 Days)" },
-              { label: "Short Remarks (200 cap)", dom: "complRemarks", val: "Sewage overflowing from manhole on Velachery Main Rd near Vijayanagar Bus Stand (Door 18, Ward 178) for 4 days. Urgent jetting clearance needed.", maxChars: 200 }
+              { label: "Complaint Type", val: "Public Complaint (No CMC No. needed)" },
+              { label: "Area & Depot", val: "Area XIII (Adyar) · Depot 178 · Door No. 18" },
+              { label: "Remarks (200 char max)", val: "Sewage overflowing from manhole on Velachery Main Rd near Vijayanagar Bus Stand (Door 18, Ward 178) for 4 days. Urgent jetting clearance needed.", maxChars: 200 }
             ]
           },
           {
-            name: "GCC PGRS — Road Pothole (1913)",
+            name: "GCC PGRS — Pothole (1913)",
             url: "https://gccservices.in/pgr/registercomplaints",
             helpline: "1913",
             whatsapp: "919445061913",
             whatsappLabel: "WhatsApp GCC (+91 94450 61913)",
-            openNote: "Web form OPEN without login · Anonymous OK",
-            isOpen: true,
-            techNote: "Category 18 (Road and Footpath) -> Sub-Type 112.",
+            access: "Web OPEN without login · Anonymous OK",
             fields: [
-              { label: "Category → Sub-Type", dom: "#specificComplaintType (18 -> 112)", val: "Road and Footpath → Pot hole fill up" },
-              { label: "Complaint Text (EN + TA)", dom: "#specificComplaintDetails", val: "Deep waterlogged pothole on Velachery Main Road near Vijayanagar Bus Stand (Ward 178) causing accidents. / வேளச்சேரி விஜயநகர் பேருந்து நிலையம் அருகில் சாலையில் பெரிய பள்ளம் உள்ளது." }
+              { label: "Category -> Sub-Type", val: "Road and Footpath (18) -> Pot hole fill up (112)" },
+              { label: "Complaint (EN + TA)", val: "Deep pothole near Vijayanagar Bus Stand on Velachery Main Road (Ward 178). / வேளச்சேரி விஜயநகர் அருகில் சாலையில் பெரிய பள்ளம் உள்ளது." }
             ]
           }
         ]
       },
       {
         id: "water_pipe",
-        mode: "new",
-        titleEn: "Drinking Water Leak",
-        titleTa: "குடிநீர் குழாய் உடைப்பு",
-        sub: "TWAD PUNAL 1916",
+        titleEn: "Water Pipe Leak",
+        titleTa: "குடிநீர் குழாய்",
         photo: "assets/water_pipe_leak.jpg",
         ringX: 50, ringY: 54,
         utterance: "Madurai Anna Bus Stand opp Kuruvikaran Salai-la kudineer pipe உடைஞ்சு 3 naala thanni waste-aa poguthu, veetuku thanni varala.",
-        tamilCue: "மதுரை அண்ணா பேருந்து நிலையம் எதிரில் குருவிக்காரன் சாலை (வார்டு 44): குடிநீர் குழாய் உடைப்பு மற்றும் தண்ணீர் விநியோகத் தடை (TWAD புனல் 1916).",
+        agentReplyEn: "Since this is outside Chennai in Madurai (Ward 44), I routed it to TWAD Board PUNAL (1916) and armed their official WhatsApp bot (94999 91916).",
+        agentReplyTa: "மதுரை அண்ணா பேருந்து நிலையம் (வார்டு 44) குடிநீர் குழாய் உடைப்பு TWAD புனல் (1916) மற்றும் வாட்ஸ்அப் பாட் (94999 91916) வழியாகத் தயாரிக்கப்பட்டது.",
+        tamilCue: "மதுரை அண்ணா பேருந்து நிலையம் எதிரில் குருவிக்காரன் சாலை (வார்டு 44): குடிநீர் குழாய் உடைப்பு (TWAD புனல் 1916).",
+        steps: [
+          "1. Heard Tanglish + Tamil -> Extracted 'drinking water pipe broken (3 days)' + 'no household supply'.",
+          "2. Outside Chennai Detected -> Switched from CMWSSB to TWAD Board PUNAL (Madurai Corp · Ward 44).",
+          "3. Checked Gate -> Web #/new-grievance blocks without OTP -> Armed PUNAL WhatsApp Bot 94999 91916.",
+          "4. Ready -> Stamped pipe leak photo and bilingual petition."
+        ],
         landmarks: [
-          { name: "Anna Bus Stand · Kuruvikaran Salai", district: "Madurai", zone: "Zone II (North)", ward: "Ward 44", depot: "TWAD Madurai", street: "Kuruvikaran Salai", roadId: "MDU_44_09", lat: "9.9252", lng: "78.1455" }
+          { name: "Anna Bus Stand · Kuruvikaran Salai", district: "Madurai", zone: "Zone II", ward: "Ward 44", street: "Kuruvikaran Salai", roadId: "MDU_44_09" }
         ],
         portals: [
           {
@@ -1154,75 +1254,81 @@
             helpline: "1916",
             whatsapp: "919499991916",
             whatsappLabel: "WhatsApp PUNAL Bot (94999 91916)",
-            openNote: "Web portal requires Mobile OTP · Use WhatsApp 94999 91916 or Call 1916",
-            isOpen: false,
-            techNote: "Direct URL #/new-grievance redirects to /auth/404 without OTP session.",
+            access: "Web requires OTP -> WhatsApp 94999 91916 or Call 1916",
             fields: [
-              { label: "Location Tree", dom: "district_id -> corporation_id -> zone_ward_id", val: "Madurai → Madurai Corporation → Zone II → Ward 44" },
-              { label: "Category", dom: "type_id / complaint_type_id", val: "Drinking Water Supply → Pipeline Leakage & No Supply" },
-              { label: "Complaint Text (EN + TA)", dom: "model.description", val: "Main drinking water pipe broken opposite Anna Bus Stand on Kuruvikaran Salai (Ward 44) for 3 days. / மதுரை அண்ணா பேருந்து நிலையம் எதிரில் 3 நாட்களாக குடிநீர் குழாய் உடைந்து தண்ணீர் வீணாகிறது." }
+              { label: "Location Tree", val: "Madurai -> Madurai Corporation -> Zone II -> Ward 44" },
+              { label: "Category", val: "Drinking Water Supply -> Pipeline Leakage & No Supply" },
+              { label: "Complaint (EN + TA)", val: "Drinking water pipe broken opposite Anna Bus Stand on Kuruvikaran Salai (Ward 44) for 3 days. / மதுரை அண்ணா பேருந்து நிலையம் எதிரில் குடிநீர் குழாய் உடைந்துள்ளது." }
             ]
           }
         ]
       },
       {
         id: "ration_tnpds",
-        mode: "new",
-        titleEn: "Ration Shop Issue",
-        titleTa: "ரேஷன் கடை புகார்",
-        sub: "TNPDS 1967",
+        titleEn: "Ration Shop",
+        titleTa: "ரேஷன் கடை",
         photo: "assets/ration_shop_tnpds.jpg",
         ringX: 50, ringY: 50,
         utterance: "Coimbatore Gandhipuram 100 Feet Road ration kadai-la biometric fingerprint vizhala-nu arisi paruppu thara maatranga.",
-        tamilCue: "கோவை காந்திபுரம் 100 அடி சாலை நியாய விலைக் கடை (வார்டு 67): கைரேகை விழவில்லை எனக் கூறி ரேஷன் பொருட்கள் வழங்க மறுப்பு (TNPDS 1967).",
+        agentReplyEn: "Routed to TNPDS (1967) for Coimbatore Gandhipuram (Ward 67). You can file via their open Feedback form without OTP or email support@tnpds.com directly.",
+        agentReplyTa: "கோவை காந்திபுரம் (வார்டு 67) ரேஷன் கடை புகார் TNPDS (1967) மூலம் தயார். OTP இன்றி /pages/feedback அல்லது support@tnpds.com வழியாக அனுப்பலாம்.",
+        tamilCue: "கோவை காந்திபுரம் 100 அடி சாலை ரேஷன் கடை (வார்டு 67): கைரேகை விழவில்லை என உணவுப் பொருள் வழங்க மறுப்பு (TNPDS 1967).",
+        steps: [
+          "1. Heard Kongu Tanglish -> Extracted 'Fair Price Shop biometric fingerprint refusal'.",
+          "2. Location Match -> Coimbatore North · Gandhipuram 100 Feet Road (Ward 67).",
+          "3. Checked Gate -> /auth/login needs Ration-Card OTP; /pages/feedback & support@tnpds.com are OPEN.",
+          "4. Ready -> Prepared 1000-char compliant TNPDS complaint."
+        ],
         landmarks: [
-          { name: "Gandhipuram 100 Ft Rd · FPS 02AC049N", district: "Coimbatore", zone: "Central Zone", ward: "Ward 67", depot: "Shop 02AC049N", street: "100 Feet Road", roadId: "CBE_67_11", lat: "11.0183", lng: "76.9661" }
+          { name: "Gandhipuram 100 Ft Rd · Ward 67", district: "Coimbatore", zone: "Central", ward: "Ward 67", street: "100 Feet Road", roadId: "CBE_67_11" }
         ],
         portals: [
           {
-            name: "TNPDS — Fair Price Shop (1967)",
+            name: "TNPDS — Civil Supplies (1967)",
             url: "https://www.tnpds.gov.in/pages/feedback",
             helpline: "1967",
             email: "support@tnpds.com",
             whatsappLabel: "Email TNPDS (support@tnpds.com)",
-            openNote: "Feedback form OPEN without OTP (/pages/feedback) · Formal complaint needs Ration-Card OTP",
-            isOpen: true,
-            techNote: "1000-character limit on feedbackSuggestions & problemDescription.",
+            access: "/pages/feedback OPEN without OTP · Formal complaint needs Ration-Card OTP",
             fields: [
-              { label: "District & Shop", dom: "District / Taluk", val: "Coimbatore North · Gandhipuram 100 Ft Rd (Ward 67)" },
-              { label: "Issue Category", dom: "classification (categoryid=3)", val: "Fair Price Shop → Denial of Ration on Biometric Failure" },
-              { label: "Complaint Text (1000 cap)", dom: "feedbackSuggestions", val: "Staff at Gandhipuram 100 Ft Rd Fair Price Shop (Ward 67) refused monthly rice/dhal due to biometric fingerprint mismatch without offering iris/override. / கோவை காந்திபுரம் ரேஷன் கடையில் கைரேகை விழவில்லை என உணவுப் பொருள் வழங்க மறுக்கின்றனர்.", maxChars: 1000 }
+              { label: "District & Shop", val: "Coimbatore North · Gandhipuram 100 Ft Rd (Ward 67)" },
+              { label: "Classification", val: "Fair Price Shop -> Denial on Biometric Failure" },
+              { label: "Complaint (1000 max)", val: "Staff at Gandhipuram 100 Ft Rd Fair Price Shop (Ward 67) refused monthly rice/dhal citing fingerprint mismatch without override. / கோவை காந்திபுரம் ரேஷன் கடையில் கைரேகை விழவில்லை என உணவுப் பொருள் மறுப்பு.", maxChars: 1000 }
             ]
           }
         ]
       },
       {
         id: "garbage_1100",
-        mode: "escalate",
-        titleEn: "Closed Without Fix",
-        titleTa: "தீர்க்காமல் மூடிய புகார்",
-        sub: "CM Helpline 1100",
+        titleEn: "Closed Ticket 1100",
+        titleTa: "மூடிய புகார் 1100",
         photo: "assets/garbage_overflow.jpg",
         ringX: 52, ringY: 56,
         utterance: "Complaint ID GCC-20491 Velachery garbage overflow-a fix pannamaye 'Resolved'-nu false-aa close pannitanga, kuppai innum apdiye road-la irukku.",
+        agentReplyEn: "Detected a premature closure on ticket #GCC-20491 (Ward 178). I drafted a formal CM Helpline (1100) reopen petition with today's stamped garbage photo.",
+        agentReplyTa: "புகார் எண் GCC-20491 (வார்டு 178) தீர்க்காமல் மூடப்பட்டுள்ளது. முதலமைச்சரின் முகவரி (1100) மேல்முறையீட்டு மனு & புகைப்பட ஆதாரம் தயார்.",
         tamilCue: "புகார் எண் GCC-20491 (வேளச்சேரி வார்டு 178): குப்பை அகற்றாமல் தவறாக மூடப்பட்டுள்ளது. முதலமைச்சரின் முகவரி (1100) மேல்முறையீடு தயார்.",
+        steps: [
+          "1. Heard Escalation -> Extracted Ticket #GCC-20491 + 'closed as Resolved without clearing garbage'.",
+          "2. Jurisdiction -> Chennai · Zone 13 · Ward 178 · Velachery Main Road (Road ID 91420).",
+          "3. Escalated to Mudhalvarin Mugavari (1100) -> Web requires Zoho OTP; direct email cmcell@tn.gov.in is OPEN.",
+          "4. Ready -> Attached stamped 'Still Broken Today' garbage bin photo."
+        ],
         landmarks: [
-          { name: "Velachery Bus Stand · Bin Corner", district: "Chennai", zone: "Zone 13 (Adyar)", ward: "Ward 178", depot: "Division 178", street: "Velachery Main Road", roadId: "91420", lat: "12.9784", lng: "80.2209" }
+          { name: "Velachery Bus Stand · Bin Corner", district: "Chennai", zone: "Zone 13", ward: "Ward 178", street: "Velachery Main Rd", roadId: "91420" }
         ],
         portals: [
           {
-            name: "Mudhalvarin Mugavari — CM Helpline (1100)",
+            name: "Mudhalvarin Mugavari — CM Cell (1100)",
             url: "https://cmhelpline.tnega.org/portal/en/signin",
             helpline: "1100",
             email: "cmcell@tn.gov.in",
             whatsappLabel: "Email CM Cell (cmcell@tn.gov.in)",
-            openNote: "Web portal requires OTP login · Direct Official Email (cmcell@tn.gov.in) & 1100 need NO login",
-            isOpen: false,
-            techNote: "Zoho Desk portal redirects /newticket to /signin; official homepage lists cmcell@tn.gov.in.",
+            access: "Web requires Zoho OTP -> Direct Email cmcell@tn.gov.in & Call 1100 need NO login",
             fields: [
-              { label: "Old Ticket ID", dom: "Reference Grievance ID", val: "#GCC-20491 · Zone 13 · Ward 178 · Road ID 91420" },
-              { label: "Subject", dom: "Ticket Subject", val: "PREMATURE CLOSURE APPEAL: Ticket #GCC-20491 marked Resolved without clearing garbage (Ward 178)" },
-              { label: "Petition Text (EN + TA)", dom: "Grievance Description", val: "Respected Special Officer (1100), Ticket #GCC-20491 for overflowing garbage on Velachery Main Rd (Ward 178) was falsely closed as Resolved. Today's stamped photo proves garbage remains uncollected. Please reopen. / புகார் எண் GCC-20491 குப்பை அகற்றப்படாமலேயே தவறாக மூடப்பட்டுள்ளது. உடனே நடவடிக்கை எடுக்கவும்." }
+              { label: "Ticket & Ward", val: "#GCC-20491 · Zone 13 · Ward 178 · Road ID 91420" },
+              { label: "Subject", val: "PREMATURE CLOSURE APPEAL: #GCC-20491 closed without clearing garbage (Ward 178)" },
+              { label: "Petition (EN + TA)", val: "Ticket #GCC-20491 on Velachery Main Rd (Ward 178) was falsely closed as Resolved without collecting overflowing garbage. Today's stamped photo proves the hazard remains. Please reopen. / புகார் #GCC-20491 குப்பை அகற்றப்படாமலேயே தவறாக மூடப்பட்டுள்ளது." }
             ]
           }
         ]
@@ -1233,22 +1339,23 @@
       serviceId: "streetlight_eb",
       landmarkIdx: 0,
       lang: "en",
+      view: "agent",
       appendedNote: "",
       ringX: 48,
       ringY: 22,
-      customPhotoUrl: null
+      customPhotoUrl: null,
+      lite: false,
+      orbMode: "ready",
+      turns: [],
+      conversationComplete: true,
+      needsSlot: null // null | "location" | "disambiguate" | "issue"
     };
 
     const voiceInput = document.getElementById("voiceInput");
-    const serviceRail = document.getElementById("serviceRail");
-    const landmarkPills = document.getElementById("landmarkPills");
-    const servicePhoto = document.getElementById("servicePhoto");
-    const hazardRing = document.getElementById("hazardRing");
-    const photoStampText = document.getElementById("photoStampText");
-    const locationGrid = document.getElementById("locationGrid");
-    const tamilCue = document.getElementById("tamilCue");
-    const easyActions = document.getElementById("easyActions");
-    const portalCardsWrap = document.getElementById("portalCardsWrap");
+    const wbVoiceInput = document.getElementById("wbVoiceInput");
+    const orbStage = document.getElementById("orbStage");
+    const orbCanvas = document.getElementById("neuralOrbCanvas");
+    const orbCtx = orbCanvas.getContext("2d");
 
     function getService() {
       return SERVICES.find(s => s.id === state.serviceId) || SERVICES[0];
@@ -1258,170 +1365,159 @@
       const el = document.getElementById("toast");
       document.getElementById("toastText").textContent = msg;
       el.setAttribute("data-visible", "true");
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2000);
+      clearTimeout(window.__tTimer);
+      window.__tTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2000);
     }
 
-    function applyLanguage() {
-      const t = UI_COPY[state.lang];
+    /* ==========================================================================
+       SUBTLE LIGHT NEURAL VOICE ORB ANIMATION (AZURE FOUNDRY STYLE)
+       ========================================================================== */
+    let orbPhase = 0;
+    function drawOrb() {
+      const w = orbCanvas.width;
+      const h = orbCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      orbCtx.clearRect(0, 0, w, h);
+
+      const speed = state.orbMode === "thinking" ? 0.09 : state.orbMode === "listening" ? 0.13 : 0.028;
+      const amp = state.orbMode === "thinking" ? 9 : state.orbMode === "listening" ? 13 : 4;
+      if (!state.lite) orbPhase += speed;
+
+      const rings = [
+        { r: 58, color: state.orbMode === "listening" ? "rgba(194, 59, 26, 0.20)" : "rgba(14, 165, 233, 0.18)", offset: 0 },
+        { r: 50, color: state.orbMode === "thinking" ? "rgba(194, 59, 26, 0.25)" : "rgba(11, 107, 92, 0.22)", offset: 2.1 }
+      ];
+
+      rings.forEach(ring => {
+        orbCtx.beginPath();
+        for (let a = 0; a <= Math.PI * 2 + 0.05; a += 0.1) {
+          const wave = Math.sin(a * 4 + orbPhase + ring.offset) * amp + Math.cos(a * 3 - orbPhase) * (amp * 0.5);
+          const rad = ring.r + wave;
+          const x = cx + Math.cos(a) * rad;
+          const y = cy + Math.sin(a) * rad;
+          if (a === 0) orbCtx.moveTo(x, y);
+          else orbCtx.lineTo(x, y);
+        }
+        orbCtx.closePath();
+        orbCtx.fillStyle = ring.color;
+        orbCtx.fill();
+      });
+
+      if (!state.lite) {
+        requestAnimationFrame(drawOrb);
+      }
+    }
+    drawOrb();
+
+    /* ==========================================================================
+       STREAMING AGENT REASONING TRACE
+       ========================================================================== */
+    function runReasoningSequence(svc, immediate = false) {
+      const stepsEl = document.getElementById("reasoningSteps");
+      const stateLabel = document.getElementById("agentStateLabel");
+      const t = COPY[state.lang];
+
+      stepsEl.innerHTML = svc.steps.map((txt, i) => `
+        <div class="reason-step" id="rStep_${i}" data-status="${immediate ? 'done' : 'pending'}">
+          <span class="step-badge">${immediate ? '✓' : (i + 1)}</span>
+          <span>${txt}</span>
+        </div>
+      `).join("");
+
+      if (immediate || state.lite) {
+        state.orbMode = "ready";
+        orbStage.setAttribute("data-agent-state", "ready");
+        stateLabel.textContent = t.agentReady;
+        return;
+      }
+
+      clearTimeout(window.__stepTimer);
+      state.orbMode = "thinking";
+      orbStage.setAttribute("data-agent-state", "thinking");
+      stateLabel.textContent = t.agentThinking;
+
+      let idx = 0;
+      function advance() {
+        if (idx > 0) {
+          const prev = document.getElementById(`rStep_${idx - 1}`);
+          if (prev) {
+            prev.setAttribute("data-status", "done");
+            prev.querySelector(".step-badge").textContent = "✓";
+          }
+        }
+        if (idx < svc.steps.length) {
+          const cur = document.getElementById(`rStep_${idx}`);
+          if (cur) cur.setAttribute("data-status", "active");
+          idx++;
+          window.__stepTimer = setTimeout(advance, 220);
+        } else {
+          state.orbMode = "ready";
+          orbStage.setAttribute("data-agent-state", "ready");
+          stateLabel.textContent = t.agentReady;
+        }
+      }
+      advance();
+    }
+
+    function applyCopy() {
+      const t = COPY[state.lang];
       document.getElementById("langEnBtn").setAttribute("aria-pressed", state.lang === "en" ? "true" : "false");
       document.getElementById("langTaBtn").setAttribute("aria-pressed", state.lang === "ta" ? "true" : "false");
-      document.getElementById("headerSub").textContent = t.headerSub;
-      document.getElementById("modeNewBtn").textContent = t.modeNew;
-      document.getElementById("modeEscalateBtn").textContent = t.modeEscalate;
+      document.getElementById("viewAgentBtn").textContent = t.viewAgent;
+      document.getElementById("viewWorkbenchBtn").textContent = t.viewWorkbench;
       document.getElementById("a11yBtn").textContent = t.a11y;
-      document.getElementById("stripLabel").textContent = t.stripLabel;
-      document.getElementById("step1Heading").textContent = t.step1Heading;
-      document.getElementById("micLabel").textContent = t.micLabel;
-      document.getElementById("resolveLabel").textContent = t.resolveLabel;
-      document.getElementById("landmarkLabel").textContent = t.landmarkLabel;
-      document.getElementById("detailInput").placeholder = t.detailPlaceholder;
-      document.getElementById("appendBtn").textContent = t.appendBtn;
-      document.getElementById("step2Heading").textContent = t.step2Heading;
-      document.getElementById("photoHelp").textContent = t.photoHelp;
-      document.getElementById("uploadLabel").textContent = t.uploadLabel;
-      document.getElementById("savePhotoLabel").textContent = t.savePhotoLabel;
-      document.getElementById("locHeadingText").textContent = t.locHeadingText;
-      document.getElementById("step3Heading").textContent = t.step3Heading;
-      document.getElementById("speakBtnText").textContent = t.speakBtnText;
+      document.getElementById("liteBtn").textContent = t.lite;
+      document.getElementById("headerSub").textContent = t.headerSub;
+      document.getElementById("agentHeadline").textContent = t.headline;
+      document.getElementById("agentSubline").textContent = t.subline;
+      document.getElementById("runAgentLabel").textContent = t.runAgent;
+      document.getElementById("speakBtnText").textContent = t.speakBtn;
+      document.getElementById("uploadLabel").textContent = t.upload;
+      document.getElementById("savePhotoLabel").textContent = t.savePhoto;
+      document.getElementById("drawerTitle").textContent = t.drawer;
+      if (state.orbMode === "ready") {
+        document.getElementById("agentStateLabel").textContent = t.agentReady;
+      }
     }
 
-    function selectService(id) {
+    function selectService(id, animateReasoning = true) {
       const svc = SERVICES.find(s => s.id === id) || SERVICES[0];
+      const lm = svc.landmarks[0];
       state.serviceId = svc.id;
       state.landmarkIdx = 0;
       state.appendedNote = "";
       state.customPhotoUrl = null;
       state.ringX = svc.ringX;
       state.ringY = svc.ringY;
-      voiceInput.value = svc.utterance;
-      document.getElementById("modeNewBtn").setAttribute("aria-pressed", svc.mode === "new" ? "true" : "false");
-      document.getElementById("modeEscalateBtn").setAttribute("aria-pressed", svc.mode === "escalate" ? "true" : "false");
-      renderAll();
-    }
-
-    function renderServiceStrip() {
-      serviceRail.innerHTML = "";
-      SERVICES.forEach(s => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "service-tile";
-        btn.setAttribute("aria-current", s.id === state.serviceId ? "true" : "false");
-        const title = state.lang === "ta" ? s.titleTa : s.titleEn;
-        btn.innerHTML = `
-          <img class="service-thumb" src="${s.photo}" alt="${s.titleEn}">
-          <div>
-            <span class="service-tile-title">${title}</span>
-            <span class="service-tile-sub">${s.sub}</span>
-          </div>
-        `;
-        btn.addEventListener("click", () => selectService(s.id));
-        serviceRail.appendChild(btn);
-      });
-    }
-
-    function renderLandmarks(svc) {
-      landmarkPills.innerHTML = "";
-      svc.landmarks.forEach((lm, idx) => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "landmark-btn";
-        btn.setAttribute("aria-pressed", idx === state.landmarkIdx ? "true" : "false");
-        btn.textContent = `${lm.name} (${lm.ward})`;
-        btn.addEventListener("click", () => {
-          state.landmarkIdx = idx;
-          renderAll();
-          showToast(`Selected ${lm.ward} · ${lm.street}`);
-        });
-        landmarkPills.appendChild(btn);
-      });
-    }
-
-    function renderPhotoStage(svc, lm) {
-      servicePhoto.src = state.customPhotoUrl || svc.photo;
-      servicePhoto.alt = `${svc.titleEn} street photo at ${lm.street}, ${lm.ward}`;
-      hazardRing.style.left = `${state.ringX}%`;
-      hazardRing.style.top = `${state.ringY}%`;
-      photoStampText.textContent = `${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (ID: ${lm.roadId})`;
-    }
-
-    function renderLocationAndEasySend(svc, lm) {
-      const cells = [
-        { k: "District", v: lm.district },
-        { k: "Zone", v: lm.zone },
-        { k: "Ward / Depot", v: `${lm.ward} · ${lm.depot}`, mono: true },
-        { k: "Official Street", v: `${lm.street} (ID: ${lm.roadId})`, mono: true }
+      state.needsSlot = null;
+      state.conversationComplete = true;
+      state.turns = [
+        { role: "user", text: svc.utterance },
+        { role: "agent", text: state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn, needsInput: false }
       ];
-      locationGrid.innerHTML = cells.map(c => `
-        <div class="loc-item">
-          <span class="loc-key">${c.k}</span>
-          <span class="loc-val ${c.mono ? 'num' : ''}">${c.v}</span>
-        </div>
-      `).join("");
-
-      tamilCue.textContent = `“${svc.tamilCue}”`;
-
-      const waText = encodeURIComponent(
-        `[NammaKural Civic Complaint]\n${lm.district} | ${lm.zone} | ${lm.ward}\nStreet: ${lm.street} (Road ID: ${lm.roadId})\n\n${svc.utterance}${state.appendedNote ? ' (' + state.appendedNote + ')' : ''}\n\n${svc.tamilCue}`
-      );
-
-      let html = "";
-      svc.portals.forEach(p => {
-        if (p.whatsapp) {
-          html += `
-            <a class="btn-whatsapp" href="https://wa.me/${p.whatsapp}?text=${waText}" target="_blank" rel="noopener noreferrer">
-              <span>${p.whatsappLabel}</span>
-            </a>
-          `;
-        } else if (p.email) {
-          const subj = encodeURIComponent(`Civic Grievance — ${lm.ward} (${lm.street})`);
-          html += `
-            <a class="btn-whatsapp" href="mailto:${p.email}?subject=${subj}&body=${waText}">
-              <span>${p.whatsappLabel}</span>
-            </a>
-          `;
-        }
-      });
-
-      const helpline = svc.portals[0].helpline;
-      html += `
-        <a class="btn-outline" href="tel:${helpline}" style="justify-content:center">
-          <span>Call Toll-Free <strong class="num">${helpline}</strong></span>
-        </a>
-      `;
-      easyActions.innerHTML = html;
+      voiceInput.value = svc.utterance;
+      wbVoiceInput.value = svc.utterance;
+      document.getElementById("wbPlaceInput").value = `${lm.name} (${lm.district})`;
+      renderAll(animateReasoning);
     }
 
-    function renderPortalCards(svc, lm) {
-      const t = UI_COPY[state.lang];
-      portalCardsWrap.innerHTML = "";
+    function buildPortalCardsHTML(container, svc, lm) {
+      const t = COPY[state.lang];
+      container.innerHTML = "";
       svc.portals.forEach(p => {
         const card = document.createElement("article");
         card.className = "portal-card";
-
         const rowsHtml = p.fields.map((f, idx) => {
-          let val = f.val
-            .replace(/Vth Avenue/g, lm.street)
-            .replace(/76370/g, lm.roadId)
-            .replace(/Ward 103/g, lm.ward);
-          if (state.appendedNote && idx === p.fields.length - 1) {
-            val += ` [${state.appendedNote}]`;
-          }
-          if (f.maxChars && val.length > f.maxChars) {
-            val = val.slice(0, f.maxChars - 1) + "…";
-          }
-          const counter = f.maxChars
-            ? `<span class="char-note">${val.length} / ${f.maxChars} chars max</span>`
-            : "";
-
+          let val = f.val.replace(/Vth Avenue/g, lm.street).replace(/76370/g, lm.roadId).replace(/Ward 103/g, lm.ward);
+          if (state.appendedNote && idx === p.fields.length - 1) val += ` [${state.appendedNote}]`;
+          if (f.maxChars && val.length > f.maxChars) val = val.slice(0, f.maxChars - 1) + "…";
+          const note = f.maxChars ? `<span class="char-note">${val.length} / ${f.maxChars} chars max</span>` : "";
           return `
             <div class="field-row">
               <div class="field-name">${f.label}</div>
-              <div>
-                <div class="field-value">${val}</div>
-                ${counter}
-              </div>
-              <button type="button" class="btn-copy" data-val="${val.replace(/"/g, '&quot;')}">${t.copyBtn}</button>
+              <div><div class="field-value">${val}</div>${note}</div>
+              <button type="button" class="btn-copy" data-val="${val.replace(/"/g, '&quot;')}">${t.copy}</button>
             </div>
           `;
         }).join("");
@@ -1429,22 +1525,15 @@
         card.innerHTML = `
           <div class="portal-card-head">
             <div>
-              <h3 class="portal-name">${p.name}</h3>
-              <div class="portal-status-line">
-                <span class="${p.isOpen ? 'status-open' : 'status-otp'}">${p.openNote}</span>
-              </div>
+              <strong style="font-size:0.95rem;">${p.name}</strong>
+              <div style="font-size:0.8rem;color:var(--ink-3);margin-top:2px;">${p.access}</div>
             </div>
-            <div class="btn-row">
-              <button type="button" class="btn-outline copy-all-btn">${t.copyAll}</button>
-              <a class="btn-outline" href="${p.url}" target="_blank" rel="noopener noreferrer">${t.openSite} ↗</a>
+            <div style="display:flex;gap:8px;">
+              <button type="button" class="btn-outline copy-all-btn" style="min-height:36px;padding:5px 10px;">${t.copyAll}</button>
+              <a class="btn-outline" style="min-height:36px;padding:5px 10px;" href="${p.url}" target="_blank" rel="noopener noreferrer">${t.openSite} ↗</a>
             </div>
           </div>
-          <div class="field-list">${rowsHtml}</div>
-          <details class="tech-details">
-            <summary>Technical DOM Selectors &amp; Portal Notes</summary>
-            <div style="margin-top:6px;" class="num">${p.techNote}</div>
-            <div style="margin-top:4px;" class="num">${p.fields.map(f => `${f.label} -> ${f.dom}`).join(" | ")}</div>
-          </details>
+          <div>${rowsHtml}</div>
         `;
 
         card.querySelectorAll(".btn-copy").forEach(btn => {
@@ -1452,12 +1541,9 @@
             const v = btn.getAttribute("data-val");
             navigator.clipboard?.writeText(v);
             btn.setAttribute("data-copied", "true");
-            btn.textContent = t.copiedBtn;
-            showToast(`Copied: ${v.slice(0, 38)}...`);
-            setTimeout(() => {
-              btn.setAttribute("data-copied", "false");
-              btn.textContent = t.copyBtn;
-            }, 1400);
+            btn.textContent = t.copied;
+            showToast(`Copied: ${v.slice(0, 36)}...`);
+            setTimeout(() => { btn.setAttribute("data-copied", "false"); btn.textContent = t.copy; }, 1400);
           });
         });
 
@@ -1469,82 +1555,303 @@
           showToast(`Copied all fields for ${p.name}`);
         });
 
-        portalCardsWrap.appendChild(card);
+        container.appendChild(card);
       });
     }
 
-    function renderAll() {
-      const svc = getService();
-      const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
-      applyLanguage();
-      renderServiceStrip();
-      renderLandmarks(svc);
-      renderPhotoStage(svc, lm);
-      renderLocationAndEasySend(svc, lm);
-      renderPortalCards(svc, lm);
+    function renderThread() {
+      const threadEl = document.getElementById("agentThread");
+      threadEl.innerHTML = "";
+      state.turns.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "thread-msg";
+        div.setAttribute("data-role", t.role);
+        if (t.needsInput) div.setAttribute("data-needs-input", "true");
+        div.textContent = t.text;
+        threadEl.appendChild(div);
+      });
     }
 
-    /* Interactive Events */
+    function renderAll(animateReasoning = false) {
+      const svc = getService();
+      const lm = svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
+      applyCopy();
+      renderThread();
+
+      /* Quick Service Chips (Agent View) */
+      const qRow = document.getElementById("quickPromptsRow");
+      qRow.innerHTML = "";
+      SERVICES.forEach(s => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "quick-chip";
+        b.setAttribute("aria-current", s.id === state.serviceId && state.conversationComplete ? "true" : "false");
+        b.innerHTML = `<img src="${s.photo}" alt=""><span>${state.lang === "ta" ? s.titleTa : s.titleEn}</span>`;
+        b.addEventListener("click", () => selectService(s.id, true));
+        qRow.appendChild(b);
+      });
+
+      /* Show Reasoning & Outcome only once conversation has enough context (or while resolving) */
+      const reasoningCard = document.querySelector(".reasoning-card");
+      const outcomeCard = document.querySelector(".agent-outcome");
+      if (!state.conversationComplete) {
+        reasoningCard.style.display = "none";
+        outcomeCard.style.display = "none";
+      } else {
+        reasoningCard.style.display = "flex";
+        outcomeCard.style.display = "flex";
+        runReasoningSequence(svc, !animateReasoning);
+      }
+
+      /* Outcome Header & Reply */
+      document.getElementById("outcomeJurisdictionTag").textContent =
+        `${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`;
+      document.getElementById("outcomeReply").textContent =
+        state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn;
+
+      /* Landmark Bar + Inline Append */
+      const lmBar = document.getElementById("landmarkBar");
+      lmBar.innerHTML = `<span style="font-size:0.8rem;font-weight:700;color:var(--ink-3);">Landmark:</span>`;
+      svc.landmarks.forEach((item, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lm-pill";
+        btn.setAttribute("aria-pressed", idx === state.landmarkIdx ? "true" : "false");
+        btn.textContent = `${item.name} (${item.ward})`;
+        btn.addEventListener("click", () => {
+          state.landmarkIdx = idx;
+          renderAll(false);
+          showToast(`Confirmed ${item.ward}`);
+        });
+        lmBar.appendChild(btn);
+      });
+
+      /* Service Photo + Hazard Marker */
+      document.getElementById("servicePhoto").src = state.customPhotoUrl || svc.photo;
+      document.getElementById("hazardRing").style.left = `${state.ringX}%`;
+      document.getElementById("hazardRing").style.top = `${state.ringY}%`;
+      document.getElementById("photoStampText").textContent = `${lm.ward} · ${lm.street} (ID ${lm.roadId})`;
+
+      /* 1-Tap Official Actions */
+      const waPayload = encodeURIComponent(
+        `[NammaKural Civic Complaint]\n${lm.district} | ${lm.zone} | ${lm.ward}\nStreet: ${lm.street} (Road ID: ${lm.roadId})\n\n${svc.utterance}${state.appendedNote ? ' (' + state.appendedNote + ')' : ''}\n\n${svc.tamilCue}`
+      );
+      const actionsStack = document.getElementById("agentActionsStack");
+      let actHtml = "";
+      svc.portals.forEach(p => {
+        if (p.whatsapp) {
+          actHtml += `<a class="btn-whatsapp" href="https://wa.me/${p.whatsapp}?text=${waPayload}" target="_blank" rel="noopener noreferrer">${p.whatsappLabel}</a>`;
+        } else if (p.email) {
+          const subj = encodeURIComponent(`Civic Grievance — ${lm.ward} (${lm.street})`);
+          actHtml += `<a class="btn-whatsapp" href="mailto:${p.email}?subject=${subj}&body=${waPayload}">${p.whatsappLabel}</a>`;
+        }
+      });
+      actHtml += `<a class="btn-outline" href="tel:${svc.portals[0].helpline}">Call Helpline <strong class="num">${svc.portals[0].helpline}</strong></a>`;
+      actionsStack.innerHTML = actHtml;
+
+      /* Drawer Count & Portal Cards */
+      document.getElementById("drawerCount").textContent = `${svc.portals.length} Portal${svc.portals.length > 1 ? 's' : ''}`;
+      buildPortalCardsHTML(document.getElementById("portalCardsAgent"), svc, lm);
+
+      /* Sync Full Workbench View (Undisturbed) */
+      const wbSvc = document.getElementById("wbServiceButtons");
+      wbSvc.innerHTML = "";
+      SERVICES.forEach(s => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "lm-pill";
+        b.setAttribute("aria-pressed", s.id === state.serviceId ? "true" : "false");
+        b.textContent = s.titleEn;
+        b.addEventListener("click", () => selectService(s.id, false));
+        wbSvc.appendChild(b);
+      });
+      const wbLm = document.getElementById("wbLandmarkPills");
+      wbLm.innerHTML = lmBar.innerHTML;
+      document.getElementById("wbActionsRow").innerHTML = actHtml;
+      buildPortalCardsHTML(document.getElementById("wbPortalCards"), svc, lm);
+    }
+
+    function detectIssueAndPlace(combinedText) {
+      const txt = combinedText.toLowerCase();
+      const hasPlace = /(anna\s*nagar|tower\s*park|arch|velachery|vijaya\s*nagar|phoenix|madurai|kuruvikaran|coimbatore|gandhipuram|100\s*feet|அண்ணா|வேளச்சேரி|மதுரை|கோவை)/.test(txt);
+      const hasIssue = /(streetlight|light|eriyala|wire|transformer|sewage|saakkadai|pothole|water|kudineer|pipe|ration|arisi|garbage|kuppai|close|20491|தெருவிளக்கு|சாக்கடை|குடிநீர்|ரேஷன்|குப்பை)/.test(txt);
+      let svcId = "streetlight_eb";
+      if (txt.includes("close") || txt.includes("20491") || txt.includes("1100")) svcId = "garbage_1100";
+      else if (txt.includes("ration") || txt.includes("arisi") || txt.includes("fingerprint") || txt.includes("ரேஷன்")) svcId = "ration_tnpds";
+      else if (txt.includes("madurai") || txt.includes("kudineer") || txt.includes("pipe") || txt.includes("குடிநீர்")) svcId = "water_pipe";
+      else if (txt.includes("velachery") || txt.includes("saakkadai") || txt.includes("sewage") || txt.includes("pothole") || txt.includes("சாக்கடை")) svcId = "sewage_pothole";
+      return { hasPlace, hasIssue, svcId, txt };
+    }
+
+    function handleAgentTurn(raw) {
+      const msg = raw.trim();
+      if (!msg) {
+        voiceInput.focus();
+        showToast("Speak or type your street problem first");
+        return;
+      }
+
+      /* If user is adding a pole/door/detail after conversation completed */
+      if (state.conversationComplete && state.turns.length > 0 && /(pole|door|days|naal|number|#|\d+)/i.test(msg) && msg.length < 45) {
+        state.turns.push({ role: "user", text: msg });
+        state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${msg}` : msg;
+        state.turns.push({ role: "agent", text: `Added "${msg}" to your complaint drafts and photo stamp.`, needsInput: false });
+        voiceInput.value = "";
+        renderAll(false);
+        return;
+      }
+
+      /* Combine conversation user turns so multi-turn talk-through remembers context */
+      state.turns.push({ role: "user", text: msg });
+      const combined = state.turns.filter(t => t.role === "user").map(t => t.text).join(" ");
+      const parsed = detectIssueAndPlace(combined);
+
+      if (!parsed.hasIssue) {
+        state.conversationComplete = false;
+        state.needsSlot = "issue";
+        const ask = state.lang === "ta"
+          ? "என்ன பிரச்சனை (தெருவிளக்கு, சாக்கடை, குடிநீர், ரேஷன், குப்பை) என்று சொல்லுங்கள்?"
+          : "I heard the location. What needs fixing there (e.g. streetlight out, sewage leak, pothole, water pipe)?";
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        voiceInput.value = "";
+        voiceInput.focus();
+        renderAll(false);
+        return;
+      }
+
+      if (!parsed.hasPlace) {
+        state.conversationComplete = false;
+        state.needsSlot = "location";
+        const ask = state.lang === "ta"
+          ? "பிரச்சனை புரிந்தது. இது எந்தப் பகுதி அல்லது அடையாள இடம் (எ.கா. Anna Nagar Tower Park / Velachery Vijayanagar)?"
+          : "Got it! Where is this happening? Speak your neighborhood or a nearby landmark (e.g. 'Anna Nagar Tower Park' or 'Velachery Vijayanagar').";
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        voiceInput.value = "";
+        voiceInput.focus();
+        renderAll(false);
+        return;
+      }
+
+      /* Broad area without specific landmark (Velachery) -> ask 1 quick clarifier or let them confirm */
+      const svc = SERVICES.find(s => s.id === parsed.svcId) || SERVICES[0];
+      state.serviceId = svc.id;
+      state.landmarkIdx = parsed.txt.includes("phoenix") || parsed.txt.includes("arch") ? Math.min(1, svc.landmarks.length - 1) : 0;
+      state.ringX = svc.ringX;
+      state.ringY = svc.ringY;
+      state.needsSlot = null;
+      state.conversationComplete = true;
+      const lm = svc.landmarks[state.landmarkIdx];
+      document.getElementById("wbPlaceInput").value = `${lm.name} (${lm.district})`;
+      wbVoiceInput.value = combined;
+      state.turns.push({
+        role: "agent",
+        text: state.lang === "ta" ? svc.agentReplyTa : svc.agentReplyEn,
+        needsInput: false
+      });
+      voiceInput.value = "";
+      renderAll(true);
+    }
+
+    /* Event Handlers */
+    document.getElementById("runAgentBtn").addEventListener("click", () => handleAgentTurn(voiceInput.value));
+    voiceInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleAgentTurn(voiceInput.value);
+      }
+    });
+
+    document.getElementById("newChatBtn").addEventListener("click", () => {
+      state.turns = [];
+      state.appendedNote = "";
+      state.conversationComplete = false;
+      state.needsSlot = "issue";
+      voiceInput.value = "";
+      voiceInput.focus();
+      renderAll(false);
+      showToast("Started fresh voice conversation — speak now!");
+    });
+
+    /* Full Form View: Intuitive Per-Field Wispr Flow Live Sync */
+    function syncFromWorkbenchInputs() {
+      const combined = `${document.getElementById("wbPlaceInput").value} ${wbVoiceInput.value}`;
+      const parsed = detectIssueAndPlace(combined);
+      const svc = SERVICES.find(s => s.id === parsed.svcId) || SERVICES[0];
+      state.serviceId = svc.id;
+      state.landmarkIdx = parsed.txt.includes("phoenix") || parsed.txt.includes("arch") ? Math.min(1, svc.landmarks.length - 1) : 0;
+      state.appendedNote = document.getElementById("wbDetailInput").value.trim();
+      state.conversationComplete = true;
+      renderAll(false);
+    }
+
+    document.getElementById("wbPlaceInput").addEventListener("input", syncFromWorkbenchInputs);
+    wbVoiceInput.addEventListener("input", syncFromWorkbenchInputs);
+
+    document.getElementById("orbMicBtn").addEventListener("click", () => {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        voiceInput.focus();
+        state.orbMode = "listening";
+        orbStage.setAttribute("data-agent-state", "listening");
+        document.getElementById("agentStateLabel").textContent = "Wispr Flow Ready — Speak into the focused box!";
+        showToast("Dictate with your Wispr Flow hotkey now");
+        return;
+      }
+      const btn = document.getElementById("orbMicBtn");
+      const rec = new SR();
+      rec.lang = "ta-IN";
+      btn.setAttribute("data-state", "listening");
+      state.orbMode = "listening";
+      orbStage.setAttribute("data-agent-state", "listening");
+      document.getElementById("agentStateLabel").textContent = "Listening in Tanglish / Tamil...";
+      rec.onresult = (ev) => {
+        voiceInput.value = ev.results[0][0].transcript;
+        handleAgentTurn(voiceInput.value);
+      };
+      rec.onend = () => { btn.setAttribute("data-state", "idle"); };
+      rec.onerror = () => { btn.setAttribute("data-state", "idle"); voiceInput.focus(); };
+      rec.start();
+    });
+
     document.getElementById("photoStage").addEventListener("click", (e) => {
       const rect = e.currentTarget.getBoundingClientRect();
       state.ringX = Math.max(8, Math.min(92, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
       state.ringY = Math.max(12, Math.min(82, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
-      renderPhotoStage(getService(), getService().landmarks[state.landmarkIdx]);
-      showToast("Marked problem spot on photo");
+      renderAll(false);
+      showToast("Moved hazard marker ring");
     });
 
     document.getElementById("photoFileInput").addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       state.customPhotoUrl = URL.createObjectURL(file);
-      renderPhotoStage(getService(), getService().landmarks[state.landmarkIdx]);
-      showToast("Loaded your street photo");
+      renderAll(false);
+      showToast("Loaded street photo");
     });
 
     document.getElementById("savePhotoBtn").addEventListener("click", () => {
       const lm = getService().landmarks[state.landmarkIdx];
+      const img = document.getElementById("servicePhoto");
       const canvas = document.createElement("canvas");
-      canvas.width = 800;
-      canvas.height = 450;
+      canvas.width = 800; canvas.height = 450;
       const c = canvas.getContext("2d");
-      c.drawImage(servicePhoto, 0, 0, 800, 450);
+      c.drawImage(img, 0, 0, 800, 450);
       const rx = (state.ringX / 100) * 800;
       const ry = (state.ringY / 100) * 450;
       c.strokeStyle = "#EF4444"; c.lineWidth = 4;
       c.beginPath(); c.arc(rx, ry, 28, 0, Math.PI * 2); c.stroke();
-      c.fillStyle = "rgba(17,24,39,0.9)"; c.fillRect(0, 404, 800, 46);
+      c.fillStyle = "rgba(15,23,42,0.9)"; c.fillRect(0, 404, 800, 46);
       c.fillStyle = "#FFFFFF"; c.font = "bold 14px sans-serif";
       c.fillText(`${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})`, 14, 432);
       try {
-        const link = document.createElement("a");
-        link.download = `NammaKural_${lm.roadId}.jpg`;
-        link.href = canvas.toDataURL("image/jpeg", 0.85);
-        link.click();
-        showToast("Saved <1 MB stamped JPEG photo");
-      } catch (err) {
+        const a = document.createElement("a");
+        a.download = `NammaKural_${lm.roadId}.jpg`;
+        a.href = canvas.toDataURL("image/jpeg", 0.85);
+        a.click();
+        showToast("Saved <1 MB stamped JPEG");
+      } catch {
         showToast("Serve via http://localhost to export stamped JPEG");
       }
-    });
-
-    document.getElementById("resolveBtn").addEventListener("click", () => {
-      const txt = voiceInput.value.toLowerCase();
-      if (txt.includes("close") || txt.includes("20491") || txt.includes("1100")) selectService("garbage_1100");
-      else if (txt.includes("ration") || txt.includes("arisi") || txt.includes("fingerprint")) selectService("ration_tnpds");
-      else if (txt.includes("madurai") || txt.includes("kudineer") || txt.includes("pipe")) selectService("water_pipe");
-      else if (txt.includes("velachery") || txt.includes("saakkadai") || txt.includes("sewage")) selectService("sewage_pothole");
-      else selectService("streetlight_eb");
-      showToast("Resolved Ward & matched civic portals");
-    });
-
-    document.getElementById("appendBtn").addEventListener("click", () => {
-      const inp = document.getElementById("detailInput");
-      const val = inp.value.trim();
-      if (!val) return;
-      state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${val}` : val;
-      voiceInput.value = `${voiceInput.value.trim()} (${val})`;
-      inp.value = "";
-      renderAll();
-      showToast(`Added "${val}" to complaint`);
     });
 
     document.getElementById("speakTamilBtn").addEventListener("click", () => {
@@ -1555,34 +1862,35 @@
         u.lang = "ta-IN";
         u.rate = 0.95;
         window.speechSynthesis.speak(u);
-        showToast("Speaking Tamil summary aloud");
+        showToast("Speaking Tamil confirmation aloud");
       }
     });
 
-    document.getElementById("micBtn").addEventListener("click", () => {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        voiceInput.focus();
-        showToast("Voice box ready — press your Wispr Flow hotkey");
-        return;
-      }
-      const btn = document.getElementById("micBtn");
-      const rec = new SR();
-      rec.lang = "ta-IN";
-      btn.setAttribute("data-listening", "true");
-      rec.onresult = (ev) => {
-        voiceInput.value = ev.results[0][0].transcript;
-        document.getElementById("resolveBtn").click();
-      };
-      rec.onend = () => btn.setAttribute("data-listening", "false");
-      rec.onerror = () => { btn.setAttribute("data-listening", "false"); voiceInput.focus(); };
-      rec.start();
+    document.getElementById("wbAppendBtn").addEventListener("click", () => {
+      const v = document.getElementById("wbDetailInput").value.trim();
+      if (!v) return;
+      state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${v}` : v;
+      document.getElementById("wbDetailInput").value = "";
+      renderAll(false);
     });
 
-    document.getElementById("modeNewBtn").addEventListener("click", () => selectService("streetlight_eb"));
-    document.getElementById("modeEscalateBtn").addEventListener("click", () => selectService("garbage_1100"));
-    document.getElementById("langEnBtn").addEventListener("click", () => { state.lang = "en"; renderAll(); });
-    document.getElementById("langTaBtn").addEventListener("click", () => { state.lang = "ta"; renderAll(); });
+    document.getElementById("viewAgentBtn").addEventListener("click", () => {
+      state.view = "agent";
+      document.documentElement.setAttribute("data-view", "agent");
+      document.getElementById("viewAgentBtn").setAttribute("aria-pressed", "true");
+      document.getElementById("viewWorkbenchBtn").setAttribute("aria-pressed", "false");
+    });
+
+    document.getElementById("viewWorkbenchBtn").addEventListener("click", () => {
+      state.view = "workbench";
+      document.documentElement.setAttribute("data-view", "workbench");
+      document.getElementById("viewAgentBtn").setAttribute("aria-pressed", "false");
+      document.getElementById("viewWorkbenchBtn").setAttribute("aria-pressed", "true");
+    });
+
+    document.getElementById("langEnBtn").addEventListener("click", () => { state.lang = "en"; renderAll(false); });
+    document.getElementById("langTaBtn").addEventListener("click", () => { state.lang = "ta"; renderAll(false); });
+
     document.getElementById("a11yBtn").addEventListener("click", (e) => {
       const on = document.documentElement.getAttribute("data-a11y-large") === "true";
       document.documentElement.setAttribute("data-a11y-large", on ? "false" : "true");
@@ -1590,8 +1898,15 @@
       showToast(on ? "Normal text size" : "Large Text A11y enabled");
     });
 
-    /* Initialize */
-    selectService("streetlight_eb");
+    document.getElementById("liteBtn").addEventListener("click", (e) => {
+      state.lite = !state.lite;
+      document.documentElement.setAttribute("data-lite", state.lite ? "true" : "false");
+      e.currentTarget.setAttribute("aria-pressed", state.lite ? "true" : "false");
+      if (!state.lite) drawOrb();
+      showToast(state.lite ? "2G Lite Mode active" : "Standard Voice Agent mode");
+    });
+
+    selectService("streetlight_eb", false);
   </script>
 </body>
 </html>

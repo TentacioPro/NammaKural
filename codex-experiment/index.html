@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eff5f2">
+  <meta name="description" content="Prepare a Tamil Nadu civic complaint by voice with NammaKural.">
+  <title>NammaKural · நம்ம குரல்</title>
+  <link rel="stylesheet" href="voice.css">
+  <script defer src="complaint.js"></script>
+  <script defer src="voice.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="wordmark"><span lang="ta">நம்ம குரல்</span><span>NammaKural</span></div>
+      <div class="preferences">
+        <button type="button" id="language" class="quiet" lang="ta">தமிழ்</button>
+        <button type="button" id="read-aloud" class="quiet" aria-pressed="false" data-copy="readAloud">Read replies aloud</button>
+        <button type="button" id="large-text" class="quiet" aria-pressed="false">A+ <span data-copy="textSize">Text size</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section id="intro" aria-labelledby="heading">
+      <h1 id="heading" data-copy="heading">What needs fixing?</h1>
+      <p class="intro" data-copy="intro">Tell us what happened and where. Speak in Tamil, Tanglish, or English.</p>
+    </section>
+
+    <section id="conversation" aria-label="Complaint conversation" hidden>
+      <div id="history" class="history"></div>
+      <div id="response" class="response" hidden>
+        <p id="question" role="status"></p>
+        <button type="button" id="listen" class="quiet" data-copy="listen">Listen</button>
+      </div>
+      <div id="choices" class="choices"></div>
+    </section>
+
+    <form id="composer" class="composer">
+      <label for="utterance" class="sr-only" data-copy="transcript">Complaint transcript</label>
+      <textarea id="utterance" rows="3" maxlength="1500" aria-describedby="flow-tip"></textarea>
+      <div class="composer-actions">
+        <button type="button" class="dictate" id="dictate" data-copy="dictate">Dictate with Wispr Flow</button>
+        <button type="submit" class="primary" id="continue" data-copy="continue">Continue</button>
+      </div>
+    </form>
+    <p id="flow-tip" class="tip" data-copy="tip">Use your Wispr Flow shortcut to speak, or type. Press Enter when ready.</p>
+
+    <div class="secondary-actions" id="secondary-actions">
+      <button type="button" class="quiet" id="example" data-copy="example">Try an example</button>
+      <button type="button" class="quiet" id="reopen" aria-pressed="false" data-copy="reopen">Report a closed complaint</button>
+      <button type="button" class="quiet" id="reset" data-copy="reset" hidden>Start over</button>
+    </div>
+
+    <section id="review" class="review" aria-labelledby="review-heading" hidden>
+      <h2 id="review-heading" tabindex="-1" data-copy="review">Review your drafts</h2>
+      <p id="location"></p>
+      <div id="drafts"></div>
+      <details class="evidence">
+        <summary data-copy="photo">Add an optional marked photo</summary>
+        <label for="photo-input" data-copy="photoLabel">Choose a street photo</label>
+        <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp">
+        <div id="photo-tools" hidden>
+          <p data-copy="mark">Tap the problem area, or move the marker with the arrow keys.</p>
+          <canvas id="photo-preview" width="800" height="450" tabindex="0" aria-label="Photo evidence marker"></canvas>
+          <button type="button" class="quiet" id="save-photo" data-copy="savePhoto">Download marked photo</button>
+        </div>
+      </details>
+      <p class="tip" data-copy="filing">Review the drafts before opening the official channel. You choose what to submit.</p>
+    </section>
+    <p id="notice" class="notice" role="status"></p>
+  </main>
+</body>
+</html>

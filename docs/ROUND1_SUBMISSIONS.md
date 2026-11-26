@@ -24,46 +24,41 @@ Citizens experience civic problems while standing on the street and naturally de
 ---
 
 ## Activity 02 — Prompt (`80–800 words`, `Text only, no uploads`)
-- **Status:** Grounded in verified inner wizard steps, JS bundles & GIS APIs of all 6 TN portals (`~765 words`)
+- **Status:** Tightened & verified `<800 words` (`~725 words` — Voice Agent + Neural Orb + 4-Step Reasoning + 6 TN Portals + 1-Tap WhatsApp + Photo Stamper)
 
 ```text
-Act as an expert frontend engineer and build a complete, working single-page web application called "NammaKural (நம்ம குரல்)" — a Tanglish-first civic grievance router, GIS street-and-ward resolver, photo-evidence stamper, and inclusive filing bridge for Tamil Nadu's 6 primary civic portals, built for Wispr Flow voice input.
+Act as an expert frontend engineer and build a complete single-page web application called "NammaKural (நம்ம குரல்)" — a calm, light-mode Tanglish Voice Agent, GIS street-and-ward resolver, photo-evidence stamper, and inclusive filing bridge for Tamil Nadu's 6 primary civic portals, built for Wispr Flow voice input.
 
 Your users and their languages:
-Everyday Tamil Nadu citizens across Chennai and 38 districts—including senior citizens, daily-wage workers, homemakers, shopkeepers, tenants, and office workers, ranging from low-literacy mobile users to tech-savvy residents. They speak in code-mixed Tanglish (Tamil mixed with English words like "streetlight", "transformer", "drainage"), colloquial Tamil (தமிழ்) across regional accents (Chennai Madras Bashai, Madurai, Kongu/Coimbatore, Tirunelveli, Trichy), and Indian English. They describe places by spoken landmarks ("Anna Nagar Tower Park back side", "Velachery Vijayanagar bus stand kitta") rather than administrative Zone, Ward, Depot, or GIS Street IDs.
+Everyday Tamil Nadu citizens across Chennai and 38 districts—senior citizens, daily-wage workers, homemakers, shopkeepers, tenants, and office workers, from low-literacy mobile users to tech-savvy residents. They speak code-mixed Tanglish (Tamil mixed with English nouns like "streetlight", "transformer", "drainage"), colloquial Tamil (தமிழ்) across regional accents (Chennai Madras Bashai, Madurai, Kongu, Tirunelveli, Trichy), and Indian English. They describe places by landmarks ("Tower Park back side", "Vijayanagar bus stand kitta") rather than Zone, Ward, Depot, or GIS Street IDs.
 
 The voice flow, step by step:
-Step 1 (Initial Voice Intake):
-- User says (via Wispr Flow into the main voice box or by tapping a sample pill): "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa irukku."
-- Product says & shows back (on-screen + Tamil/English TTS voice read-back): "Heard 2 issues near Anna Nagar Tower Park: (1) Streetlight not burning, (2) Loose transformer wire. Resolved GIS Location: Chennai -> Central Region -> Zone 08 (Anna Nagar) -> Ward 103 -> Official Street: Vth Avenue (Road ID 76370)."
-Step 2 (Voice Landmark Disambiguation when an area spans multiple wards/depots):
+Step 1 (Wispr Flow Voice Intake & Neural Orb):
+- User taps the central animated Neural Voice Orb (or presses their Wispr Flow hotkey) and speaks into a plain voice bar: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa irukku."
+- Agent animates from Listening to Reasoning and streams 4 transparent steps: (1) Heard 2 issues (streetlight outage + loose wire); (2) GIS Match -> Zone 08, Ward 103, Vth Avenue (Road ID 76370); (3) Split -> GCC PGRS (1913) & TANGEDCO Minnagam (1912); (4) Armed 1-tap WhatsApp & stamped <1MB photo.
+Step 2 (Voice Landmark Disambiguation when an area spans multiple wards):
 - User says: "Velachery main road-la sewage overflow aaguthu, periya pothole irukku."
-- Product asks back by voice and big visual pills: "Velachery covers multiple Wards and Metro Water Depots. Which landmark are you closest to? Say or tap: (1) Vijayanagar Bus Stand (Zone XIII, Ward 178), (2) Phoenix Marketcity (Ward 175), or (3) Velachery MRTS Station (Ward 177)."
-- User says: "Vijayanagar Bus Stand."
-- Product locks "Zone 13 -> Ward / Depot 178 -> Velachery Main Road" and splits the complaint across CMWSSB Metro Water and GCC PGRS Roads.
-Step 3 (Photo Evidence Tap-to-Mark & Voice Slot-Filling):
-- User snaps or selects a street photo, taps directly on the hazard (pothole/wire/sewage) to drop a red marker ring, and speaks any missing slot ("3 days-aa irukku, door number 14").
-- Product inserts "Problem Duration: 3 Days" and "Door No: 14" into the form cards, stamps an official footer onto the photo (Zone, Ward, Official Street Name, Lat/Lng, Timestamp), and compresses it under 1 MB (required by GCC PGRS's strict 1 MB JPG/PNG check).
+- Agent pauses and asks back by voice and landmark pills: "Velachery covers multiple Wards. Which landmark is closest? Say or tap: (1) Vijayanagar Bus Stand (Ward 178), or (2) Phoenix Marketcity (Ward 175)."
+- User says: "Vijayanagar Bus Stand." Agent locks Zone 13 -> Ward / Depot 178 and splits CMWSSB Metro Water (strict 200-char remark cap) and GCC PGRS Roads.
+Step 3 (Service Photo Tap-to-Mark & Voice Slot-Filling):
+- Displays a matching street photo for each service (Streetlight/EB, Sewage/Pothole, Water Leak, Ration Shop, Garbage). User taps the hazard to move a red target ring and appends missing details by voice ("Door number 14"). Agent stamps Zone, Ward, Road ID, and timestamp onto the <1MB JPEG.
 Step 4 (Premature-Closure 1100 Voice Escalation):
-- In the "Closed Without Fix (1100)" tab, user says: "Complaint GCC-20491 fix pannama close pannitanga," plus attaches a "Still Broken Today" photo. Product generates a Reopen Petition and Mudhalvarin Mugavari (1100) escalation.
+- User says: "Complaint GCC-20491 fix pannama close pannitanga," and attaches a current photo. Agent drafts a Mudhalvarin Mugavari (1100) reopen petition.
 
-What the product says or shows back (3 Inclusive Filing Modes):
-1. Tamil Audio Read-Back & Verified Jurisdiction Strip: Speaks confirmation aloud in conversational Tamil and displays Region, District, Body Type (Corporation / Municipality / Town Panchayat / Rural Block-Village-Habitation), Zone, Ward/Depot, Official Street Name, and Lat/Lng.
-2. Zero-Copy-Paste Mode for Non-Tech / Semi-Literate Users (bypasses OTP/CAPTCHA walls):
-   - "1-Tap Official WhatsApp Filing": Deep-links to official TN grievance WhatsApp queues (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD PUNAL +91-9499991916, TANGEDCO Minnagam 9498794987) with the full Ward/Street-resolved bilingual payload ready to hit Send.
-   - "1-Tap Official Email & Helpline Voice Cue": Opens pre-filled mailto for Mudhalvarin Mugavari (cmcell@tn.gov.in) or TNPDS (support@tnpds.com), or dials 1913 / 1100 / 1916 / 1912 / 1967 with a 10-second Tamil speakerphone cue card.
-3. Portal-Matched Field-by-Field Copy Cards (matching each portal's exact inner DOM schema):
-   - GCC PGRS (1913): 4-step wizard fields (Google Places Search string, GIS Street Name, Lat/Lng, Landmark, exact 17 Complaint Types & 180 Sub-Types like "Street Light -> Non burning of Street lights", "<1MB Stamped Photo").
-   - CMWSSB (1916): Public/Consumer Type, Area, Depot, Location, Street, Door No, Category, Sub-Category, Problem Duration (Days), and strict 200-character Remarks.
-   - TWAD PUNAL (1916), TANGEDCO CCMS (1912), Mudhalvarin Mugavari (1100), and TNPDS (1967): Exact hierarchical dropdown values, formal English + Tamil descriptions, and 1-click Copy per field.
+What the product says or shows back (No Dense Form Wall):
+1. Calm Agent Outcome Card & Tamil Audio Read-Back: Speaks confirmation aloud in conversational Tamil (ta-IN TTS) so blind, elder, and low-literacy users verify Ward and Department by ear.
+2. Zero-Copy-Paste Assisted Actions (bypasses OTP/CAPTCHA gates):
+   - "1-Tap Official WhatsApp / Email": Deep-links to official TN queues (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD PUNAL +91-9499991916, TANGEDCO 9498794987, CM Cell cmcell@tn.gov.in, TNPDS support@tnpds.com) pre-filled with resolved bilingual text.
+   - "1-Tap Helpline Dial": Calls 1913, 1100, 1916, 1912, or 1967.
+3. Collapsible Portal Form Drawer (plus a "Full Form View" toggle): Expands per-field Copy cards matching inner DOM schemas—GCC PGRS (open 4-step wizard, anonymous mode, 17 types), CMWSSB (200-char cap), TWAD PUNAL (urban/rural tree), TANGEDCO, Mudhalvarin Mugavari, and TNPDS.
 
 Noise, accents, mixed languages and misheard input:
-1. Street Noise & Cut-Off Speech: Retains partial speech, highlights only the missing slot in amber, and appends the next voice phrase without restarting.
-2. Regional Accents & Tanglish Variants: Built-in phonetic dictionary maps dialect/spelling variants ("eriyala/light podala", "thanni varala/kudineer", "saakkadai", "kuppai") and Tamil Unicode script.
-3. Misheard Landmarks: Speaks and displays top-3 closest landmark pills for 1-tap correction.
+1. Street Noise & Cut-Off Speech: Retains partial transcripts and lets users append missing pole/door numbers without restarting.
+2. Accents & Tanglish Variants: Phonetic matcher normalizes dialect variants ("eriyala/light podala", "thanni varala/kudineer", "saakkadai", "kuppai") and Tamil Unicode.
+3. Misheard Landmarks: Shows top-3 closest landmark pills for 1-tap correction.
 
 Enough detail to build:
-Build a responsive two-column layout (Left: Mode Switcher, Wispr Flow voice input, 5 Tanglish demo presets, Landmark Disambiguator pills, and HTML5 Canvas Photo Stamper; Right: Tamil TTS Read-Back bar, 1-Tap WhatsApp/Email/Helpline bar, and Split Portal Schema Cards). Embed real Chennai ArcGIS Zone/Ward/Street mappings, all 17 GCC categories, CMWSSB 200-char schema, PUNAL urban/rural hierarchy, and bilingual templates so it runs 100% live in the browser.
+Build a sunlit, light-mode Voice Agent UI (inspired by Azure AI Foundry Agent Preview) with an HTML5 Canvas animated neural orb, clean Wispr Flow bar, 5 photo-thumbnail service pills, 4-step streaming reasoning trace, Outcome Card with Tamil TTS + 1-tap WhatsApp + Tap-to-Mark photo stamper, collapsible portal copy drawer, `English | தமிழ்` switcher, `A+` large-text toggle, and `2G Lite` mode. Embed real Chennai ArcGIS Zone/Ward/Street data and bilingual templates so it runs 100% offline.
 ```
 
 ---

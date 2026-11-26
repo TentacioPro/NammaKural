@@ -3,7 +3,7 @@
 Mission: Build **`NammaKural`** (*நம்ம குரல்* — "Our Voice"): a Tanglish-first civic Voice Agent, GIS landmark-to-ward resolver, sentiment/urgency router, HITL clarity gate, and filing bridge for Tamil Nadu civic portals, with Wispr Flow as the voice intake layer.
 
 ## Timeline (Verified `2026-11-27`)
-- **Round 1 (`Activity 01 → 02 → 03`):** Closes **29 Nov 2026, 11:59 pm** (`Activity 01`: Complete · `Activity 02`: Prompt `80–800 words` due · `Activity 03`: Impact unlocks next).
+- **Round 1 (`Activity 01 → 02 → 03`):** Closes **29 Nov 2026, 11:59 pm** (`Activity 01`: Complete · `Activity 02`: Complete · `Activity 03`: Impact open now).
 - **Round 2 (`27–30 Nov 2026`):** Unlocks once Round 1 passes; **`Submit your build: 30 Nov`**.
 - **Shortlist & Finale:** Results `2 Dec 2026` · Campus Finale `13 Dec 2026`.
 

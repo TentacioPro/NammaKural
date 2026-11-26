@@ -6,8 +6,8 @@ Legend: `[ ]` open, `[x]` done (`- [x] ~~task~~ (YYYY-MM-DD, agent)`), `[~]` awa
 - [x] ~~Verify live DOM schemas, GIS endpoints & OTP gates across all 6 TN portals~~ (2026-11-26, browser-agent)
 - [x] ~~Draft & submit Activity 01 (Idea) on Scaler × Wispr dashboard (quality check passed)~~ (2026-11-26, owner)
 - [x] ~~Draft & verify Activity 02 Prompt (`657 words`, under `80–800` word cap) in `docs/ROUND1_SUBMISSIONS.md`~~ (2026-11-27, antigravity)
-- [~] Paste & submit Activity 02 on Scaler portal (`Start your prompt ->`)
-- [ ] Unlock and submit Activity 03 (`Impact` — benefits, impact deltas, measurable metrics) before `29 Nov 23:59`
+- [x] ~~Paste & submit Activity 02 on Scaler portal (passed AI check, Activity 03 revealed)~~ (2026-11-27, owner)
+- [~] Draft, paste & submit Activity 03 (`Impact` — benefits, impact deltas, measurable metrics) before `29 Nov 23:59`
 
 ## Objective: Pure Voice Agent Prototype v2 (`Round 2 Prep · Due 30 Nov`)
 - [x] ~~Isolate Codex experiments cleanly in `codex-experiment/`~~ (2026-11-26, antigravity)

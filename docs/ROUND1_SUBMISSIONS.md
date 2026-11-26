@@ -1,4 +1,4 @@
-# Round 1 Submissions (`Due: 29 Nov 2026` · `1 of 3 complete`)
+# Round 1 Submissions (`Due: 29 Nov 2026` · `2 of 3 complete`)
 
 ## Activity 01 — Idea (`50–500 words`, `Text only, no uploads`)
 - **Status:** Submitted (`Quality check passed · Evaluation pending`)
@@ -61,9 +61,20 @@ Build a sunlit single-page app with Canvas 3-layer AcousticOrb states, citizen 3
 
 ---
 
-## Activity 03 — Impact (`Locked until Activity 02 submitted`)
+## Activity 03 — Impact (`Unlocked — Ready to check portal rubric & submit`)
 - **Task:** *"Describe who benefits if your idea works, what changes for them, and how you'd know."*
-- **Drafting checklist once unlocked:**
-  - **Who benefits:** Tamil Nadu residents (especially elders, working professionals, and Tanglish/Tamil speakers across cities & towns)
-  - **What changes:** Minutes-long/hours-long multi-portal form hunting drops to <60s; zero "wrong department" rejections from GCC/TANGEDCO/CMWSSB mix-ups; higher successful reopening when tickets are closed prematurely
-  - **How you'd know:** Time from voice input to portal-ready fields (`<45s`), % of multi-issue complaints accurately split, reduction in misrouted/wrong-ward filings, and reopened/resolved escalation rate
+
+```text
+Who benefits:
+Urban and semi-urban residents across Chennai and Tamil Nadu's 38 districts—especially senior citizens, non-English speakers, homemakers, shopkeepers, tenants, and daily-wage commuters—who rely on civic infrastructure every day but struggle with 9+ fragmented, English-heavy grievance portals (GCC PGRS, CMWSSB, TWAD PUNAL, TANGEDCO, Mudhalvarin Mugavari, TNPDS). Walk-in e-Sevai booth operators and municipal triage teams also benefit directly from cleaner, structured first-time submissions.
+
+What changes for them:
+1. From Hours & Middlemen to <60-Second Independent Filing: Citizens no longer pay e-Sevai middlemen or abandon complaints over cascading Zone/Ward dropdowns and Page-1 OTP traps. Speaking one Tanglish breath—optionally paired with one runtime street photo or bill—produces verified District/Zone/Ward routing, safety urgency prioritization (P1 1912 for sparking wires), and 1-tap official WhatsApp or open-portal dispatch.
+2. Zero Wrong-Department Bounces: Overlapping street hazards (such as a dead streetlight pole next to a sparking EB transformer wire, or sewage overflow beside a road pothole) are cleanly split into separate jurisdiction-matched petitions before dispatch, backed by conversational Tamil audio confirmation and dual-confirm HITL approval.
+3. Stronger Escalation Accountability & Anti-Spam Hygiene: Citizen Mobile OTP, 24-hour Ward/Department cooldowns, and Request History prevent noisy duplicate spam while letting citizens turn falsely closed tickets into stamped, timestamped 1100 / cmcell@tn.gov.in reopen petitions in seconds.
+
+How we would know it works (Measurable Signals):
+1. Speed to Verified Clarity: Median time from initial voice utterance (with GPS or landmark clarification) to HITL-approved dispatch package stays under 45–60 seconds.
+2. Routing & Clarification Precision: >=95% accuracy in mapping Tanglish/Tamil speech to exact Zone/Ward/Department and splitting multi-agency grievances across golden test suites, with minimal unnecessary clarification turns.
+3. Correction & Re-Open Impact: Declining HITL edit rate (hitl_edited_fields) over time as dialect normalizers learn from user corrections, zero unapproved/random tool dispatches, and measurable reductions in "wrong jurisdiction" rejections and unresolved premature closures.
+```

@@ -2304,24 +2304,78 @@
       }
     }
 
+    let ttsVoices = [];
+    let ttsGeneration = 0;
+    let phaseBeforeSpeech = "idle";
+    function refreshTtsVoices() {
+      if ("speechSynthesis" in window) {
+        ttsVoices = window.speechSynthesis.getVoices() || [];
+      }
+    }
+    refreshTtsVoices();
+    if ("speechSynthesis" in window && "onvoiceschanged" in window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = refreshTtsVoices;
+    }
+
+    function pickTtsVoice(isTamil) {
+      if (!ttsVoices.length) refreshTtsVoices();
+      if (isTamil) {
+        return ttsVoices.find(v => /^ta/i.test(v.lang) || /tamil/i.test(v.name)) || null;
+      }
+      return (
+        ttsVoices.find(v => /^en-IN/i.test(v.lang)) ||
+        ttsVoices.find(v => /^en/i.test(v.lang)) ||
+        null
+      );
+    }
+
+    function interruptAgentSpeech() {
+      ttsGeneration++;
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (state.agentPhase === "speaking") {
+        state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
+        spawnRipple(true);
+        updateStatusPill();
+      }
+    }
+
     function speakReply(text) {
-      if (!state.autoSpeak || !("speechSynthesis" in window)) return;
+      if (!state.autoSpeak || !("speechSynthesis" in window) || !text) return;
       window.speechSynthesis.cancel();
-      const prevPhase = state.agentPhase;
+      const myGen = ++ttsGeneration;
+      if (state.agentPhase !== "speaking") phaseBeforeSpeech = state.agentPhase;
       state.agentPhase = "speaking";
       updateStatusPill();
       spawnRipple(true);
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = /[\u0B80-\u0BFF]/.test(text) ? "ta-IN" : "en-IN";
-      u.rate = 0.96;
-      u.onend = () => {
-        if (state.agentPhase === "speaking") {
-          state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : prevPhase;
-          updateStatusPill();
+
+      // Split Tamil-script chunks from Latin/English chunks so bilingual replies actually speak Tamil in ta-IN
+      const segments = String(text)
+        .split(/([\u0B80-\u0BFF][\u0B80-\u0BFF\s.,!?0-9\-]*)/g)
+        .map(x => x.trim())
+        .filter(Boolean);
+      const chunks = segments.length ? segments : [String(text)];
+
+      function speakChunk(i) {
+        if (myGen !== ttsGeneration) return;
+        if (i >= chunks.length) {
+          if (state.agentPhase === "speaking") {
+            state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
+            updateStatusPill();
+          }
+          return;
         }
-      };
-      u.onerror = u.onend;
-      window.speechSynthesis.speak(u);
+        const chunk = chunks[i];
+        const isTamil = /[\u0B80-\u0BFF]/.test(chunk);
+        const u = new SpeechSynthesisUtterance(chunk);
+        u.lang = isTamil ? "ta-IN" : "en-IN";
+        const voice = pickTtsVoice(isTamil);
+        if (voice) u.voice = voice;
+        u.rate = 0.96;
+        u.onend = () => speakChunk(i + 1);
+        u.onerror = () => speakChunk(i + 1);
+        window.speechSynthesis.speak(u);
+      }
+      speakChunk(0);
     }
 
     function classifyConversationalGreeting(msg) {
@@ -2505,8 +2559,9 @@
       state.agentPhase = "hitl_review";
 
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx];
-      const promptReply = state.lang === "ta"
-        ? `${lm.ward} கண்டறியப்பட்டது (${urgency.badgeTa}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும் அல்லது சரிபார்ப்புப் பெட்டியைத் திறக்கவும்.`
+      const spokeTamilOrTanglish = /[\u0B80-\u0BFF]|(eriyala|thanni|kuppai|saakkadai|naala|aaguthu|irukku|veetuku|pakkathula|pannama)/i.test(msg);
+      const promptReply = (state.lang === "ta" || spokeTamilOrTanglish)
+        ? `புரிந்தது — ${lm.ward} (${urgency.badgeTa}). சரிபார்த்து அனுப்ப OTP உறுதி செய்து 'உறுதி, உறுதி' சொல்லவும்.`
         : `Resolved ${lm.ward} (${urgency.badgeEn}). Open Clarity Popup to confirm OTP & seal, or say 'Confirm, Confirm' ('உறுதி, உறுதி') twice.`;
       const replyIdx = state.turns.push({ role: "agent", text: promptReply, needsInput: false }) - 1;
 
@@ -2622,6 +2677,9 @@
     });
 
     voiceInput.addEventListener("input", () => {
+      if (state.callActive && (state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking))) {
+        interruptAgentSpeech();
+      }
       const v = voiceInput.value.trim();
       const txtEl = document.getElementById("liveTranscriptText");
       if (v) {
@@ -2635,12 +2693,19 @@
       state.autoSpeak = !state.autoSpeak;
       e.currentTarget.setAttribute("aria-pressed", state.autoSpeak ? "true" : "false");
       e.currentTarget.textContent = state.autoSpeak ? "Voice: ON" : "Voice: Muted";
-      if (!state.autoSpeak && "speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (!state.autoSpeak) interruptAgentSpeech();
     });
 
     let liveRec = null;
     let callTimerInterval = null;
     let callSeconds = 0;
+    let pendingTranscript = "";
+    let lastCommittedText = "";
+    let turnFlushTimer = null;
+    let micDenied = false;
+    let vadStream = null;
+    let vadRafId = null;
+    let vadCtx = null;
 
     function updateCallDockUi() {
       const startBtn = document.getElementById("startCallBtn");
@@ -2654,12 +2719,89 @@
       startLbl.textContent = state.callActive ? (state.lang === "ta" ? "அழைப்பில்" : "On Call") : (state.lang === "ta" ? "அழைப்பு" : "Call");
       muteBtn.disabled = !state.callActive;
       muteBtn.setAttribute("aria-pressed", state.isMuted ? "true" : "false");
-      muteLbl.textContent = state.isMuted ? (state.lang === "ta" ? "ஒலியடக்கப்பட்டது" : "Muted") : (state.lang === "ta" ? "அமைதி" : "Mute");
+      muteLbl.textContent = state.isMuted ? (state.lang === "ta" ? "ஒலியெழுப்பு" : "Unmute") : (state.lang === "ta" ? "அமைதி" : "Mute");
       endBtn.disabled = !state.callActive;
       orbBtn.setAttribute("data-state", (state.callActive && !state.isMuted) ? "listening" : "idle");
     }
 
+    function commitRecognizedTurn(rawText) {
+      clearTimeout(turnFlushTimer);
+      turnFlushTimer = null;
+      const cleaned = (rawText || "").trim();
+      if (!cleaned || cleaned === lastCommittedText) return false;
+      lastCommittedText = cleaned;
+      pendingTranscript = "";
+      voiceInput.value = "";
+      document.getElementById("liveTranscriptText").textContent = `Heard: "${cleaned}"`;
+      handleAgentTurn(cleaned);
+      setTimeout(() => {
+        if (lastCommittedText === cleaned) lastCommittedText = "";
+      }, 2500);
+      return true;
+    }
+
+    function startDuplexBargeInMonitor() {
+      // Only attach hardware Web Audio stream over http/https (file:// re-prompts separately per stream!)
+      if (window.location.protocol === "file:" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+      if (vadStream) return;
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+        .then(stream => {
+          vadStream = stream;
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return;
+          vadCtx = new Ctx();
+          const src = vadCtx.createMediaStreamSource(stream);
+          const analyser = vadCtx.createAnalyser();
+          analyser.fftSize = 512;
+          src.connect(analyser);
+          const buf = new Uint8Array(analyser.fftSize);
+          let hotFrames = 0;
+
+          function sampleEnergy() {
+            if (!state.callActive || !vadStream) return;
+            const speakingNow = state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking);
+            if (!state.isMuted && speakingNow) {
+              analyser.getByteTimeDomainData(buf);
+              let sum = 0;
+              for (let i = 0; i < buf.length; i++) {
+                const v = (buf[i] - 128) / 128;
+                sum += v * v;
+              }
+              const rms = Math.sqrt(sum / buf.length);
+              if (rms > 0.055) hotFrames++;
+              else hotFrames = Math.max(0, hotFrames - 1);
+              if (hotFrames >= 4) {
+                hotFrames = 0;
+                interruptAgentSpeech();
+                document.getElementById("liveTranscriptText").textContent = "Interrupted — listening now...";
+              }
+            } else {
+              hotFrames = 0;
+            }
+            vadRafId = requestAnimationFrame(sampleEnergy);
+          }
+          vadRafId = requestAnimationFrame(sampleEnergy);
+        })
+        .catch(() => {});
+    }
+
+    function stopDuplexBargeInMonitor() {
+      cancelAnimationFrame(vadRafId);
+      vadRafId = null;
+      if (vadStream) {
+        vadStream.getTracks().forEach(t => t.stop());
+        vadStream = null;
+      }
+      if (vadCtx) {
+        try { vadCtx.close(); } catch {}
+        vadCtx = null;
+      }
+    }
+
     function stopSpeechCapture() {
+      clearTimeout(turnFlushTimer);
+      turnFlushTimer = null;
+      stopDuplexBargeInMonitor();
       if (liveRec) {
         const ref = liveRec;
         liveRec = null;
@@ -2668,12 +2810,14 @@
     }
 
     function startSpeechCapture() {
-      stopSpeechCapture();
-      if (!state.callActive || state.isMuted) return;
+      // Keep single persistent recognizer across mute/unmute so Chrome never re-prompts unnecessarily
+      if (!state.callActive || micDenied) return;
       if (state.sttMode === "wispr") {
         document.getElementById("liveTranscriptText").textContent = "Wispr Flow active — press your dictation hotkey or type below.";
         return;
       }
+      if (liveRec) return;
+
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
         document.getElementById("liveTranscriptText").textContent = "Mic stream unavailable here — use Wispr Flow hotkey or type below.";
@@ -2684,36 +2828,55 @@
         liveRec.continuous = true;
         liveRec.interimResults = true;
         liveRec.lang = state.lang === "ta" ? "ta-IN" : "en-IN";
+        liveRec.onspeechstart = () => {
+          if (!state.isMuted) interruptAgentSpeech();
+        };
         liveRec.onresult = (ev) => {
-          if ("speechSynthesis" in window) window.speechSynthesis.cancel(); // Instant barge-in!
+          if (state.isMuted) return;
+          interruptAgentSpeech();
           let interim = "";
           for (let i = ev.resultIndex; i < ev.results.length; i++) {
             const piece = ev.results[i][0].transcript;
             if (ev.results[i].isFinal) {
-              document.getElementById("liveTranscriptText").textContent = `Heard: "${piece.trim()}"`;
-              handleAgentTurn(piece.trim());
+              commitRecognizedTurn(piece);
             } else {
               interim += piece;
             }
           }
           if (interim.trim()) {
-            document.getElementById("liveTranscriptText").textContent = `Hearing live: "${interim.trim()}..."`;
-            voiceInput.value = interim.trim();
+            pendingTranscript = interim.trim();
+            voiceInput.value = pendingTranscript;
+            document.getElementById("liveTranscriptText").textContent = `Hearing live: "${pendingTranscript}..."`;
             spawnRipple(false);
+            clearTimeout(turnFlushTimer);
+            turnFlushTimer = setTimeout(() => {
+              if (state.callActive && !state.isMuted && pendingTranscript) {
+                commitRecognizedTurn(pendingTranscript);
+              }
+            }, 950);
           }
         };
-        liveRec.onerror = () => {
-          liveRec = null;
-          if (state.callActive) {
-            document.getElementById("liveTranscriptText").textContent = "Browser mic paused — dictate cleanly with Wispr Flow hotkey or type below.";
+        liveRec.onerror = (ev) => {
+          if (ev?.error === "not-allowed" || ev?.error === "service-not-allowed") {
+            micDenied = true;
+            liveRec = null;
+            if (state.callActive) {
+              document.getElementById("liveTranscriptText").textContent = "Mic blocked — open http://127.0.0.1:8000 or use Wispr Flow / type below.";
+            }
+            return;
           }
+          // Ignore harmless "no-speech" / "aborted" silently without dropping call
         };
         liveRec.onend = () => {
-          if (liveRec && state.callActive && !state.isMuted) {
+          // Only restart on http/https (avoid Chrome file:// repeated permission popups!)
+          if (liveRec && state.callActive && !micDenied && window.location.protocol !== "file:") {
             try { liveRec.start(); } catch { liveRec = null; }
+          } else {
+            liveRec = null;
           }
         };
         liveRec.start();
+        startDuplexBargeInMonitor();
       } catch {
         liveRec = null;
       }
@@ -2727,6 +2890,8 @@
       }
       state.callActive = true;
       state.isMuted = false;
+      micDenied = false;
+      pendingTranscript = "";
       state.agentPhase = "listening";
       callSeconds = 0;
       clearInterval(callTimerInterval);
@@ -2741,13 +2906,16 @@
       if (state.turns.length === 0) {
         const welcome = state.lang === "ta"
           ? "வணக்கம்! நான் நம்ம குரல் — உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்."
-          : "Vanakkam! I am NammaKural, your civic voice agent. Tell me what needs fixing on your street and your nearest landmark — speak naturally in Tamil or Tanglish.";
+          : "வணக்கம்! நான் நம்ம குரல். Tell me what needs fixing on your street in Tamil or Tanglish.";
         state.turns.push({ role: "agent", text: welcome, needsInput: true });
         renderAll(false);
         speakReply(welcome);
       } else {
         renderParticulars();
         updateStatusPill();
+      }
+      if (window.location.protocol === "file:") {
+        document.getElementById("liveTranscriptText").textContent = "Note: Browser re-asks mic on file:// — serve http://127.0.0.1:8000 to remember mic permission.";
       }
       updateCallDockUi();
       startSpeechCapture();
@@ -2756,16 +2924,23 @@
 
     function toggleMute() {
       if (!state.callActive) return;
-      state.isMuted = !state.isMuted;
-      if (state.isMuted) {
-        stopSpeechCapture();
-        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-        state.agentPhase = "idle";
-        document.getElementById("liveTranscriptText").textContent = "Microphone muted — tap Mute again to resume.";
-        showToast("Mic muted");
+      if (!state.isMuted) {
+        // Flush any unsubmitted spoken/typed buffer right before muting!
+        const unsubmitted = (pendingTranscript || voiceInput.value || "").trim();
+        if (unsubmitted && unsubmitted !== lastCommittedText) {
+          commitRecognizedTurn(unsubmitted);
+        }
+        state.isMuted = true;
+        if (vadStream) vadStream.getAudioTracks().forEach(t => { t.enabled = false; });
+        // NEVER cancel agent speechSynthesis on mic mute — agent keeps speaking!
+        if (state.agentPhase !== "speaking") state.agentPhase = "idle";
+        document.getElementById("liveTranscriptText").textContent = "Mic muted — agent finishes replying. Tap Unmute to speak again.";
+        showToast("Mic muted (pending speech processed)");
       } else {
-        state.agentPhase = "listening";
-        startSpeechCapture();
+        state.isMuted = false;
+        if (vadStream) vadStream.getAudioTracks().forEach(t => { t.enabled = true; });
+        state.agentPhase = (window.speechSynthesis && window.speechSynthesis.speaking) ? "speaking" : "listening";
+        if (!liveRec && state.sttMode !== "wispr") startSpeechCapture();
         spawnRipple(true);
         document.getElementById("liveTranscriptText").textContent = "Listening in Tanglish / Tamil...";
         showToast("Mic unmuted");
@@ -2776,8 +2951,12 @@
 
     function endCall() {
       if (!state.callActive && !liveRec) return;
+      const unsubmitted = (pendingTranscript || voiceInput.value || "").trim();
+      if (unsubmitted && unsubmitted !== lastCommittedText) {
+        commitRecognizedTurn(unsubmitted);
+      }
       stopSpeechCapture();
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      interruptAgentSpeech();
       clearInterval(callTimerInterval);
       state.callActive = false;
       state.isMuted = false;
@@ -3032,8 +3211,16 @@
     });
 
     document.getElementById("orbMicBtn").addEventListener("click", () => {
-      if (state.callActive) toggleMute();
-      else startCall();
+      if (state.callActive) {
+        if (state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking)) {
+          interruptAgentSpeech();
+          showToast("Interrupted — listening now");
+        } else {
+          toggleMute();
+        }
+      } else {
+        startCall();
+      }
     });
 
     document.getElementById("photoStage").addEventListener("click", (e) => {

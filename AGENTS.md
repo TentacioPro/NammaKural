@@ -26,4 +26,4 @@ Mission: Build **`NammaKural`** (*நம்ம குரல்* — "Our Voice")
 - [`DESIGN.md`](DESIGN.md) — Visual grammar & Foundry Voice Orb specs
 - [`docs/architecture/VOICE_AGENT_ARCHITECTURE.md`](docs/architecture/VOICE_AGENT_ARCHITECTURE.md) — Full Voice AI stack, Tanglish/accent NLU, VAD, telemetry & self-improvement research
 - [`docs/TN_CIVIC_PORTALS.md`](docs/TN_CIVIC_PORTALS.md) — Live DOM inspection & WhatsApp/OTP boundaries across 6 TN portals
-- [`docs/ROUND1_SUBMISSIONS.md`](docs/ROUND1_SUBMISSIONS.md) — Submitted Activity 01 & ready Activity 02 prompt (`657 words`)
+- [`docs/ROUND1_SUBMISSIONS.md`](docs/ROUND1_SUBMISSIONS.md) — Submitted Activity 01 & ready Activity 02 prompt (`705 words`)

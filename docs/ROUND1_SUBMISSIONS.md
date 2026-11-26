@@ -24,39 +24,37 @@ Citizens experience civic problems while standing on the street and naturally de
 ---
 
 ## Activity 02 — Prompt (`80–800 words`, `Text only, no uploads`)
-- **Status:** Tightened & verified `<800 words` (`~725 words` — Voice Agent + Neural Orb + 4-Step Reasoning + 6 TN Portals + 1-Tap WhatsApp + Photo Stamper)
+- **Status:** Fully aligned with Pure HITL Voice Agent + Sentiment/Urgency Triage + Non-Silent VAD architecture (`~705 words`, safely inside `80–800` word cap)
 
 ```text
-Act as an expert frontend engineer and build a complete single-page web application called "NammaKural (நம்ம குரல்)" — a calm, light-mode Tanglish Voice Agent, GIS street-and-ward resolver, photo-evidence stamper, and inclusive filing bridge for Tamil Nadu's 6 primary civic portals, built for Wispr Flow voice input.
+Act as an expert voice-AI and frontend engineer and build a working web application called "NammaKural (நம்ம குரல்)" — a calm, sunlit, pure conversational Voice Agent, GIS landmark-to-ward resolver, sentiment/urgency router, and Human-in-the-Loop (HITL) civic filing bridge for Tamil Nadu's 6 public portals, using Wispr Flow as the voice intake layer.
 
 Your users and their languages:
-Everyday Tamil Nadu citizens across Chennai and 38 districts—senior citizens, daily-wage workers, homemakers, shopkeepers, tenants, and office workers, from low-literacy mobile users to tech-savvy residents. They speak code-mixed Tanglish (Tamil mixed with English nouns like "streetlight", "transformer", "drainage"), colloquial Tamil (தமிழ்) across regional accents (Chennai Madras Bashai, Madurai, Kongu, Tirunelveli, Trichy), and Indian English. They describe places by landmarks ("Tower Park back side", "Vijayanagar bus stand kitta") rather than Zone, Ward, Depot, or GIS Street IDs.
+Everyday Tamil Nadu residents across Chennai and 38 districts—senior citizens, daily-wage earners, homemakers, tenants, shopkeepers, and office workers across urban and semi-urban streets. They speak Tanglish (colloquial Tamil mixed with English nouns like "streetlight", "transformer", "saakkadai", "ration card"), regional Tamil dialects (Chennai Madras Bashai, Madurai, Kongu, Tirunelveli, Trichy), and Indian English. They describe places by street landmarks ("Tower Park back side", "Vijayanagar bus stand kitta") rather than Zone, Ward, Depot, or GIS Road IDs, and reject intimidating multi-field government forms.
 
 The voice flow, step by step:
-Step 1 (Wispr Flow Voice Intake & Neural Orb):
-- User taps the central animated Neural Voice Orb (or presses their Wispr Flow hotkey) and speaks into a plain voice bar: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa irukku."
-- Agent animates from Listening to Reasoning and streams 4 transparent steps: (1) Heard 2 issues (streetlight outage + loose wire); (2) GIS Match -> Zone 08, Ward 103, Vth Avenue (Road ID 76370); (3) Split -> GCC PGRS (1913) & TANGEDCO Minnagam (1912); (4) Armed 1-tap WhatsApp & stamped <1MB photo.
-Step 2 (Voice Landmark Disambiguation when an area spans multiple wards):
-- User says: "Velachery main road-la sewage overflow aaguthu, periya pothole irukku."
-- Agent pauses and asks back by voice and landmark pills: "Velachery covers multiple Wards. Which landmark is closest? Say or tap: (1) Vijayanagar Bus Stand (Ward 178), or (2) Phoenix Marketcity (Ward 175)."
-- User says: "Vijayanagar Bus Stand." Agent locks Zone 13 -> Ward / Depot 178 and splits CMWSSB Metro Water (strict 200-char remark cap) and GCC PGRS Roads.
-Step 3 (Service Photo Tap-to-Mark & Voice Slot-Filling):
-- Displays a matching street photo for each service (Streetlight/EB, Sewage/Pothole, Water Leak, Ration Shop, Garbage). User taps the hazard to move a red target ring and appends missing details by voice ("Door number 14"). Agent stamps Zone, Ward, Road ID, and timestamp onto the <1MB JPEG.
-Step 4 (Premature-Closure 1100 Voice Escalation):
-- User says: "Complaint GCC-20491 fix pannama close pannitanga," and attaches a current photo. Agent drafts a Mudhalvarin Mugavari (1100) reopen petition.
+Step 1 (Minimal Orb Intake, Reasoning & Urgency Triage — Zero Form Wall):
+- The screen opens to a clean white/sunlit Foundry-style canvas with an animated 3-layer harmonic Acoustic Orb, a single Wispr Flow dictation bar, and 5 quick spoken examples. There are zero upfront forms.
+- Citizen taps the orb or Wispr Flow hotkey and speaks in one breath: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa spark aaguthu."
+- The orb animates Listening -> Thinking -> Never-Going-Silent Narration ("Checking Zone 08 Ward 103 and splitting agencies..."), classifies Urgency & Sentiment (`P1 Critical Safety` due to "spark", `P2 High Escalation` for chronic/false-closure cases, or `P3 Standard`), and resolves Chennai Zone 08, Ward 103, Vth Avenue (Road ID 76370) across GCC PGRS (1913) and TANGEDCO (1912).
 
-What the product says or shows back (Pure Voice Agent — No Form Wall + HITL Clarity Check):
-1. Sentiment & Urgency Triage: Detects urgency/sentiment from spoken Tanglish—elevating sparking/live transformer wires to P1 Critical Safety (prioritizing TANGEDCO 1912 emergency dial) and chronic delays/false closures to P2 High Urgency Escalation (enabling 1100 escalation tone).
-2. Mandatory Final Clarity Check (HITL Gate): Before unlocking dispatch, presents a concise confirmation card with understood issue(s), urgency tier, resolved Zone/Ward, and agencies—with explicit Approve & Prepare Dispatch vs. Speak/Type a Change buttons.
-3. Post-Approval Dispatch & Tamil Read-Back: Speaks confirmation aloud in Tamil (ta-IN TTS), reveals 1-Tap Official WhatsApp / CM Cell Email (cmcell@tn.gov.in) / Helpline Call (1913, 1100, 1916, 1912, 1967), Tap-to-Mark <1MB photo stamper, and a collapsible portal copy drawer.
+Step 2 (Clarify ONLY When Needed — Missing Slot or Multi-Ward Ambiguity):
+- If key slots are missing ("saakkadai overflow aaguthu" without location) or an area spans multiple wards ("Velachery main road-la pothole"), the agent pauses dispatch and asks one brief spoken question backed by clickable voice/touch pills: "Velachery spans multiple Wards. Which landmark is closest: Vijayanagar Bus Stand (Ward 178) or Phoenix Marketcity (Ward 175)?" Once answered, it locks Zone 13 -> Ward/Depot 178 across CMWSSB (strict 200-char remark cap) and GCC Roads.
+
+Step 3 (Mandatory HITL Final Clarity Check — Approve Before Dispatch):
+- Before unlocking any send/dispatch action, the agent pauses at a Human-in-the-Loop confirmation card displaying: (a) Plain-language issue summary, (b) Detected Urgency & Sentiment badge (e.g. P1 Critical Safety or P2 Chronic Escalation), (c) Resolved District, Zone, Ward, Road ID, and portal access strategy (e.g. GCC Open Anonymous Web vs. TANGEDCO OTP bypass via WhatsApp), plus landmark confirmation pills.
+- Citizen chooses "Approve & Prepare Dispatch" or "Speak / Type a Change" (e.g. "Add Pole 42" or "Switch to Anna Arch").
+
+Step 4 (Post-Approval Dispatch, Emergency Prioritization, Photo Stamp & 1100 Escalation):
+- Only after HITL approval does the agent unlock final tools: conversational Tamil TTS confirmation (ta-IN) so elders verify by ear, P1 Emergency Dial ("1912" prioritized at top for sparking wires), 1-Tap Official WhatsApp queues (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD +91-9499991916, TANGEDCO 9498794987) or direct email (cmcell@tn.gov.in / 1100 for falsely closed complaints like "#GCC-20491 fix pannama close pannitanga"), an interactive Tap-to-Mark <1MB JPEG photo stamper (overlaying Ward, Road ID, coordinates), and a collapsed-by-default portal field-copy drawer.
 
 Noise, accents, mixed languages and misheard input:
-1. Street Noise & Cut-Off Speech: Retains conversation memory turn-by-turn and asks ONLY for genuinely missing or ambiguous details.
-2. Accents & Tanglish Variants: Phonetic matcher normalizes dialect variants ("eriyala/light podala", "thanni varala/kudineer", "saakkadai", "kuppai") and Tamil Unicode.
-3. Misheard Landmarks: Shows quick landmark confirmation pills for 1-tap correction.
+1. Street Noise & Backchannel Filtering: Semantic VAD with a backchannel allowlist treats "ok", "mm-hmm", "seri", "aama" and bystander chatter as non-turns, while explicit "Talk to interrupt" cues ("stop", "wait", "niruthunga") immediately stop TTS output (<150ms) to accept corrections.
+2. Tanglish & Dialect Normalization: Phonetic matcher maps code-mixed and Tamil Unicode variants ("eriyala/light podala", "saakkadai", "thanni varala/kudineer", "kuppai") to canonical agencies without repeating input.
+3. Cut-off Speech & Ambiguity Recovery: Retains turn-by-turn conversation state so late additions ("Door 14") update drafts cleanly, and HITL clarity review prevents misrouted complaints before dispatch.
 
 Enough detail to build:
-Build a sunlit, light-mode Pure Voice Agent UI (inspired by Azure AI Foundry / Voice Live AcousticOrb) with a 3-layer harmonic Canvas orb, clean Wispr Flow bar, 5 quick voice scenarios, streaming reasoning trace, Sentiment/Urgency triage, HITL Clarity Check approval gate, post-approval Tamil TTS + 1-tap WhatsApp + Tap-to-Mark photo stamper, `English | தமிழ்` switcher, `A+` large-text toggle, and `2G Lite` mode—powered offline by embedded Chennai ArcGIS Zone/Ward/Street data.
+Build a single-file, sunlit responsive web app with an HTML5 Canvas 3-layer AcousticOrb state machine (`idle`, `listening`, `thinking`, `clarifying`, `hitl_review`, `approved_dispatch`, `critical`), plain Wispr Flow input, dynamic clarifier pills, P1/P2/P3 sentiment router, HITL approval gate locking post-approval Tamil TTS / WhatsApp / <1MB photo stamper, `English | தமிழ்` toggle, `A+ Text` accessibility scaling, and `2G Lite` mode—backed offline by TN ArcGIS Ward/Road schemas.
 ```
 
 ---

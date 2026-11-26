@@ -1,7 +1,7 @@
-# Round 1 Submissions (`Due: 27 Nov 2026` · `0 of 3 complete`)
+# Round 1 Submissions (`Due: 29 Nov 2026` · `1 of 3 complete`)
 
 ## Activity 01 — Idea (`50–500 words`, `Text only, no uploads`)
-- **Status:** Tailored to exact 4-section rubric (`~335 words`)
+- **Status:** Submitted (`Quality check passed · Evaluation pending`)
 
 ```text
 The problem:
@@ -24,37 +24,39 @@ Citizens experience civic problems while standing on the street and naturally de
 ---
 
 ## Activity 02 — Prompt (`80–800 words`, `Text only, no uploads`)
-- **Status:** Fully aligned with Pure HITL Voice Agent + Sentiment/Urgency Triage + Non-Silent VAD architecture (`~705 words`, safely inside `80–800` word cap)
+- **Status:** Finalized with Anti-Spam Verification/Cooldowns, Request History, Dual-Confirm Tamil HITL & Real Submission Paths (`627 words`, strictly inside `80–800` word cap)
 
 ```text
-Act as an expert voice-AI and frontend engineer and build a working web application called "NammaKural (நம்ம குரல்)" — a calm, sunlit, pure conversational Voice Agent, GIS landmark-to-ward resolver, sentiment/urgency router, and Human-in-the-Loop (HITL) civic filing bridge for Tamil Nadu's 6 public portals, using Wispr Flow as the voice intake layer.
+Act as an expert voice-AI and frontend engineer and build a working web app called "NammaKural (நம்ம குரல்)" — a calm, sunlit conversational Voice Agent, GIS landmark-to-ward resolver, anti-spam verified HITL router, and official civic filing bridge for Tamil Nadu's 6 public portals, built for Wispr Flow voice input.
 
 Your users and their languages:
-Everyday Tamil Nadu residents across Chennai and 38 districts—senior citizens, daily-wage earners, homemakers, tenants, shopkeepers, and office workers across urban and semi-urban streets. They speak Tanglish (colloquial Tamil mixed with English nouns like "streetlight", "transformer", "saakkadai", "ration card"), regional Tamil dialects (Chennai Madras Bashai, Madurai, Kongu, Tirunelveli, Trichy), and Indian English. They describe places by street landmarks ("Tower Park back side", "Vijayanagar bus stand kitta") rather than Zone, Ward, Depot, or GIS Road IDs, and reject intimidating multi-field government forms.
+Everyday Tamil Nadu residents across Chennai and 38 districts—senior citizens, daily-wage earners, homemakers, shopkeepers, tenants, and office workers. They speak Tanglish (Tamil mixed with English words like "streetlight", "transformer", "saakkadai"), regional Tamil dialects (Chennai, Madurai, Kongu, Tirunelveli, Trichy), and Indian English, describing places by landmarks ("Tower Park back side") rather than Ward or GIS Road IDs.
 
 The voice flow, step by step:
-Step 1 (Minimal Orb Intake, Reasoning & Urgency Triage — Zero Form Wall):
-- The screen opens to a clean white/sunlit Foundry-style canvas with an animated 3-layer harmonic Acoustic Orb, a single Wispr Flow dictation bar, and 5 quick spoken examples. There are zero upfront forms.
-- Citizen taps the orb or Wispr Flow hotkey and speaks in one breath: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa spark aaguthu."
-- The orb animates Listening -> Thinking -> Never-Going-Silent Narration ("Checking Zone 08 Ward 103 and splitting agencies..."), classifies Urgency & Sentiment (`P1 Critical Safety` due to "spark", `P2 High Escalation` for chronic/false-closure cases, or `P3 Standard`), and resolves Chennai Zone 08, Ward 103, Vth Avenue (Road ID 76370) across GCC PGRS (1913) and TANGEDCO (1912).
+Step 1 (Minimal Orb Intake, Sentiment Triage & Zero Form Wall):
+- Screen opens on a clean white Foundry-style canvas with an animated 3-layer Acoustic Orb, one Wispr Flow dictation bar, and a compact "My Request History" drawer. Zero upfront form walls.
+- Citizen speaks once: "Anna Nagar Tower Park back side 5th Avenue-la streetlight 5 naala eriyala, transformer wire vera loose-aa spark aaguthu."
+- Orb animates Listening -> Thinking -> Never-Going-Silent Narration ("Checking Ward 103 and active ticket history..."), detects `P1 Critical Safety` (live spark), `P2 High Escalation` (false closure/chronic delay), or `P3 Standard`, and resolves Zone 08, Ward 103, Vth Avenue (Road ID 76370) across GCC PGRS (1913) and TANGEDCO (1912).
 
-Step 2 (Clarify ONLY When Needed — Missing Slot or Multi-Ward Ambiguity):
-- If key slots are missing ("saakkadai overflow aaguthu" without location) or an area spans multiple wards ("Velachery main road-la pothole"), the agent pauses dispatch and asks one brief spoken question backed by clickable voice/touch pills: "Velachery spans multiple Wards. Which landmark is closest: Vijayanagar Bus Stand (Ward 178) or Phoenix Marketcity (Ward 175)?" Once answered, it locks Zone 13 -> Ward/Depot 178 across CMWSSB (strict 200-char remark cap) and GCC Roads.
+Step 2 (Clarify ONLY When Needed + Duplicate/Cooldown Guard):
+- If details are missing or an area spans multiple wards ("Velachery"), the agent asks one spoken question with 1-tap landmark pills ("Vijayanagar Bus Stand Ward 178 or Phoenix Marketcity Ward 175?").
+- Anti-Spam & Cooldown Check: Queries citizen Request History and enforces a 24h department-per-ward cooldown before creating duplicate filings—unless `P1 Critical Safety` hazard overrides it, or citizen opts to escalate an existing ticket (#GCC-20491) to CM Cell 1100. Dispatch tools are strictly code-gated so random LLM tool calls cannot fire.
 
-Step 3 (Mandatory HITL Final Clarity Check — Approve Before Dispatch):
-- Before unlocking any send/dispatch action, the agent pauses at a Human-in-the-Loop confirmation card displaying: (a) Plain-language issue summary, (b) Detected Urgency & Sentiment badge (e.g. P1 Critical Safety or P2 Chronic Escalation), (c) Resolved District, Zone, Ward, Road ID, and portal access strategy (e.g. GCC Open Anonymous Web vs. TANGEDCO OTP bypass via WhatsApp), plus landmark confirmation pills.
-- Citizen chooses "Approve & Prepare Dispatch" or "Speak / Type a Change" (e.g. "Add Pole 42" or "Switch to Anna Arch").
+Step 3 (Two-Path Verified HITL Gate — Double Affirmation or Modal + Spoken Seal):
+- Before dispatching, citizen authenticates via Mobile OTP (with DigiLocker/API-Setu & e-Sevai Operator hooks for govt rollout—storing zero raw Aadhaar PII) and completes a strict HITL Clarity Check:
+  - Hands-Free Voice Path: Agent reads back Ward, Urgency, and Agencies in Tamil (ta-IN); citizen affirms the confirmation keyword twice ("உறுதி, உறுதி" / "Confirm, Confirm").
+  - Dynamic Modal Path: A clarity popup displays full resolved summary + cooldown status; citizen reviews, taps OK, and speaks once ("உறுதி" / "Confirm") in their native Tamil/Tanglish accent to seal dispatch.
 
-Step 4 (Post-Approval Dispatch, Emergency Prioritization, Photo Stamp & 1100 Escalation):
-- Only after HITL approval does the agent unlock final tools: conversational Tamil TTS confirmation (ta-IN) so elders verify by ear, P1 Emergency Dial ("1912" prioritized at top for sparking wires), 1-Tap Official WhatsApp queues (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD +91-9499991916, TANGEDCO 9498794987) or direct email (cmcell@tn.gov.in / 1100 for falsely closed complaints like "#GCC-20491 fix pannama close pannitanga"), an interactive Tap-to-Mark <1MB JPEG photo stamper (overlaying Ward, Road ID, coordinates), and a collapsed-by-default portal field-copy drawer.
+Step 4 (Real Submission Paths — Public Queues, Official WhatsApp & Operator Mode):
+- Never hacks logins or CAPTCHAs. Post-approval unlocks real submission channels: (a) Direct citizen-authenticated WhatsApp official bots (GCC +91-9445061913, CMWSSB +91-8144930308, TWAD +91-9499991916, TANGEDCO 9498794987) carrying telecom caller identity, (b) Emergency Helpline Dial (1912 prioritized for P1 hazards, plus 1913/1916/1100/1967) & CM Cell email (cmcell@tn.gov.in), and (c) Open web/e-Sevai Booth Operator payload cards + Tap-to-Mark <1MB GIS stamped JPEG photo (and TNeGA/ULB REST webhook schema for municipal integration).
 
 Noise, accents, mixed languages and misheard input:
-1. Street Noise & Backchannel Filtering: Semantic VAD with a backchannel allowlist treats "ok", "mm-hmm", "seri", "aama" and bystander chatter as non-turns, while explicit "Talk to interrupt" cues ("stop", "wait", "niruthunga") immediately stop TTS output (<150ms) to accept corrections.
-2. Tanglish & Dialect Normalization: Phonetic matcher maps code-mixed and Tamil Unicode variants ("eriyala/light podala", "saakkadai", "thanni varala/kudineer", "kuppai") to canonical agencies without repeating input.
-3. Cut-off Speech & Ambiguity Recovery: Retains turn-by-turn conversation state so late additions ("Door 14") update drafts cleanly, and HITL clarity review prevents misrouted complaints before dispatch.
+1. Street Noise & Backchannel Immunity: Semantic VAD treats "ok", "mm-hmm", "seri", "aama" and bystander noise as non-turns, while "Talk to interrupt" triggers ("stop", "wait", "niruthunga") halt playback (<150ms).
+2. Tanglish & Dialect Normalization: Phonetic matcher maps regional variants ("eriyala/light podala", "saakkadai", "thanni varala", "kuppai") and Tamil Unicode cleanly.
+3. Ambiguity & Edit Recovery: Late spoken corrections ("Pole 42") update the HITL modal cleanly before final seal.
 
 Enough detail to build:
-Build a single-file, sunlit responsive web app with an HTML5 Canvas 3-layer AcousticOrb state machine (`idle`, `listening`, `thinking`, `clarifying`, `hitl_review`, `approved_dispatch`, `critical`), plain Wispr Flow input, dynamic clarifier pills, P1/P2/P3 sentiment router, HITL approval gate locking post-approval Tamil TTS / WhatsApp / <1MB photo stamper, `English | தமிழ்` toggle, `A+ Text` accessibility scaling, and `2G Lite` mode—backed offline by TN ArcGIS Ward/Road schemas.
+Build a sunlit single-page app with Canvas 3-layer AcousticOrb states (`idle`, `listening`, `thinking`, `clarifying`, `hitl_review`, `approved_dispatch`, `critical`), Request History & Cooldown engine, Mobile-OTP + Dual-Confirm Tamil HITL popup, official WhatsApp/1912/<1MB Photo Stamper dispatch, `English | தமிழ்` toggle, `A+ Text`, and `2G Lite` mode—powered offline by TN ArcGIS Ward/Road schemas.
 ```
 
 ---

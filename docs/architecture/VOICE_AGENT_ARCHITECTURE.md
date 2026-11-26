@@ -100,3 +100,24 @@ Citizens do not say *"Ward 103 GCC Electrical"*; they say *"Tower Park pinnaadi 
 3. **Closed-Loop Recursive Improvement (Offline-Gated):**
    - Every time a citizen edits the HITL Clarity Check (clicks *"Speak / Type a Change"*, switches landmark pill #1 -> #2, or adds a missing phrase), record an anonymized **`hitl_correction_delta`**.
    - Weekly/batch job clusters frequent missed Tanglish terms or mis-mapped landmarks -> appends synthetic regression cases to `eval_fixtures` -> updates phonetic/landmark tables ONLY after passing `>=95%` regression without breaking existing cases.
+
+---
+
+## 8. Anti-Spam, Citizen Verification, Cooldowns & Real Portal Submission
+
+### Preventing Random Tool Calls & Duplicate Complaints
+1. **Deterministic Tool Gating (`Code > LLM`):** Dispatch functions (`whatsapp_dispatch`, `webhook_submit`, `pdf_export`) are unreachable by raw LLM output; only `state.agentPhase === "approved_dispatch"` unlocks them.
+2. **Citizen Identity (India Compliance):**
+   - **Hackathon / Public Rollout:** **Mobile OTP Verification** (matching TN portals' own caller identity model) — never stores raw Aadhaar numbers (UIDAI raw Aadhaar OTP requires licensed AUA/KUA registration; production municipal integrations hook **DigiLocker / API Setu** cleanly).
+   - **Telecom-Bound WhatsApp:** Sending via `wa.me` uses the citizen's own WhatsApp SIM number, which Tamil Nadu grievance bots already rate-limit & track natively.
+3. **Request History & Department/Ward Cooldowns:**
+   - **Request History Log:** Displays prior grievances, ticket IDs (`#GCC-20491`), resolved Ward, timestamp, and status.
+   - **Cooldown Lock (`24h` per Citizen × Ward × Agency):** Blocks accidental duplicate filings for the same Ward & Department during cooldown, offering **"Escalate existing ticket to CM Cell 1100"** instead — overridden only when urgency classifies as **`P1 Critical Safety`** (e.g., live sparking wire) with an explicit audit marker.
+4. **Dual-Confirm HITL Gate (`Tamil Native Seal`):**
+   - **Voice-Only Path:** Reads back Ward + Agency + Cooldown status in `ta-IN`; citizen must affirm the confirmation keyword **twice** (`"உறுதி, உறுதி"` / `"Confirm, Confirm"`).
+   - **Dynamic Modal Path:** Opens a Final Clarity Popup showing complete resolved details; citizen reviews, taps **OK**, and speaks **`"உறுதி"` / `"Confirm"`** once in their native Tamil/Tanglish accent to authorize dispatch.
+
+### Real-World Submission Bridge (How Complaints Actually Reach Portals)
+- **Public Citizen Channels (Zero Private Credentials Needed):** Open Web schema (`GCC PGRS`), Citizen WhatsApp bots (`GCC`, `CMWSSB`, `TWAD`, `TANGEDCO`), Direct Official Emails (`cmcell@tn.gov.in`, `support@tnpds.com`), and Helplines (`1913`, `1916`, `1912`, `1100`, `1967`).
+- **e-Sevai / Booth Operator Mode & ULB API Path:** Mirrors how Tamil Nadu e-Sevai / CSC operators authenticate once per operator session (biometric/TNeGA ID) and submit verified walk-in citizen petitions cleanly — generating operator-ready structured fields & ready for authenticated TNeGA/Zoho Desk REST webhooks when partnered with a municipal body.
+

@@ -9,7 +9,7 @@ Mission: Build **`NammaKural`** (*நம்ம குரல்* — "Our Voice")
 
 ## Non-Negotiable Invariants
 - **I1 Public schemas only:** Never automate government logins, OTPs, or CAPTCHAs. Use verified open web schemas, official WhatsApp queues, helplines (`1913`, `1916`, `1912`, `1100`, `1967`), or direct official emails (`cmcell@tn.gov.in`, `support@tnpds.com`).
-- **I2 Mandatory HITL before dispatch:** Voice Agent must present a Final Clarity Check (`hitl_review`) showing resolved Ward, Agencies, and Sentiment/Urgency tier before unlocking dispatch tools.
+- **I2 Mandatory Dual-Confirm HITL & Anti-Spam Guard:** Never allow autonomous LLM dispatch (`Code > LLM`). Enforce citizen Mobile OTP (no raw Aadhaar PII — DigiLocker/API-Setu for govt rollout), Request History + 24h Ward/Agency cooldown check (P1 hazard override only), and strict HITL seal (spoken confirmation affirmed twice OR Final Clarity Popup OK + spoken `"உறுதி / Confirm"` once in Tamil/Tanglish) before unlocking dispatch tools.
 - **I3 Ask only when needed:** Never show an upfront multi-field form wall; ask follow-up questions only when issue, location, or multi-ward landmark disambiguation is missing.
 - **I4 No secrets or personal PII:** Never commit phone numbers, email IDs, API keys, OTPs, consumer numbers, or private user transcripts. Sample fixtures use synthetic ticket IDs and public landmarks only.
 - **I5 Workspace isolation:** Keep `D:\NammaKural` isolated from `D:\ContentStudio` and `D:\learning\learning-tracker`.
@@ -26,4 +26,4 @@ Mission: Build **`NammaKural`** (*நம்ம குரல்* — "Our Voice")
 - [`DESIGN.md`](DESIGN.md) — Visual grammar & Foundry Voice Orb specs
 - [`docs/architecture/VOICE_AGENT_ARCHITECTURE.md`](docs/architecture/VOICE_AGENT_ARCHITECTURE.md) — Full Voice AI stack, Tanglish/accent NLU, VAD, telemetry & self-improvement research
 - [`docs/TN_CIVIC_PORTALS.md`](docs/TN_CIVIC_PORTALS.md) — Live DOM inspection & WhatsApp/OTP boundaries across 6 TN portals
-- [`docs/ROUND1_SUBMISSIONS.md`](docs/ROUND1_SUBMISSIONS.md) — Submitted Activity 01 & ready Activity 02 prompt (`705 words`)
+- [`docs/ROUND1_SUBMISSIONS.md`](docs/ROUND1_SUBMISSIONS.md) — Submitted Activity 01 & ready Activity 02 prompt (`627 words`)

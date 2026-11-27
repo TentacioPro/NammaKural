@@ -16,6 +16,8 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+from backend.logger import log_event
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 _SYSTEM_PROMPT = """You are NammaKural (நம்ம குரல்), a compassionate Tamil Nadu civic voice assistant.
@@ -183,14 +185,17 @@ def generate_civic_turn(
     ).encode("utf-8")
 
     try:
+        log_event("llm.request", f"Calling {status['provider']} ({status['active_model']})", {"lang": lang})
         req = urllib.request.Request(endpoint, data=payload, headers=headers)
         with urllib.request.urlopen(req, timeout=8.0) as resp:
             body = json.loads(resp.read().decode("utf-8"))
             content = str(body["choices"][0]["message"].get("content", "")).strip()
             if not content:
+                log_event("llm.empty_response", "LLM returned empty content; falling back to deterministic router", level="WARN")
                 return None
             parsed = _extract_json_object(content)
             reply = str(parsed.get("reply", "")).strip() if parsed else content
+            log_event("llm.response", "LLM generated conversational response", {"model": status["active_model"], "parsed_json": bool(parsed)})
             return {
                 "used": True,
                 "provider": status["provider"],
@@ -200,5 +205,6 @@ def generate_civic_turn(
                 "landmark_text": str(parsed.get("landmark_text", "")) if parsed else "",
                 "urgency_hint": str(parsed.get("urgency_hint", "")) if parsed else "",
             }
-    except (urllib.error.URLError, TimeoutError, KeyError, IndexError, ValueError):
+    except (urllib.error.URLError, TimeoutError, KeyError, IndexError, ValueError) as exc:
+        log_event("llm.error", f"Fallback to deterministic engine: {type(exc).__name__}", level="WARN")
         return None

@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
 import urllib.request
 from typing import Any
 
 from backend.llm_bridge import _read_env_value, probe_local_llm
+from backend.logger import log_event
 from backend.nlu import analyze_turn, classify_conversational_chitchat, classify_semantic_vad, classify_sentiment_urgency
 from backend.state import check_cooldown, scrub_pii_and_aadhaar, verify_hitl_seal
 from backend.state_packs import REGISTRY
@@ -340,9 +342,11 @@ def run_workflow_turn(
         }
 
     # 1. Pre-LLM Aadhaar & PII Firewall
+    t_start = time.time()
     scrub_latest = scrub_pii_and_aadhaar(utterance)
     scrub_combined = scrub_pii_and_aadhaar(combined_text)
     if scrub_latest["aadhaar_blocked"]:
+        log_event("guardrail.aadhaar_blocked", "Blocked 12-digit Aadhaar sequence pre-LLM", {"state_code": state_code}, level="WARN")
         warn = (
             "ஆதார் எண் சொல்ல வேண்டாம் — உங்கள் மொபைல் OTP மட்டுமே போதும். தெருப் பிரச்சனையைச் சொல்லுங்கள்."
             if lang == "ta"
@@ -361,11 +365,13 @@ def run_workflow_turn(
     clean_combined = scrub_combined["clean_text"]
     vad = classify_semantic_vad(clean_latest, assistant_speaking)
     if vad["action"] == "not_turn":
+        log_event("vad.ignored", "Ignored backchannel or brief bystander noise", {"text": clean_latest})
         return {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, "reply": "", "clauses": [], "tool_trace": []}
 
     chitchat = classify_conversational_chitchat(clean_latest)
     if chitchat is not None:
         reply = chitchat["reply_ta"] if lang == "ta" else chitchat["reply_en"]
+        log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
         return {"fsm_state": "GREET", "vad": vad, "chitchat": chitchat, "reply": reply, "clauses": split_tts_clauses(reply), "tool_trace": []}
 
     ctx: dict[str, Any] = {
@@ -440,10 +446,23 @@ def run_workflow_turn(
             llm_reply = f"Complaint sealed for {lm['ward']}."
 
     safe_reply = post_guardrail_reply(llm_reply, {lm["ward"]} if analysis.get("has_place") else set())
+    latency_ms = round((time.time() - t_start) * 1000, 1)
+    log_event(
+        "workflow.turn_complete",
+        f"FSM={fsm_state} ward={lm['ward']} service={analysis['service_id']}",
+        {
+            "state_code": state_code,
+            "model": model_used,
+            "tools": [t.get("tool") for t in tool_trace],
+            "latency_ms": latency_ms,
+            "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
+        },
+    )
     return {
         "fsm_state": fsm_state,
         "state_code": state_code,
         "model": model_used,
+        "latency_ms": latency_ms,
         "vad": vad,
         "aadhaar_blocked": False,
         "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],

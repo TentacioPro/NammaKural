@@ -1163,6 +1163,7 @@
         </div>
 
         <button type="button" class="btn-pill-quiet" id="modelSetupOpenBtn">STT & Model</button>
+        <button type="button" class="btn-pill-quiet" id="logsOpenBtn">Logs</button>
         <button type="button" class="btn-pill-quiet" id="historyOpenBtn">Requests</button>
         <button type="button" class="btn-pill-quiet" id="guideToggleBtn">Guide</button>
         <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+</button>
@@ -1430,6 +1431,21 @@
       <div style="display:flex;justify-content:flex-end;">
         <button type="button" class="btn-hitl-approve" id="modelSetupSaveBtn">Apply Voice Setup</button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL 6: LIVE PIPELINE LOGS & TOOL TRACE INSPECTOR -->
+  <div class="modal-backdrop" id="logsModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="logsModalTitle" data-open="false">
+    <div class="modal-dialog" style="max-width:680px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h3 id="logsModalTitle" style="font-size:1.05rem;">Live Voice Pipeline Logs (PII-Redacted)</h3>
+        <div style="display:flex;gap:6px;">
+          <button type="button" class="btn-outline" id="logsRefreshBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Refresh</button>
+          <button type="button" class="btn-outline" id="logsClearBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Clear</button>
+          <button type="button" class="btn-outline" id="logsCloseBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Close</button>
+        </div>
+      </div>
+      <div id="logsList" style="max-height:360px;overflow-y:auto;background:#0F172A;color:#E2E8F0;border-radius:10px;padding:10px 12px;font-family:var(--font-mono);font-size:0.76rem;line-height:1.5;display:flex;flex-direction:column;gap:4px;"></div>
     </div>
   </div>
 
@@ -1730,6 +1746,7 @@
       llmMode: "auto",
       stateCode: "tn",
       dpdpConsented: true,
+      logs: [],
       historyItems: [
         { ticket_id: "#GCC-20491", ward: "Ward 178", service_id: "garbage_1100", agency: "GCC PGRS (1913)", summary: "Velachery Main Rd garbage overflow — marked Resolved without clearance", hours_ago: 14, status: "PREMATURELY_CLOSED" },
         { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
@@ -1756,6 +1773,39 @@
 
     function getService() {
       return SERVICES.find(s => s.id === state.serviceId) || SERVICES[0];
+    }
+
+    function renderLogsView(serverItems = null) {
+      const box = document.getElementById("logsList");
+      if (!box) return;
+      const entries = (serverItems && serverItems.length) ? serverItems : state.logs;
+      if (!entries.length) {
+        box.innerHTML = `<div style="color:#94A3B8;">No pipeline logs recorded yet. Tap Call or type/speak to inspect STT, VAD, Workflow Tools, and LLM calls.</div>`;
+        return;
+      }
+      box.innerHTML = entries.map(e => {
+        const col = e.level === "ERROR" ? "#FCA5A5" : e.level === "WARN" ? "#FCD34D" : "#5EEAD4";
+        const extra = e.data && Object.keys(e.data).length ? ` · ${JSON.stringify(e.data)}` : "";
+        return `<div><span style="color:#94A3B8;">[${e.time}]</span> <strong style="color:${col};">${e.source || "browser"}:${e.stage}</strong> ${e.message}${extra}</div>`;
+      }).join("");
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function logPipelineEvent(stage, message = "", data = {}, level = "INFO") {
+      const timeStr = new Date().toTimeString().slice(0, 8);
+      const entry = { time: timeStr, source: "browser", level, stage, message, data };
+      state.logs.push(entry);
+      if (state.logs.length > 120) state.logs.shift();
+      if (document.getElementById("logsModalBackdrop")?.getAttribute("data-open") === "true") {
+        renderLogsView();
+      }
+      if (window.location.protocol !== "file:") {
+        apiCall("/api/client-log", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage, message, level, data })
+        });
+      }
     }
 
     function showToast(msg) {
@@ -2348,8 +2398,12 @@
     }
 
     function interruptAgentSpeech() {
+      const wasSpeaking = state.agentPhase === "speaking" || ("speechSynthesis" in window && window.speechSynthesis.speaking);
       ttsGeneration++;
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (wasSpeaking) {
+        logPipelineEvent("tts.barge_in", "Interrupted agent speech");
+      }
       if (state.agentPhase === "speaking") {
         state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
         spawnRipple(true);
@@ -2403,6 +2457,9 @@
         u.lang = (isTamil && taVoice) ? "ta-IN" : "en-IN";
         const voice = (isTamil && taVoice) ? taVoice : pickTtsVoice(false);
         if (voice) u.voice = voice;
+        if (i === 0) {
+          logPipelineEvent("tts.speak", chunk.slice(0, 60), { lang: u.lang, voice: voice ? voice.name : "default", chunks: chunks.length });
+        }
         u.rate = 0.96;
         u.onend = () => speakChunk(i + 1);
         u.onerror = () => speakChunk(i + 1);
@@ -2526,10 +2583,65 @@
       }
 
       state.turns.push({ role: "user", text: msg });
+      if (!fromPreset) voiceInput.value = "";
       document.getElementById("liveTranscriptText").textContent = `Heard: "${msg}"`;
+      state.agentPhase = "thinking";
+      renderAll(false);
       const combined = state.turns
         .filter(t => t.role === "user" && !classifyConversationalGreeting(t.text))
         .map(t => t.text).join(" ") + (state.gpsLandmarkName ? ` ${state.gpsLandmarkName}` : "");
+
+      // Use real 6-state Tool-Calling Workflow FSM on backend when served via http://
+      if (!fromPreset && window.location.protocol !== "file:") {
+        const wfRes = await apiCall("/api/workflow/turn", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            utterance: msg,
+            combined_text: combined,
+            state_code: state.stateCode,
+            lang: state.lang,
+            llm_mode: state.llmMode,
+            history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text })),
+            gps_lat: state.gpsCoords?.lat ?? null,
+            gps_lon: state.gpsCoords?.lon ?? null,
+            otp_verified: state.otpVerified,
+            dpdp_consented: state.dpdpConsented
+          })
+        });
+        if (wfRes && wfRes.analysis) {
+          logPipelineEvent("workflow.turn", `FSM=${wfRes.fsm_state} model=${wfRes.model}`, {
+            tools: (wfRes.tool_trace || []).map(t => t.tool),
+            ward: wfRes.analysis.landmark?.ward,
+            latency_ms: wfRes.latency_ms
+          });
+          // Apply non-TN State Pack or unclear-turn LLM replies directly from workflow FSM
+          if (state.stateCode !== "tn" || wfRes.fsm_state === "TRIAGE") {
+            const lm = wfRes.analysis.landmark;
+            state.resolvedLandmark = {
+              name: lm.name,
+              district: lm.district,
+              zone: lm.zone,
+              ward: lm.ward,
+              street: lm.street,
+              roadId: lm.road_id
+            };
+            state.urgencyTier = wfRes.analysis.urgency?.tier || "STANDARD";
+            state.urgencyMeta = {
+              tier: state.urgencyTier,
+              badgeEn: wfRes.analysis.urgency?.badge_en || "P3 Standard",
+              badgeTa: wfRes.analysis.urgency?.badge_ta || "P3 சாதாரண புகார்",
+              prefix: wfRes.analysis.urgency?.prefix || ""
+            };
+            state.agentPhase = wfRes.fsm_state === "HITL_SEAL" ? "hitl_review" : "clarifying";
+            state.turns.push({ role: "agent", text: wfRes.reply, needsInput: state.agentPhase === "clarifying" });
+            voiceInput.value = "";
+            renderAll(state.agentPhase === "hitl_review");
+            speakReply(wfRes.reply);
+            return;
+          }
+        }
+      }
       const parsed = detectIssueAndPlace(combined);
 
       if (!parsed.hasIssue && !parsed.hasPlace) {
@@ -2928,7 +3040,9 @@
         liveRec.continuous = true;
         liveRec.interimResults = true;
         liveRec.lang = state.lang === "ta" ? "ta-IN" : "en-IN";
+        liveRec.onstart = () => logPipelineEvent("stt.start", `Listening (${liveRec?.lang || "en-IN"})`);
         liveRec.onspeechstart = () => {
+          logPipelineEvent("stt.speech_start", "Detected user voice onset");
           if (!state.isMuted) interruptAgentSpeech();
         };
         liveRec.onresult = (ev) => {
@@ -2940,10 +3054,13 @@
             const piece = alt.transcript;
             if (ev.results[i].isFinal) {
               const words = piece.trim().split(/\s+/).filter(Boolean);
+              const conf = Number(alt.confidence || 0).toFixed(2);
               if (alt.confidence > 0 && alt.confidence < 0.42 && words.length <= 2) {
+                logPipelineEvent("stt.noise_filtered", piece.trim(), { confidence: conf }, "WARN");
                 document.getElementById("liveTranscriptText").textContent = "Filtered faint background noise...";
                 continue;
               }
+              logPipelineEvent("stt.final", piece.trim(), { confidence: conf });
               commitRecognizedTurn(piece);
             } else {
               interim += piece;
@@ -2963,7 +3080,9 @@
           }
         };
         liveRec.onerror = (ev) => {
-          if (ev?.error === "not-allowed" || ev?.error === "service-not-allowed") {
+          const code = ev?.error || "unknown";
+          logPipelineEvent("stt.error", `SpeechRecognition error: ${code}`, {}, code === "no-speech" ? "WARN" : "ERROR");
+          if (code === "not-allowed" || code === "service-not-allowed") {
             micDenied = true;
             liveRec = null;
             if (state.callActive) {
@@ -2971,7 +3090,9 @@
             }
             return;
           }
-          // Ignore harmless "no-speech" / "aborted" silently without dropping call
+          if ((code === "network" || code === "audio-capture") && state.callActive) {
+            document.getElementById("liveTranscriptText").textContent = `Web Speech ${code} — check mic/internet or use Wispr Flow hotkey below.`;
+          }
         };
         liveRec.onend = () => {
           // Only restart on http/https (avoid Chrome file:// repeated permission popups!)
@@ -3188,6 +3309,26 @@
       } else {
         applyCoords(13.0850, 80.2101);
       }
+    });
+
+    async function openLogsModal() {
+      document.getElementById("logsModalBackdrop").setAttribute("data-open", "true");
+      renderLogsView();
+      const apiRes = await apiCall("/api/logs?limit=80");
+      if (apiRes?.items?.length) {
+        renderLogsView(apiRes.items);
+      }
+    }
+    document.getElementById("logsOpenBtn").addEventListener("click", openLogsModal);
+    document.getElementById("logsRefreshBtn").addEventListener("click", openLogsModal);
+    document.getElementById("logsClearBtn").addEventListener("click", async () => {
+      state.logs = [];
+      await apiCall("/api/logs", { method: "DELETE" });
+      renderLogsView([]);
+      showToast("Cleared logs");
+    });
+    document.getElementById("logsCloseBtn").addEventListener("click", () => {
+      document.getElementById("logsModalBackdrop").setAttribute("data-open", "false");
     });
 
     document.getElementById("historyOpenBtn").addEventListener("click", async () => {

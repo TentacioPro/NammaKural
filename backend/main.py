@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from backend.agent_workflow import run_workflow_turn, split_tts_clauses
 from backend.llm_bridge import generate_civic_turn, probe_local_llm
+from backend.logger import LOG_FILE, clear_logs, get_logs, log_event
 from backend.nlu import (
     SERVICE_CATALOG,
     analyze_turn,
@@ -361,6 +362,7 @@ def get_webrtc_config() -> dict[str, Any]:
 @app.post("/api/rtc/offer")
 def rtc_offer_signaling(req: RtcOfferRequest) -> dict[str, Any]:
     """Receive client WebRTC SDP offer and prepare TURN-ready peer signaling metadata."""
+    log_event("webrtc.offer", "Received client WebRTC SDP signaling offer", {"sdp_bytes": len(req.sdp)})
     return {
         "status": "signaling_ready",
         "received_type": req.type,
@@ -368,3 +370,31 @@ def rtc_offer_signaling(req: RtcOfferRequest) -> dict[str, Any]:
         "turn_enabled": True,
         "audio_codec": "opus/16000",
     }
+
+
+class ClientLogRequest(BaseModel):
+    stage: str
+    message: str = ""
+    level: str = "INFO"
+    data: dict[str, Any] = Field(default_factory=dict)
+
+
+@app.post("/api/client-log")
+def ingest_client_log(req: ClientLogRequest) -> dict[str, Any]:
+    """Capture PII-scrubbed browser STT/Audio/TTS events into unified backend logs."""
+    entry = log_event(req.stage, req.message, req.data, level=req.level, source="browser")
+    return {"logged": True, "entry": entry}
+
+
+@app.get("/api/logs")
+def read_logs(limit: int = 80) -> dict[str, Any]:
+    """Expose recent structured pipeline logs (browser + backend + workflow tools)."""
+    items = get_logs(limit)
+    return {"count": len(items), "log_file": str(LOG_FILE.name), "items": items}
+
+
+@app.delete("/api/logs")
+def wipe_logs() -> dict[str, Any]:
+    """Clear in-memory log ring buffer cleanly."""
+    clear_logs()
+    return {"cleared": True}

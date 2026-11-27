@@ -156,3 +156,9 @@ def test_llm_tool_calling_loop_and_webrtc_coturn_endpoints(monkeypatch) -> None:
 
     packs = client.get("/api/state-packs").json()
     assert packs["count"] >= 3
+
+    cl = client.post("/api/client-log", json={"stage": "stt.final", "message": "Phone 9876543210 test", "level": "INFO"}).json()
+    assert cl["logged"] is True
+    assert "[REDACTED_NUM]" in cl["entry"]["message"]
+    logs_res = client.get("/api/logs?limit=20").json()
+    assert logs_res["count"] >= 1

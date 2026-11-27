@@ -3,14 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#F7FAFC">
+  <meta name="theme-color" content="#FFFFFF">
   <title>NammaKural (நம்ம குரல்) — Voice-First Tamil Nadu Civic Agent</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Anek+Tamil:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-page: #F7FAFC;
+      --bg-page: #FFFFFF;
       --bg-surface: #FFFFFF;
       --bg-subtle: #F0F4F8;
       --bg-mint: #E9F7F2;
@@ -22,17 +19,17 @@
       --border: #DCE4EE;
       --border-strong: #9FB0C4;
 
-      --accent: #C23B1A;
-      --accent-hover: #A42E12;
-      --accent-soft: #FDF0EC;
-      --teal: #0B6B5C;
-      --teal-dark: #074A40;
+      --accent: #1E3A8A;
+      --accent-hover: #172D6B;
+      --accent-soft: #E9EFFA;
+      --teal: #1E3A8A;
+      --teal-dark: #172D6B;
       --whatsapp: #15803D;
       --whatsapp-hover: #116630;
       --amber: #9A5B00;
 
-      --font-sans: 'DM Sans', 'Anek Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+      --font-sans: 'Noto Sans Tamil', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Consolas, monospace;
 
       --radius: 14px;
       --radius-sm: 8px;
@@ -66,18 +63,14 @@
       font-family: var(--font-sans);
       background: var(--bg-page);
       color: var(--ink);
-      line-height: 1.55;
+      line-height: 1.6;
       -webkit-text-size-adjust: 100%;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background-color: #FAF9F6;
-      background-image:
-        radial-gradient(ellipse 80% 55% at 50% 0%, rgba(124, 58, 237, 0.055), transparent 65%),
-        radial-gradient(ellipse 65% 50% at 85% 20%, rgba(13, 148, 136, 0.045), transparent 60%),
-        radial-gradient(ellipse 65% 55% at 15% 80%, rgba(234, 179, 8, 0.04), transparent 60%);
+      background-color: var(--bg-page);
       padding-bottom: calc(48px + env(safe-area-inset-bottom));
     }
 
@@ -86,7 +79,7 @@
     }
 
     :focus-visible {
-      outline: 2.5px solid var(--accent);
+      outline: 3px solid var(--focus, var(--accent));
       outline-offset: 2px;
     }
 
@@ -232,37 +225,33 @@
       position: relative;
     }
 
-    .orb-canvas-wrap {
-      position: relative;
-      width: 248px;
-      height: 248px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    .orb-canvas {
-      position: absolute;
-      inset: 0;
-      width: 248px;
-      height: 248px;
-      pointer-events: none;
-    }
-
     .orb-core-btn {
-      position: relative;
-      z-index: 2;
-      width: 112px;
-      height: 112px;
+      width: 176px;
+      min-height: 176px;
+      max-width: 100%;
       border-radius: 50%;
       border: 0;
-      background: transparent;
+      background: #1E3A8A;
       color: #FFFFFF;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      gap: 7px;
+      padding: 16px;
+      font: inherit;
+      font-weight: 700;
+      box-shadow: inset 0 -5px 0 rgb(0 0 0 / 18%);
+    }
+
+    .orb-core-btn .icon { width: 34px; height: 34px; }
+    .orb-core-btn span { display: block; }
+    .orb-core-btn[data-state="listening"] { background: #047857; }
+    .orb-core-btn[data-state="thinking"] { background: #D97706; color: #160E05; }
+    .orb-core-btn[data-state="paused"], .orb-core-btn[data-state="urgent"] { background: #B91C1C; }
+    .orb-core-btn[data-state="listening"] .icon { animation: listen-ring 1.5s ease-out infinite; }
+    @keyframes listen-ring {
+      50% { transform: scale(1.12); }
     }
 
     .agent-state-pill {
@@ -306,11 +295,10 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255, 255, 255, 0.9);
+      background: var(--bg-surface);
       border: 1px solid rgba(15, 23, 42, 0.1);
       padding: 6px 8px;
       border-radius: 999px;
-      box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.12);
     }
 
     .call-btn {
@@ -320,8 +308,8 @@
       font-family: var(--font-sans);
       font-size: 0.86rem;
       font-weight: 700;
-      padding: 8px 16px;
-      min-height: 40px;
+      padding: 8px 10px;
+      min-height: 56px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -330,11 +318,11 @@
     }
     .call-btn:active { transform: scale(0.97); }
     .call-btn-start { background: var(--teal); color: #FFFFFF; }
-    .call-btn-start[data-active="true"] { background: #E9F7F2; color: var(--teal-dark); }
+    .call-btn-start[data-active="true"] { background: #047857; color: #FFFFFF; }
     .call-btn-mute { background: transparent; color: var(--ink-2); }
-    .call-btn-mute[aria-pressed="true"] { background: #FFF8EC; color: var(--amber); }
-    .call-btn-cut { background: #FEF2F2; color: #B91C1C; }
-    .call-btn[disabled] { opacity: 0.42; cursor: not-allowed; }
+    .call-btn-mute[aria-pressed="true"] { background: var(--bg-warm); color: var(--amber); }
+    .call-btn-cut { background: var(--danger-bg, #FEF2F2); color: var(--danger-ink, #B91C1C); }
+    .call-btn[disabled] { background: var(--bg-subtle); color: var(--ink-3); cursor: not-allowed; }
 
     /* Particulars Chips (Live Conversational Slots) */
     .particulars-row {
@@ -349,18 +337,18 @@
       font-weight: 600;
       padding: 3px 10px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.72);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
       color: var(--ink-2);
     }
     .particular-chip[data-filled="true"] {
-      background: #E9F7F2;
+      background: var(--bg-mint);
       border-color: #A7F3D0;
       color: var(--teal-dark);
     }
 
-    /* Borderless Wispr Flow / Text Composer */
-    .wispr-input-bar {
+    /* Borderless / Text Composer */
+    .composer-input-bar {
       width: 100%;
       max-width: 660px;
       background: rgba(255, 255, 255, 0.85);
@@ -373,12 +361,12 @@
       text-align: left;
     }
 
-    .wispr-input-bar:focus-within {
-      background: #FFFFFF;
+    .composer-input-bar:focus-within {
+      background: var(--bg-surface);
       border-color: var(--teal);
     }
 
-    .wispr-textarea {
+    .composer-textarea {
       width: 100%;
       border: 0;
       background: transparent;
@@ -391,7 +379,7 @@
       min-height: 52px;
     }
 
-    .wispr-bar-footer {
+    .composer-bar-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -399,7 +387,7 @@
       flex-wrap: wrap;
     }
 
-    .wispr-hint {
+    .composer-hint {
       font-size: 0.8rem;
       color: var(--ink-3);
       display: inline-flex;
@@ -795,17 +783,17 @@
       border: 1px solid transparent;
     }
     .urgency-pill[data-tier="CRITICAL_SAFETY"] {
-      background: #FEF2F2;
-      color: #B91C1C;
+      background: var(--danger-bg, #FEF2F2);
+      color: var(--danger-ink, #B91C1C);
       border-color: #FECACA;
     }
     .urgency-pill[data-tier="HIGH_ESCALATION"] {
-      background: #FFFBEB;
-      color: #9A5B00;
+      background: var(--bg-warm);
+      color: var(--amber);
       border-color: #FDE68A;
     }
     .urgency-pill[data-tier="STANDARD"] {
-      background: #E9F7F2;
+      background: var(--bg-mint);
       color: var(--teal-dark);
       border-color: #A7F3D0;
     }
@@ -823,7 +811,7 @@
     .hitl-card[data-visible="true"] { display: flex; }
     .hitl-card[data-approved="true"] {
       border-color: var(--teal);
-      background: #FAFFFD;
+      background: var(--bg-mint);
     }
 
     .hitl-grid {
@@ -884,7 +872,7 @@
     }
     .btn-hitl-approve:hover { background: var(--teal-dark); }
     .btn-hitl-approve[disabled] {
-      background: #E9F7F2;
+      background: var(--bg-mint);
       color: var(--teal-dark);
       border: 1px solid #A7F3D0;
       cursor: default;
@@ -1118,7 +1106,7 @@
       text-align: left;
     }
     .live-transcript-strip[data-live="true"] {
-      background: #E9F7F2;
+      background: var(--bg-mint);
       border-color: var(--teal);
       color: var(--teal-dark);
     }
@@ -1135,6 +1123,71 @@
       flex-wrap: wrap;
     }
     .hitl-banner[data-visible="true"] { display: flex; }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg-page: #0B1220;
+      --bg-surface: #142138;
+      --bg-subtle: #1E2D46;
+      --bg-mint: #162F40;
+      --bg-warm: #322917;
+      --ink: #F8FAFC;
+      --ink-2: #E2E8F0;
+      --ink-3: #C0CDE0;
+      --border: #475A77;
+      --border-strong: #8397B4;
+      --teal-dark: #BFDBFE;
+      --accent-soft: #263B5C;
+      --amber: #FCD58C;
+      --focus: #93C5FD;
+      --danger-bg: #451B22;
+      --danger-ink: #FECACA;
+    }
+
+    .agent-shell { max-width: 1160px; padding-top: 24px; gap: 24px; }
+    .agent-shell > *, .transcript-stage > * { min-width: 0; }
+    .orb-stage { padding-block: 12px; }
+    .transcript-stage { display: flex; flex-direction: column; gap: 12px; overflow-wrap: anywhere; }
+    #transcriptTitle { font-size: 1.18rem; }
+    .transcript-stage .agent-thread,
+    .transcript-stage .composer-input-bar { width: 100%; max-width: none; }
+    .engine-mode {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 6px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      background: var(--bg-subtle);
+      color: var(--ink);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    #voiceKeyNotice { color: var(--ink-2); font-size: 0.88rem; }
+    #safetyAlert:not(:empty) { background: var(--danger-bg, #FEF2F2); color: var(--danger-ink, #B91C1C); padding: 12px; border-radius: var(--radius-sm); }
+    #safetyAlert a { color: inherit; display: inline-flex; align-items: center; min-height: 44px; padding-inline: 8px; font-weight: 700; }
+    .clarity-panel[data-open="false"] { display: none; }
+    .clarity-content { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border-strong); background: var(--bg-surface); border-radius: var(--radius); padding: 12px; }
+    .clarity-content .otp-row { flex-wrap: wrap; }
+    button:not(.orb-core-btn), .attach-chip, input.otp-input, select { min-height: 44px !important; min-width: 44px; }
+    .call-dock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 370px); border-color: var(--border); }
+    .call-dock .call-btn { justify-content: center; gap: 4px; min-height: 56px !important; }
+    .call-btn .icon { display: none; }
+    .aux-controls { display: flex; flex-wrap: wrap; gap: 4px; }
+    .composer-textarea { min-height: 48px; }
+    #quickVoiceSelect { max-width: 100%; }
+    #secondaryToggle { display: none; align-self: start; }
+    #clarityAnnouncement:not(:empty) { font-weight: 700; }
+    @media (max-width: 639px) {
+      #secondaryToggle { display: inline-flex; }
+      #secondaryControls[data-expanded="false"] { display: none; }
+      .header-inner { align-items: flex-start; }
+      .nav-controls { justify-content: flex-start; }
+    }
+    @media (min-width: 768px) {
+      .agent-shell { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; }
+      .agent-shell > :not(.orb-stage):not(.transcript-stage) { grid-column: 1 / -1; }
+      .transcript-stage { padding-inline-start: 24px; border-inline-start: 1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -1152,23 +1205,19 @@
         <div class="brand-mark" aria-hidden="true">குரல்</div>
         <div>
           <h1>NammaKural <span style="font-weight:500;color:var(--ink-3)">· நம்ம குரல்</span></h1>
-          <p class="brand-tag" id="headerSub">Wispr Flow Voice Agent · Tamil Nadu</p>
+          <p class="brand-tag" id="headerSub">Civic voice service · Tamil Nadu</p>
         </div>
       </div>
 
       <div class="nav-controls">
+        <span id="engineModePill" class="engine-mode" role="status">Mode: Offline FSM (No Key Set)</span>
+        <button type="button" class="btn-pill-quiet" id="themeToggle" aria-pressed="false">Dark mode</button>
         <div class="segmented" role="group" aria-label="Language">
           <button type="button" class="seg-btn" id="langTanglishBtn" aria-pressed="true">Tanglish</button>
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
           <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="false">EN</button>
         </div>
 
-        <button type="button" class="btn-pill-quiet" id="modelSetupOpenBtn">STT & Model</button>
-        <button type="button" class="btn-pill-quiet" id="logsOpenBtn">Logs</button>
-        <button type="button" class="btn-pill-quiet" id="historyOpenBtn">Requests</button>
-        <button type="button" class="btn-pill-quiet" id="guideToggleBtn">Guide</button>
-        <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+</button>
-        <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G</button>
       </div>
     </div>
   </header>
@@ -1180,15 +1229,15 @@
     <section class="agent-shell" aria-label="Voice Civic Agent">
       <div class="orb-stage" id="orbStage" data-agent-state="idle">
         <!-- River-Ripple Acoustic Orb Floating Directly on Light Background -->
-        <div class="orb-canvas-wrap" id="orbTrigger" title="Click orb to start / toggle call">
-          <canvas id="neuralOrbCanvas" class="orb-canvas" width="248" height="248" aria-hidden="true"></canvas>
-          <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle" aria-label="Start or mute voice call"></button>
-        </div>
+        <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path id="orbIcon" d="M9 5a3 3 0 1 1 6 0v6a3 3 0 1 1-6 0V5z M5 11a7 7 0 0 0 14 0 M12 18v4 M8 22h8"/></svg>
+          <span id="orbTa" lang="ta">பேசுங்க</span><span id="orbEn">Speak</span>
+        </button>
 
-        <span class="agent-state-pill">
+        <span class="agent-state-pill" role="status">
           <span class="pulse-dot"></span>
-          <span id="agentStateLabel">Tap Call to speak · Wispr Flow Ready</span>
-          <span class="num" id="callTimer" style="font-size:0.8rem;color:var(--ink-3);margin-left:4px;">00:00</span>
+          <span id="agentStateLabel">Tap Call to speak · Ready</span>
+          <span class="num" id="callTimer" aria-hidden="true" style="font-size:0.8rem;color:var(--ink-3);margin-left:4px;">00:00</span>
         </span>
         <span class="barge-hint" id="bargeHint">Talk to interrupt · Say "stop" / "niruthunga" anytime</span>
 
@@ -1196,15 +1245,15 @@
         <div class="call-dock" role="group" aria-label="Voice Call Controls">
           <button type="button" class="call-btn call-btn-start" id="startCallBtn" data-active="false">
             <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span id="startCallLabel">Call</span>
+            <span id="startCallLabel"><span lang="ta">பேசு</span> / Call</span>
           </button>
           <button type="button" class="call-btn call-btn-mute" id="muteMicBtn" aria-pressed="false" disabled>
             <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
-            <span id="muteLabel">Mute</span>
+            <span id="muteLabel"><span lang="ta">நிறுத்து</span> / Pause</span>
           </button>
           <button type="button" class="call-btn call-btn-cut" id="endCallBtn" disabled>
             <svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 2.09 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="22" x2="2" y1="2" y2="22"/></svg>
-            <span>Cut</span>
+            <span><span lang="ta">முடி</span> / End</span>
           </button>
         </div>
 
@@ -1213,6 +1262,11 @@
           <button type="button" id="dpdpConsentBtn" style="background:none;border:0;color:var(--teal-dark);font-weight:700;cursor:pointer;font-size:0.75rem;text-decoration:underline;padding:0;" aria-pressed="true">Consent: Active (Withdraw)</button>
         </div>
 
+      </div>
+      <section class="transcript-stage" aria-labelledby="transcriptTitle">
+        <h2 id="transcriptTitle"><span lang="ta">உரையாடல்</span> / Conversation</h2>
+        <p id="voiceKeyNotice" role="status" aria-live="polite">Sarvam key not set. Using browser voice (ta-IN).</p>
+        <div id="safetyAlert" aria-live="assertive" aria-atomic="true"></div>
         <!-- Subtle Borderless Live Transcript Stream & Gathered Particulars -->
         <div id="liveTranscriptText" style="font-size:0.88rem;color:var(--ink-2);min-height:20px;max-width:620px;" aria-live="polite"></div>
         <div class="particulars-row" id="particularsStrip" aria-label="Gathered complaint particulars"></div>
@@ -1227,16 +1281,25 @@
         <!-- Dynamic Clarifier Pills (Rendered ONLY when needed mid-conversation) -->
         <div class="clarify-pills" id="clarifyPills" style="display:none;"></div>
 
-        <!-- Clean Wispr Flow / Text Bar + Runtime Upload + GPS -->
-        <div class="wispr-input-bar">
-          <textarea id="voiceInput" class="wispr-textarea" rows="1" placeholder="Press Wispr Flow hotkey or type in Tamil / Tanglish..." aria-label="Spoken complaint input"></textarea>
-          <div class="wispr-bar-footer">
+        <!-- Clean / Text Bar + Runtime Upload + GPS -->
+        <button type="button" class="btn-outline" id="secondaryToggle" aria-expanded="false" aria-controls="secondaryControls">Type / Photo (Optional)</button>
+        <div class="composer-input-bar" id="secondaryControls" data-expanded="false">
+          <div class="aux-controls" aria-label="Conversation options">
+        <button type="button" class="btn-pill-quiet" id="modelSetupOpenBtn">STT & Model</button>
+        <button type="button" class="btn-pill-quiet" id="logsOpenBtn">Logs</button>
+        <button type="button" class="btn-pill-quiet" id="historyOpenBtn">Requests</button>
+        <button type="button" class="btn-pill-quiet" id="guideToggleBtn">Guide</button>
+        <button type="button" class="btn-pill-quiet" id="a11yBtn" aria-pressed="false">A+</button>
+        <button type="button" class="btn-pill-quiet" id="liteBtn" aria-pressed="false">2G</button>
+          </div>
+          <textarea id="voiceInput" class="composer-textarea" rows="1" placeholder="Type a street problem and nearby landmark" aria-label="Spoken complaint input"></textarea>
+          <div class="composer-bar-footer">
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              <label class="attach-chip" title="Attach street photo, EB/water bill, or closed ticket screenshot">
+              <button type="button" class="attach-chip" id="attachPhotoBtn">
                 <svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 <span id="runtimeAttachLabel">Attach Photo / Bill</span>
-                <input type="file" id="runtimeAttachInput" accept="image/jpeg,image/png,image/webp,application/pdf" style="display:none">
-              </label>
+              </button>
+              <input type="file" id="runtimeAttachInput" accept="image/jpeg,image/png,image/webp,application/pdf" hidden>
               <button type="button" class="attach-chip" id="gpsTriggerBtn">Check GPS</button>
               <button type="button" class="attach-chip" id="autoSpeakToggleBtn" aria-pressed="true">Voice: ON</button>
               <select id="quickVoiceSelect" class="attach-chip" aria-label="Test voice accent" style="padding:3px 8px;">
@@ -1262,9 +1325,9 @@
             </div>
           </div>
         </div>
-      </div>
 
       <!-- Compact HITL Action Trigger Strip (Appears dynamically when ready for HITL Seal!) -->
+      <div id="clarityAnnouncement" aria-live="assertive" aria-atomic="true"></div>
       <div class="hitl-banner" id="hitlLaunchBar" data-visible="false">
         <div>
           <span class="urgency-pill" id="hitlUrgencyBadge" data-tier="STANDARD">P3 Standard</span>
@@ -1272,9 +1335,35 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button type="button" class="btn-outline" id="hitlEditBtn">Edit</button>
-          <button type="button" class="btn-hitl-approve" id="hitlApproveBtn">Open Clarity Check & Seal</button>
+          <button type="button" class="btn-hitl-approve" id="hitlApproveBtn" aria-controls="clarityModalBackdrop" aria-expanded="false">Open Clarity Check & Seal</button>
         </div>
       </div>
+
+  <section class="clarity-panel" id="clarityModalBackdrop" aria-labelledby="clarityModalTitle" data-open="false">
+    <div class="clarity-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <h3 id="clarityModalTitle" tabindex="-1" style="font-size:1.08rem;"><span lang="ta">புகார் சரிபார்ப்பு</span> / Review complaint</h3>
+        <button type="button" class="btn-outline" id="clarityCloseBtn" style="min-height:32px;padding:4px 10px;">Close</button>
+      </div>
+      <div class="cooldown-alert" id="cooldownAlert" data-visible="false"></div>
+      <div id="clarityPopupBody" style="font-size:0.9rem;color:var(--ink-2);line-height:1.5;background:var(--bg-page);padding:12px;border-radius:10px;border:1px solid var(--border);"></div>
+      <div class="landmark-bar" id="landmarkBar"></div>
+      <div class="otp-cooldown-box">
+        <div class="otp-row">
+          <strong style="font-size:0.84rem;" id="otpStatusLabel">Mobile OTP Check</strong>
+          <button type="button" class="btn-outline" id="otpSendBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Get Demo OTP</button>
+          <input type="text" id="otpCodeInput" class="otp-input" placeholder="OTP (4829)" aria-label="Enter Mobile OTP" value="">
+          <button type="button" class="btn-outline" id="otpVerifyBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Verify OTP</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button type="button" class="btn-outline" id="modalOkBtn" aria-pressed="false">1. OK, Details Correct</button>
+        <button id="reviewMicBtn" type="button" class="btn-outline">பேசு / Start microphone</button>
+        <p id="sealVoiceHint" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+      </section>
 
       <!-- Streaming Reasoning Trace (Visible Post-Analysis / Summary) -->
       <section class="reasoning-card" id="reasoningCard" aria-labelledby="reasoningTitle" style="display:none;">
@@ -1289,7 +1378,7 @@
       <section class="agent-outcome" id="dispatchSection" aria-labelledby="outcomeJurisdictionTag" style="display:none;">
         <div class="outcome-top">
           <div>
-            <div style="font-size:0.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:4px;" id="outcomeJurisdictionTag"></div>
+            <div style="font-size:0.8rem;font-weight:700;color:var(--teal-dark);margin-bottom:4px;" id="outcomeJurisdictionTag" tabindex="-1"></div>
             <p class="outcome-reply" id="outcomeReply"></p>
           </div>
           <button type="button" class="btn-outline" id="speakTamilBtn">
@@ -1358,32 +1447,6 @@
     </div>
   </div>
 
-  <!-- MODAL 3: DYNAMIC FINAL CLARITY POPUP + OTP + NATIVE TAMIL VOICE SEAL -->
-  <div class="modal-backdrop" id="clarityModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="clarityModalTitle" data-open="false">
-    <div class="modal-dialog">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <h3 id="clarityModalTitle" style="font-size:1.08rem;">Final Clarity Check — Verify & Seal</h3>
-        <button type="button" class="btn-outline" id="clarityCloseBtn" style="min-height:32px;padding:4px 10px;">Close</button>
-      </div>
-      <div class="cooldown-alert" id="cooldownAlert" data-visible="false"></div>
-      <div id="clarityPopupBody" style="font-size:0.9rem;color:var(--ink-2);line-height:1.5;background:var(--bg-page);padding:12px;border-radius:10px;border:1px solid var(--border);"></div>
-      <div class="landmark-bar" id="landmarkBar"></div>
-      <div class="otp-cooldown-box">
-        <div class="otp-row">
-          <strong style="font-size:0.84rem;" id="otpStatusLabel">Mobile OTP Check</strong>
-          <button type="button" class="btn-outline" id="otpSendBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Get Demo OTP</button>
-          <input type="text" id="otpCodeInput" class="otp-input" placeholder="OTP (4829)" aria-label="Enter Mobile OTP" value="">
-          <button type="button" class="btn-outline" id="otpVerifyBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Verify OTP</button>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <button type="button" class="btn-outline" id="modalOkBtn" aria-pressed="false">1. OK, Details Correct</button>
-        <input type="text" id="modalSealInput" class="otp-input" style="flex:1;min-width:150px;" placeholder='Speak/type "உறுதி" or "Confirm"' aria-label="Native confirmation keyword">
-        <button type="button" class="btn-hitl-approve" id="modalSealBtn" disabled>2. Seal ("உறுதி")</button>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL 4: ON-DEMAND HOW TO USE + OPTIONAL TEST PHRASES -->
   <div class="modal-backdrop" id="guideModalBackdrop" role="dialog" aria-modal="true" aria-labelledby="guideModalTitle" data-open="false">
     <div class="modal-dialog">
@@ -1392,9 +1455,9 @@
         <button type="button" class="btn-outline" id="guideCloseBtn" style="min-height:32px;padding:4px 10px;">Close</button>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px;font-size:0.88rem;color:var(--ink-2);">
-        <div><strong>1. Talk Live:</strong> Tap the Orb / Start Live Mic (or Wispr Flow) and speak naturally in Tamil, Tanglish, or English. Say "ஹலோ" or "நான் பேசுறது கேக்குதா" anytime.</div>
+        <div><strong>1. Talk Live:</strong> Tap the Orb / Start Live Mic and speak naturally in Tamil, Tanglish, or English. Say "ஹலோ" or "நான் பேசுறது கேக்குதா" anytime.</div>
         <div><strong>2. Attach / Location Popups:</strong> GPS popup or Upload modal opens only when needed—never blocking your conversation.</div>
-        <div><strong>3. HITL Seal:</strong> Verify OTP (demo: 4829), then say <em>"உறுதி, உறுதி"</em> twice hands-free OR check the Clarity Popup + say <em>"உறுதி"</em>.</div>
+        <div><strong>3. HITL Seal:</strong> Verify OTP (demo: 4829), then say <em>"உறுதி"</em> in two separate turns OR check the Clarity Popup + say <em>"உறுதி"</em>.</div>
       </div>
       <button type="button" class="btn-outline" id="listenGuideBtn">Listen 3-Step Guide in Tamil</button>
       <div style="border-top:1px solid var(--border);padding-top:10px;">
@@ -1414,9 +1477,8 @@
       <div class="hitl-box">
         <span class="hitl-label">Speech-to-Text (STT) Layer</span>
         <select id="sttEngineSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
-          <option value="hybrid-ta">Hybrid: Tamil &amp; Code-Mix Live (ta-IN) + Wispr Flow</option>
-          <option value="hybrid">Hybrid: Indian English &amp; Tanglish Live (en-IN) + Wispr Flow</option>
-          <option value="wispr">Wispr Flow Hotkey System Dictation Only</option>
+          <option value="hybrid-ta">Hybrid: Tamil &amp; Code-Mix Live (ta-IN)</option>
+          <option value="hybrid">Hybrid: Indian English &amp; Tanglish Live (en-IN)</option>
           <option value="browser">Browser SpeechRecognition Only (ta-IN)</option>
         </select>
       </div>
@@ -1514,7 +1576,7 @@
 
     const COPY = {
       tanglish: {
-        headerSub: "Wispr Flow Civic Voice Agent · Tamil Nadu",
+        headerSub: "Civic Voice Agent · Tamil Nadu",
         a11y: "A+ Text",
         lite: "2G Lite",
         agentReady: "Ready · Tanglish / தமிழ்-la sollunga",
@@ -1524,7 +1586,7 @@
         agentApproved: "Approved · 1-Tap Official Dispatch Ready",
         headline: "Ungal theru problem-a sollunga",
         subline: "Tanglish or Tamil-la pesunga. Neerja urgency detect panni, confirm pannathuku apparam send pannuvaanga.",
-        wisprHint: "Form illai · Natural-aa pesunga",
+        composerHint: "Form illai · Natural-aa pesunga",
         runAgent: "Send / Pesu",
         speakBtn: "Listen in Tamil",
         upload: "Upload Photo",
@@ -1541,7 +1603,7 @@
         openSite: "Open Portal"
       },
       en: {
-        headerSub: "Wispr Flow Civic Voice Agent · Tamil Nadu",
+        headerSub: "Civic Voice Agent · Tamil Nadu",
         a11y: "A+ Text",
         lite: "2G Lite",
         agentReady: "Agent Ready · Speak in Tanglish / தமிழ்",
@@ -1551,7 +1613,7 @@
         agentApproved: "Approved · Ready for 1-Tap Official Dispatch",
         headline: "Speak what needs fixing on your street",
         subline: "Speak once in Tanglish or Tamil. NammaKural detects urgency, asks only if a detail is missing, and waits for your approval before dispatch.",
-        wisprHint: "No forms to fill · Speak naturally or pick an example below",
+        composerHint: "No forms to fill · Speak naturally or pick an example below",
         runAgent: "Send / Speak",
         speakBtn: "Listen in Tamil",
         upload: "Upload Photo",
@@ -1568,7 +1630,7 @@
         openSite: "Open Portal"
       },
       ta: {
-        headerSub: "தமிழ்நாடு மக்கள் குறைதீர் குரல் முகவர் (Wispr Flow)",
+        headerSub: "தமிழ்நாடு மக்கள் குறைதீர் குரல் முகவர்",
         a11y: "A+ எழுத்து",
         lite: "2G எளியது",
         agentReady: "குரல் முகவர் தயார் · தமிழ் / Tanglish",
@@ -1577,8 +1639,8 @@
         agentHitl: "இறுதி உறுதிப்படுத்தல் · உங்கள் அனுமதிக்காக காத்திருக்கிறது",
         agentApproved: "அனுமதிக்கப்பட்டது · உடனே அனுப்பத் தயார்",
         headline: "உங்கள் தெருவில் உள்ள பிரச்சனையைச் சொல்லுங்கள்",
-        subline: "Wispr Flow மூலம் தமிழிலோ Tanglish-லோ பேசுங்கள். தேவையென்றால் மட்டும் கேள்வி கேட்டு, உங்கள் ஒப்புதலுக்குப் பிறகே அனுப்பும்.",
-        wisprHint: "படிவம் இல்லை · இயல்பாகப் பேசுங்கள் அல்லது கீழே உள்ளதைத் தேர்வு செய்யுங்கள்",
+        subline: "தமிழிலோ Tanglish-லோ பேசுங்கள். தேவையென்றால் மட்டும் கேள்வி கேட்டு, உங்கள் ஒப்புதலுக்குப் பிறகே அனுப்பும்.",
+        composerHint: "படிவம் இல்லை · இயல்பாகப் பேசுங்கள் அல்லது கீழே உள்ளதைத் தேர்வு செய்யுங்கள்",
         runAgent: "பேசு / அனுப்பு",
         speakBtn: "தமிழில் கேட்க",
         upload: "புகைப்படம் இணைக்க",
@@ -1859,8 +1921,6 @@
 
     const voiceInput = document.getElementById("voiceInput");
     const orbStage = document.getElementById("orbStage");
-    const orbCanvas = document.getElementById("neuralOrbCanvas");
-    const orbCtx = orbCanvas.getContext("2d");
 
     function getService() {
       return SERVICES.find(s => s.id === state.serviceId) || SERVICES[0];
@@ -1877,7 +1937,7 @@
       box.innerHTML = entries.map(e => {
         const col = e.level === "ERROR" ? "#FCA5A5" : e.level === "WARN" ? "#FCD34D" : "#5EEAD4";
         const extra = e.data && Object.keys(e.data).length ? ` · ${JSON.stringify(e.data)}` : "";
-        return `<div><span style="color:#94A3B8;">[${e.time}]</span> <strong style="color:${col};">${e.source || "browser"}:${e.stage}</strong> ${e.message}${extra}</div>`;
+        return `<div><span style="color:#94A3B8;">[${e.time}]</span> <strong style="color:${col};">${e.source || "browser"}:${e.stage}</strong> ${htmlText(e.message)}${extra}</div>`;
       }).join("");
       box.scrollTop = box.scrollHeight;
     }
@@ -1907,127 +1967,32 @@
       window.__tTimer = setTimeout(() => el.setAttribute("data-visible", "false"), 2200);
     }
 
-    /* ==========================================================================
-       RIVER-STONE WATER RIPPLE ORB (SUNLIT FOUNDRY LIQUID REFLECTION CANVAS)
-       Concentric stone-in-water ripples + oscillatory inner fluid wave
-       ========================================================================== */
-    let orbPhase = 0;
-    let ripples = [
-      { r: 66, alpha: 0.22, speed: 0.65 },
-      { r: 88, alpha: 0.12, speed: 0.65 }
-    ];
-    let lastRippleTick = 0;
+    let earconContext;
 
-    function spawnRipple(strong = false) {
-      ripples.push({ r: 58, alpha: strong ? 0.42 : 0.24, speed: strong ? 1.05 : 0.72 });
-      if (ripples.length > 7) ripples.shift();
-    }
-
-    function drawOrb(ts = 0) {
-      const w = orbCanvas.width;
-      const h = orbCanvas.height;
-      const cx = w / 2;
-      const cy = h / 2;
-      orbCtx.clearRect(0, 0, w, h);
-
-      const isActiveVoice = state.agentPhase === "listening" || state.agentPhase === "speaking";
-      const intervalMs = state.agentPhase === "speaking" ? 420 : state.agentPhase === "listening" ? 540 : 1800;
-      if (!state.lite && ts - lastRippleTick > intervalMs) {
-        spawnRipple(isActiveVoice);
-        lastRippleTick = ts;
-      }
-
-      const rgb = state.urgencyTier === "CRITICAL_SAFETY"
-        ? "194, 59, 26"
-        : state.agentPhase === "listening"
-          ? "11, 107, 92"
-          : "99, 102, 241";
-
-      /* Concentric Water Ripples Expanding Across Calm Light Ground */
-      for (let i = ripples.length - 1; i >= 0; i--) {
-        const rp = ripples[i];
-        if (!state.lite) {
-          rp.r += rp.speed;
-          rp.alpha *= 0.976;
-        }
-        if (rp.alpha < 0.015 || rp.r > 122) {
-          ripples.splice(i, 1);
-          continue;
-        }
-        orbCtx.beginPath();
-        for (let a = 0; a <= Math.PI * 2 + 0.08; a += 0.12) {
-          const osc = Math.sin(a * 4 + orbPhase * 1.1) * (isActiveVoice ? 2.6 : 0.8);
-          const rad = rp.r + osc;
-          const x = cx + Math.cos(a) * rad;
-          const y = cy + Math.sin(a) * rad;
-          if (a === 0) orbCtx.moveTo(x, y);
-          else orbCtx.lineTo(x, y);
-        }
-        orbCtx.closePath();
-        orbCtx.strokeStyle = `rgba(${rgb}, ${rp.alpha.toFixed(3)})`;
-        orbCtx.lineWidth = 1.6;
-        orbCtx.stroke();
-      }
-
-      /* Soft Outer Atmospheric Reflection Halo */
-      const speed = state.agentPhase === "speaking" ? 0.055 : state.agentPhase === "listening" ? 0.042 : 0.018;
-      const amp = state.agentPhase === "speaking" ? 11 : state.agentPhase === "listening" ? 8 : 3;
-      if (!state.lite) orbPhase += speed;
-
-      const halo = orbCtx.createRadialGradient(cx, cy, 38, cx, cy, 92);
-      halo.addColorStop(0, `rgba(${rgb}, 0.20)`);
-      halo.addColorStop(1, "rgba(255,255,255,0)");
-      orbCtx.fillStyle = halo;
-      orbCtx.beginPath();
-      orbCtx.arc(cx, cy, 92, 0, Math.PI * 2);
-      orbCtx.fill();
-
-      /* Core Translucent River-Glass Fluid Sphere (Clipped Inner Liquid Reflection) */
-      orbCtx.save();
-      orbCtx.beginPath();
-      orbCtx.arc(cx, cy, 56, 0, Math.PI * 2);
-      orbCtx.clip();
-
-      const sphereGrad = orbCtx.createLinearGradient(cx - 48, cy - 52, cx + 50, cy + 54);
-      if (state.urgencyTier === "CRITICAL_SAFETY") {
-        sphereGrad.addColorStop(0, "#FB7185");
-        sphereGrad.addColorStop(1, "#C23B1A");
-      } else if (state.agentPhase === "listening") {
-        sphereGrad.addColorStop(0, "#2DD4BF");
-        sphereGrad.addColorStop(1, "#0B6B5C");
-      } else {
-        sphereGrad.addColorStop(0, "#A78BFA");
-        sphereGrad.addColorStop(0.55, "#7C3AED");
-        sphereGrad.addColorStop(1, "#0EA5E9");
-      }
-      orbCtx.fillStyle = sphereGrad;
-      orbCtx.fillRect(cx - 60, cy - 60, 120, 120);
-
-      /* Oscillatory Liquid Wave Reflection Inside Sphere */
-      orbCtx.beginPath();
-      orbCtx.moveTo(cx - 60, cy + 60);
-      for (let x = -60; x <= 60; x += 4) {
-        const y = Math.sin(x * 0.07 + orbPhase * 1.4) * (amp * 0.65) + Math.cos(x * 0.04 - orbPhase) * (amp * 0.45);
-        orbCtx.lineTo(cx + x, cy + 4 + y);
-      }
-      orbCtx.lineTo(cx + 60, cy + 60);
-      orbCtx.closePath();
-      orbCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
-      orbCtx.fill();
-
-      /* Top Glass Highlight Arc */
-      const gloss = orbCtx.createRadialGradient(cx - 18, cy - 22, 4, cx - 12, cy - 18, 42);
-      gloss.addColorStop(0, "rgba(255, 255, 255, 0.55)");
-      gloss.addColorStop(1, "rgba(255, 255, 255, 0)");
-      orbCtx.fillStyle = gloss;
-      orbCtx.fillRect(cx - 58, cy - 58, 116, 116);
-      orbCtx.restore();
-
-      if (!state.lite) {
-        requestAnimationFrame(drawOrb);
+    function playEarcon(kind) {
+      if (earconContext?.state !== "running") return;
+      const pitches = { listening: [440, 660], thinking: [440], ready: [523, 784], paused: [440, 330], urgent: [660, 440, 660], error: [330, 220] };
+      for (const [index, frequency] of (pitches[kind] || []).entries()) {
+        const start = earconContext.currentTime + index * 0.13;
+        const tone = earconContext.createOscillator();
+        const gain = earconContext.createGain();
+        tone.frequency.value = frequency;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.075, start + 0.025);
+        gain.gain.linearRampToValueAtTime(0, start + 0.11);
+        tone.connect(gain).connect(earconContext.destination);
+        tone.start(start);
+        tone.stop(start + 0.12);
       }
     }
-    requestAnimationFrame(drawOrb);
+
+    const orbStates = {
+      idle: ["பேசுங்க", "Speak", "M9 5a3 3 0 1 1 6 0v6a3 3 0 1 1-6 0V5z M5 11a7 7 0 0 0 14 0 M12 18v4 M8 22h8"],
+      listening: ["கேட்கிறேன்", "Listening", "M20 12a8 8 0 1 1-16 0 8 8 0 1 1 16 0 M15 12a3 3 0 1 1-6 0 3 3 0 1 1 6 0"],
+      thinking: ["சரிபார்க்கிறேன்", "Checking", "M2 12h5l3-6 4 12 3-6h5"],
+      paused: ["நிறுத்தப்பட்டது", "Paused", "M9 5v14 M15 5v14"],
+      urgent: ["அவசர உதவி", "Urgent", "M12 3 2 20h20L12 3z M12 9v4 M12 16v1"]
+    };
 
     /* ==========================================================================
        SENTIMENT & URGENCY TRIAGE ENGINE
@@ -2078,10 +2043,25 @@
         clarifying: t.agentClarifying,
         hitl_review: t.agentHitl,
         approved_dispatch: t.agentApproved,
+        life_safety: "அவசர உதவி / Emergency help",
         speaking: state.lang === "ta" ? `${persona.name} பேசுகிறது...` : `${persona.name} is speaking...`
       };
-      stateLabel.textContent = map[state.agentPhase] || t.agentReady;
+      const label = state.isMuted ? "நிறுத்தப்பட்டது / Paused" : map[state.agentPhase] || t.agentReady;
+      if (stateLabel.textContent !== label) stateLabel.textContent = label;
       orbStage.setAttribute("data-agent-state", state.agentPhase);
+      const orb = document.getElementById("orbMicBtn");
+      const urgent = ["LIFE_SAFETY", "CRITICAL_SAFETY"].includes(state.urgencyTier);
+      const next = urgent ? "urgent" : state.isMuted ? "paused"
+        : ["thinking", "speaking"].includes(state.agentPhase) ? "thinking"
+        : state.callActive ? "listening" : "idle";
+      if (orb.dataset.state !== next) {
+        const [ta, en, icon] = orbStates[next];
+        orb.dataset.state = next;
+        document.getElementById("orbTa").textContent = ta;
+        document.getElementById("orbEn").textContent = en;
+        document.getElementById("orbIcon").setAttribute("d", icon);
+        playEarcon(next);
+      }
     }
 
     /* ==========================================================================
@@ -2291,9 +2271,14 @@
         : "Urgency: Auto-Triage";
       const urgChip = `<span class="particular-chip" data-filled="${Boolean(state.urgencyMeta)}">${urgText}</span>`;
       const evChip = state.attachmentInfo || state.appendedNote
-        ? `<span class="particular-chip" data-filled="true">Evidence: ${state.attachmentInfo || state.appendedNote}</span>`
+        ? `<span class="particular-chip" data-filled="true">Evidence: ${htmlText(state.attachmentInfo || state.appendedNote)}</span>`
         : "";
       strip.innerHTML = issueChip + locChip + urgChip + evChip;
+    }
+
+    function htmlText(value) {
+      return String(value ?? "").replace(/[&<>"]/g, character =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[character]);
     }
 
     function renderAll(animateReasoning = false) {
@@ -2342,7 +2327,7 @@
         <strong>Urgency:</strong> ${state.lang === "ta" ? urgency.badgeTa : urgency.badgeEn}<br>
         <strong>Location:</strong> ${lm.district} · ${lm.zone} · ${lm.ward} · ${lm.street} (Road ID ${lm.roadId})<br>
         <strong>Agencies:</strong> ${svc.portals.map(p => p.name).join(" + ")}<br>
-        <strong>Evidence / Note:</strong> ${state.attachmentInfo || state.appendedNote || "Default hazard plate (<1 MB)"}
+        <strong>Evidence / Note:</strong> ${htmlText(state.attachmentInfo || state.appendedNote || "Default hazard plate (<1 MB)")}
       `;
 
       const lmBar = document.getElementById("landmarkBar");
@@ -2500,6 +2485,11 @@
 
     function unlockAudioGesture() {
       try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!earconContext && AudioCtx) earconContext = new AudioCtx();
+        earconContext?.resume().catch(() => {});
+      } catch {}
+      try {
         sharedPlayer.src = SILENT_WAV_URI;
         const p = sharedPlayer.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
@@ -2520,8 +2510,8 @@
         logPipelineEvent("tts.barge_in", "Interrupted agent speech");
       }
       if (state.agentPhase === "speaking") {
-        state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
-        spawnRipple(true);
+        state.agentPhase = phaseBeforeSpeech;
+
         updateStatusPill();
       }
     }
@@ -2538,7 +2528,7 @@
         if (myGen !== ttsGeneration) return;
         if (i >= chunks.length) {
           if (state.agentPhase === "speaking") {
-            state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
+            state.agentPhase = phaseBeforeSpeech;
             updateStatusPill();
           }
           return;
@@ -2546,25 +2536,12 @@
         let chunk = chunks[i];
         const isTamil = /[\u0B80-\u0BFF]/.test(chunk);
         const taVoice = isTamil ? pickTtsVoice(true) : null;
-        if (isTamil && !taVoice) {
-          chunk = chunk
-            .replace(/வணக்கம்!?/g, "Vanakkam!")
-            .replace(/நான் நம்ம குரல்/g, "Naan Namma Kural")
-            .replace(/நன்றாகக் கேட்கிறது!?/g, "Nalla kekudhu!")
-            .replace(/உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்\.?/g, "Ungal theru prachanaiyai sollunga.")
-            .replace(/புரிந்தது/g, "Purinjidhu")
-            .replace(/உறுதி/g, "Urudhi");
-          if (/[\u0B80-\u0BFF]/.test(chunk)) {
-            chunk = chunk.replace(/[\u0B80-\u0BFF]+/g, "").trim();
-          }
-          if (!chunk) { speakChunk(i + 1); return; }
-        }
         const u = new SpeechSynthesisUtterance(chunk);
-        u.lang = (isTamil && taVoice) ? "ta-IN" : "en-IN";
-        const voice = (isTamil && taVoice) ? taVoice : pickTtsVoice(false);
+        u.lang = isTamil ? "ta-IN" : "en-IN";
+        const voice = isTamil ? taVoice : pickTtsVoice(false);
         if (voice) u.voice = voice;
         if (i === 0) {
-          logPipelineEvent("tts.speak_fallback", chunk.slice(0, 60), { lang: u.lang, voice: voice ? voice.name : "default" });
+          logPipelineEvent("tts.speak_fallback", "Using browser speech", { lang: u.lang, voice: voice?.name || "default" });
         }
         u.rate = 0.96;
         u.onend = () => speakChunk(i + 1);
@@ -2581,7 +2558,7 @@
       if (state.agentPhase !== "speaking") phaseBeforeSpeech = state.agentPhase;
       state.agentPhase = "speaking";
       updateStatusPill();
-      spawnRipple(true);
+
 
       // Try real neural Tamil / Indian-English TTS over FastAPI (/api/tts) first!
       if (window.location.protocol !== "file:" && !state.lite) {
@@ -2606,7 +2583,7 @@
               URL.revokeObjectURL(url);
               if (ttsAudioEl === audio) ttsAudioEl = null;
               if (myGen === ttsGeneration && state.agentPhase === "speaking") {
-                state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
+                state.agentPhase = phaseBeforeSpeech;
                 updateStatusPill();
               }
             };
@@ -2651,13 +2628,74 @@
       return { cleaned, blocked };
     }
 
-    async function handleAgentTurn(raw, fromPreset = false) {
+    const confirmationWord = /^[\s.!?,]*(?:confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)[\s.!?,]*$/i;
+
+    function localEmergency(text) {
+      const routes = [
+        [/\b(?:1906|(?:lpg |cooking )?gas leak(?:ing)?|gas kasivu)\b|எரிவாயு கசிவு|கேஸ் கசிவு/i, "1906"],
+        [/\b(?:101|fire|thee pidich\w*)\b|தீப்பிடி|தீ பிடி|தீ விபத்து/i, "101"],
+        [/\b(?:108|ambulance|heart attack|unconscious)\b|ஆம்புலன்ஸ்|மயங்கி|மாரடைப்பு/i, "108"],
+        [/\b(?:112|electrocut(?:ed|ion|ing)|life.threatening)\b|மின்சாரம் தாக்கி|உயிருக்கு ஆபத்து/i, "112"]
+      ];
+      const numbers = routes.filter(([pattern]) => pattern.test(text)).map(([, number]) => number);
+      return numbers.length > 1 ? "112" : numbers[0];
+    }
+
+    function showSafetyAlert(number) {
+      const alert = document.getElementById("safetyAlert");
+      if (alert.dataset.number === number) return;
+      alert.dataset.number = number;
+      alert.replaceChildren();
+      if (!number) return;
+      const tamil = document.createElement("span");
+      tamil.lang = "ta";
+      tamil.textContent = "அவசர உதவி";
+      const dial = document.createElement("a");
+      dial.href = "tel:" + number;
+      dial.textContent = "Call " + number;
+      alert.append(tamil, " / Emergency help. ", dial);
+    }
+
+    const clarityPanel = document.getElementById("clarityModalBackdrop");
+    const clarityAnnouncement = document.getElementById("clarityAnnouncement");
+
+    function closeClarity(restoreFocus = true) {
+      if (clarityPanel.dataset.open !== "true") return;
+      clarityPanel.dataset.open = "false";
+      state.modalOkChecked = false;
+      clarityAnnouncement.textContent = "";
+      document.getElementById("hitlApproveBtn").setAttribute("aria-expanded", "false");
+      if (restoreFocus) document.getElementById("hitlApproveBtn").focus();
+    }
+
+    async function handleAgentTurn(raw, fromPreset = false, spoken = false) {
       const rawMsg = (raw || "").trim();
       if (!rawMsg) {
         voiceInput.focus();
         showToast("Speak or type your street problem first");
         return;
       }
+      if (spoken) interruptAgentSpeech();
+      const piiCheck = scrubAadhaarAndPii(rawMsg);
+      const msg = piiCheck.cleaned;
+      const emergency = localEmergency(msg);
+      if (emergency) {
+        closeClarity(false);
+        state.urgencyTier = "LIFE_SAFETY";
+        state.urgencyMeta = null;
+        state.resolvedLandmark = null;
+        state.agentPhase = "life_safety";
+        const tamil = "அவசர உதவிக்கு உடனே " + emergency + " எண்ணை அழையுங்க.";
+        state.turns.push({ role: "user", text: msg }, {
+          role: "agent", text: state.lang === "ta" ? tamil : "Call " + emergency + " now for emergency help."
+        });
+        voiceInput.value = "";
+        renderAll(false);
+        showSafetyAlert(emergency);
+        speakReply(tamil);
+        return;
+      }
+      showSafetyAlert("");
       if (!state.dpdpConsented) {
         const consentWarn = "DPDP consent is withdrawn. Tap 'Withdraw / Re-enable' above to use AI voice, or dial 1913 / 1100 directly.";
         state.turns.push({ role: "agent", text: consentWarn, needsInput: false });
@@ -2665,8 +2703,6 @@
         showToast("Consent withdrawn — AI routing paused");
         return;
       }
-      const piiCheck = scrubAadhaarAndPii(rawMsg);
-      const msg = piiCheck.cleaned;
       if (piiCheck.blocked) {
         state.turns.push({ role: "user", text: msg });
         const warn = state.lang === "ta"
@@ -2693,25 +2729,22 @@
         return;
       }
 
-      /* 2. Spoken Hands-Free Double Affirmation during HITL review */
-      if (state.agentPhase === "hitl_review") {
-        const sealMatches = msg.match(/(confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)/gi) || [];
-        if (sealMatches.length >= 2) {
-          attemptHitlSeal("voice_double", msg, false);
+      if (state.agentPhase === "hitl_review" || clarityPanel.dataset.open === "true") {
+        if (confirmationWord.test(msg)) {
+          if (!spoken) {
+            showToast("Say Confirm or உறுதி aloud while the microphone is on.");
+            return;
+          }
+          const useModal = clarityPanel.dataset.open === "true" && state.modalOkChecked;
           if (!fromPreset) voiceInput.value = "";
+          await attemptHitlSeal(useModal ? "modal_plus_voice" : "voice_double", msg, useModal);
           return;
         }
-        if (sealMatches.length === 1) {
-          state.turns.push({ role: "user", text: msg });
-          const ask2 = state.lang === "ta"
-            ? "ஒரு முறை உறுதி கேட்டது. 'உறுதி, உறுதி' என இருமுறை சொல்லுங்கள், அல்லது சரிபார்ப்புப் பெட்டியைத் திறக்கவும்."
-            : "Heard 1 confirmation. Say it twice ('Confirm, Confirm' / 'உறுதி, உறுதி') hands-free, or open the Clarity Popup.";
-          state.turns.push({ role: "agent", text: ask2, needsInput: true });
-          voiceInput.value = "";
-          renderAll(false);
-          speakReply(ask2);
+        if (/^(?:\s|[,!.?]|confirm|உறுதி|urudhi|yes)+$/i.test(msg)) {
+          showToast("Say one confirmation per turn.");
           return;
         }
+        closeClarity(false);
       }
 
       /* 3. Runtime Evidence Mention Trigger ("attach photo / bill") */
@@ -2766,38 +2799,45 @@
             persona_name: getAgentPersona().name
           })
         });
-        if (wfRes && wfRes.analysis) {
-          logPipelineEvent("workflow.turn", `FSM=${wfRes.fsm_state} model=${wfRes.model}`, {
-            tools: (wfRes.tool_trace || []).map(t => t.tool),
-            ward: wfRes.analysis.landmark?.ward,
-            latency_ms: wfRes.latency_ms
-          });
-          // Use natural LLM conversational reply whenever model is active or on non-TN/TRIAGE turns!
-          if (state.stateCode !== "tn" || wfRes.fsm_state === "TRIAGE" || (wfRes.model && wfRes.model !== "offline-tanglish-v1")) {
-            const lm = wfRes.analysis.landmark;
-            state.serviceId = wfRes.analysis.service_id || state.serviceId;
-            state.resolvedLandmark = {
-              name: lm.name,
-              district: lm.district,
-              zone: lm.zone,
-              ward: lm.ward,
-              street: lm.street,
-              roadId: lm.road_id
-            };
-            state.urgencyTier = wfRes.analysis.urgency?.tier || "STANDARD";
+        if (wfRes) {
+          const analysis = wfRes.analysis;
+          if (analysis) {
+            logPipelineEvent("workflow.turn", "Processed civic request", {
+              fsm_state: wfRes.fsm_state,
+              latency_ms: wfRes.latency_ms
+            });
+            const lm = analysis.landmark;
+            state.serviceId = analysis.service_id || state.serviceId;
+            state.resolvedLandmark = lm && analysis.has_place && !analysis.ambiguous_area ? {
+              name: lm.name, district: lm.district, zone: lm.zone,
+              ward: lm.ward, street: lm.street, roadId: lm.road_id
+            } : null;
+            state.urgencyTier = analysis.urgency?.tier || "STANDARD";
             state.urgencyMeta = {
               tier: state.urgencyTier,
-              badgeEn: wfRes.analysis.urgency?.badge_en || "P3 Standard",
-              badgeTa: wfRes.analysis.urgency?.badge_ta || "P3 சாதாரண புகார்",
-              prefix: wfRes.analysis.urgency?.prefix || ""
+              badgeEn: analysis.urgency?.badge_en || "P3 Standard",
+              badgeTa: analysis.urgency?.badge_ta || "P3 சாதாரண புகார்",
+              prefix: analysis.urgency?.prefix || ""
             };
-            state.agentPhase = wfRes.fsm_state === "HITL_SEAL" ? "hitl_review" : "clarifying";
-            state.turns.push({ role: "agent", text: wfRes.reply, needsInput: state.agentPhase === "clarifying" });
-            voiceInput.value = "";
-            renderAll(state.agentPhase === "hitl_review");
-            speakReply(wfRes.reply);
-            return;
+            const number = analysis.urgency?.helpline || (state.urgencyTier === "CRITICAL_SAFETY" ? "1912" : "");
+            showSafetyAlert(number);
+            state.needsSlot = analysis.ambiguous_area ? "place" : (!analysis.has_place ? "place" : (!analysis.has_issue ? "issue" : null));
+            const choices = {
+              velachery: ["Vijayanagar Bus Stand", "Phoenix Marketcity"],
+              anna_nagar: ["Tower Park", "Anna Arch"]
+            };
+            state.clarifyOptions = (choices[analysis.ambiguous_area] || []).map(value => ({ label: value, value }));
+            state.ticketRef = analysis.ticket_ref || state.ticketRef;
           }
+          state.agentPhase = wfRes.fsm_state === "HITL_SEAL" ? "hitl_review"
+            : wfRes.fsm_state === "LIFE_SAFETY" ? "life_safety"
+            : wfRes.ignored_backchannel && state.callActive ? "listening" : "clarifying";
+          const display = wfRes.display_text || wfRes.reply;
+          if (display) state.turns.push({ role: "agent", text: display, needsInput: state.agentPhase === "clarifying" });
+          voiceInput.value = "";
+          renderAll(false);
+          speakReply(wfRes.tts_text || wfRes.reply);
+          return;
         }
       }
       const parsed = detectIssueAndPlace(combined);
@@ -2931,29 +2971,10 @@
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx];
       const spokeTamilOrTanglish = /[\u0B80-\u0BFF]|(eriyala|thanni|kuppai|saakkadai|naala|aaguthu|irukku|veetuku|pakkathula|pannama)/i.test(msg);
       const promptReply = (state.lang === "ta" || spokeTamilOrTanglish)
-        ? `புரிந்தது — ${lm.ward} (${urgency.badgeTa}). சரிபார்த்து அனுப்ப OTP உறுதி செய்து 'உறுதி, உறுதி' சொல்லவும்.`
-        : `Resolved ${lm.ward} (${urgency.badgeEn}). Open Clarity Popup to confirm OTP & seal, or say 'Confirm, Confirm' ('உறுதி, உறுதி') twice.`;
-      const replyIdx = state.turns.push({ role: "agent", text: promptReply, needsInput: false }) - 1;
-
-      if (!fromPreset && state.llmMode !== "offline") {
-        apiCall("/api/turn", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            combined_text: combined,
-            latest_text: msg,
-            lang: state.lang,
-            llm_mode: state.llmMode,
-            history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text }))
-          })
-        }).then(res => {
-          if (res?.llm?.used && res.llm.reply && state.turns[replyIdx]) {
-            state.turns[replyIdx].text = `${res.llm.reply} (${lm.ward} · Say 'Confirm, Confirm' or open Clarity Popup)`;
-            renderThread();
-          }
-        });
-      }
-
+        ? `புரிந்தது — ${lm.ward} (${urgency.badgeTa}). சரிபார்த்து அனுப்ப OTP உறுதி செய்து தனித்தனி முறையா 'உறுதி' சொல்லவும்.`
+        : `Resolved ${lm.ward} (${urgency.badgeEn}). Open Clarity Popup to confirm OTP & seal, or say 'Confirm' or 'உறுதி' in two separate turns.`;
+      state.turns.push({ role: "agent", text: promptReply, needsInput: false });
+      if (urgency.tier === "CRITICAL_SAFETY") showSafetyAlert("1912");
       if (!fromPreset) voiceInput.value = "";
       renderAll(true);
       speakReply(promptReply);
@@ -2964,14 +2985,13 @@
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
       const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
 
-      if (!state.otpVerified) {
-        showToast("Verify Demo Mobile OTP (4829) first to prevent spam");
-        document.getElementById("otpCodeInput").focus();
+      if (!state.otpVerified || !state.dpdpConsented) {
+        showToast("Open complaint review and verify the demo OTP first.");
         return;
       }
 
       const activeDup = state.historyItems.find(h => h.ward === lm.ward && h.service_id === svc.id && h.hours_ago < 24);
-      if (activeDup && urgency.tier !== "CRITICAL_SAFETY" && svc.id !== "garbage_1100") {
+      if (activeDup && urgency.tier !== "CRITICAL_SAFETY" ) {
         showToast(`24h cooldown on ${lm.ward} (${activeDup.ticket_id}) — escalate via 1100 instead!`);
         return;
       }
@@ -2983,23 +3003,34 @@
           mode,
           spoken_phrase: spokenPhrase,
           modal_ok: modalOk,
-          otp_verified: state.otpVerified,
+          otp_session_id: state.otpSessionId,
           ward: lm.ward,
           service_id: svc.id,
           urgency_tier: urgency.tier
         })
       });
 
-      if (!apiRes) {
-        const hits = (spokenPhrase.match(/(confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)/gi) || []).length;
-        const ok = (mode === "voice_double" && hits >= 2) || (mode === "modal_plus_voice" && modalOk && hits >= 1);
-        apiRes = ok
-          ? { approved: true, ticket_id: `#NK-${Math.floor(10000 + Math.random() * 89999)}`, seal_method: mode }
-          : { approved: false, reason: "Confirmation phrase did not match HITL rule." };
+      if (!apiRes && window.location.protocol === "file:") {
+        const complaint = [lm.ward, svc.id, urgency.tier].join("|");
+        const second = state.pendingVoiceSeal === complaint;
+        state.pendingVoiceSeal = mode === "voice_double" && !second ? complaint : null;
+        const approved = confirmationWord.test(spokenPhrase) && (mode === "voice_double" ? second : modalOk);
+        apiRes = { approved, pending_confirmation: !approved && mode === "voice_double",
+          ticket_id: approved ? "#NK-DEMO" : null };
       }
 
-      if (!apiRes.approved) {
-        showToast(apiRes.reason || "Confirmation rejected");
+      if (!apiRes?.approved) {
+        if (apiRes?.pending_confirmation) {
+          const hint = "First confirmation received. In a new turn, say Confirm or உறுதி again.";
+          state.turns.push({ role: "agent", text: hint, needsInput: true });
+          renderThread();
+          showToast(hint);
+          playEarcon("ready");
+          // Avoid speaking a trigger word while the recognizer is awaiting it.
+        } else {
+          showToast(apiRes?.reason || "Confirmation service unavailable");
+          playEarcon("error");
+        }
         return;
       }
 
@@ -3013,7 +3044,8 @@
         status: "HITL_SEALED"
       });
       state.agentPhase = "approved_dispatch";
-      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "false");
+      const reviewWasOpen = clarityPanel.dataset.open === "true";
+      closeClarity(false);
       state.turns.push({
         role: "agent",
         text: state.lang === "ta"
@@ -3022,6 +3054,7 @@
         needsInput: false
       });
       renderAll(false);
+      if (reviewWasOpen) document.getElementById("outcomeJurisdictionTag").focus();
       showToast(`Sealed ${apiRes.ticket_id} — Dispatch tools unlocked`);
     }
 
@@ -3073,6 +3106,8 @@
     let lastCommittedText = "";
     let turnFlushTimer = null;
     let micDenied = false;
+    let spokenSegment = 0;
+    let lastSealedSegment = -1;
     let vadStream = null;
     let vadRafId = null;
     let vadCtx = null;
@@ -3083,27 +3118,28 @@
       const muteBtn = document.getElementById("muteMicBtn");
       const muteLbl = document.getElementById("muteLabel");
       const endBtn = document.getElementById("endCallBtn");
-      const orbBtn = document.getElementById("orbMicBtn");
 
       startBtn.setAttribute("data-active", state.callActive ? "true" : "false");
-      startLbl.textContent = state.callActive ? (state.lang === "ta" ? "அழைப்பில்" : "On Call") : (state.lang === "ta" ? "அழைப்பு" : "Call");
+      startLbl.lastChild.textContent = state.callActive ? " / On call" : " / Call";
       muteBtn.disabled = !state.callActive;
       muteBtn.setAttribute("aria-pressed", state.isMuted ? "true" : "false");
-      muteLbl.textContent = state.isMuted ? (state.lang === "ta" ? "ஒலியெழுப்பு" : "Unmute") : (state.lang === "ta" ? "அமைதி" : "Mute");
+      muteLbl.firstChild.textContent = state.isMuted ? "தொடரு" : "நிறுத்து";
+      muteLbl.lastChild.textContent = state.isMuted ? " / Resume" : " / Pause";
       endBtn.disabled = !state.callActive;
-      orbBtn.setAttribute("data-state", (state.callActive && !state.isMuted) ? "listening" : "idle");
+      document.getElementById("reviewMicBtn").hidden = state.callActive && !state.isMuted;
+      updateStatusPill();
     }
 
     function commitRecognizedTurn(rawText) {
       clearTimeout(turnFlushTimer);
       turnFlushTimer = null;
       const cleaned = (rawText || "").trim();
-      if (!cleaned || cleaned === lastCommittedText) return false;
+      if (!cleaned || (cleaned === lastCommittedText && !confirmationWord.test(cleaned))) return false;
       lastCommittedText = cleaned;
       pendingTranscript = "";
       voiceInput.value = "";
       document.getElementById("liveTranscriptText").textContent = `Heard: "${cleaned}"`;
-      handleAgentTurn(cleaned);
+      handleAgentTurn(cleaned, false, true);
       setTimeout(() => {
         if (lastCommittedText === cleaned) lastCommittedText = "";
       }, 2500);
@@ -3182,15 +3218,12 @@
     function startSpeechCapture() {
       // Keep single persistent recognizer across mute/unmute so Chrome never re-prompts unnecessarily
       if (!state.callActive || micDenied) return;
-      if (state.sttMode === "wispr") {
-        document.getElementById("liveTranscriptText").textContent = "Wispr Flow active — press your dictation hotkey or type below.";
-        return;
-      }
       if (liveRec) return;
 
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        document.getElementById("liveTranscriptText").textContent = "Mic stream unavailable here — use Wispr Flow hotkey or type below.";
+        document.getElementById("liveTranscriptText").textContent = "Microphone unavailable. Open Type / Photo to enter your complaint.";
+        playEarcon("error");
         return;
       }
       try {
@@ -3201,6 +3234,7 @@
         liveRec.lang = recLang;
         liveRec.onstart = () => logPipelineEvent("stt.start", `Listening (${liveRec?.lang || "en-IN"})`);
         liveRec.onspeechstart = () => {
+          spokenSegment++;
           logPipelineEvent("stt.speech_start", "Detected user voice onset");
           if (!state.isMuted) interruptAgentSpeech();
         };
@@ -3214,12 +3248,16 @@
             if (ev.results[i].isFinal) {
               const words = piece.trim().split(/\s+/).filter(Boolean);
               const conf = Number(alt.confidence || 0).toFixed(2);
-              if (alt.confidence > 0 && alt.confidence < 0.42 && words.length <= 2) {
+              if (alt.confidence > 0 && alt.confidence < 0.42 && words.length <= 2 && !localEmergency(piece) && !confirmationWord.test(piece)) {
                 logPipelineEvent("stt.noise_filtered", piece.trim(), { confidence: conf }, "WARN");
                 document.getElementById("liveTranscriptText").textContent = "Filtered faint background noise...";
                 continue;
               }
-              logPipelineEvent("stt.final", piece.trim(), { confidence: conf });
+              if (confirmationWord.test(piece)) {
+                if (lastSealedSegment === spokenSegment) continue;
+                lastSealedSegment = spokenSegment;
+              }
+              logPipelineEvent("stt.final", "Received final utterance", { confidence: conf });
               commitRecognizedTurn(piece);
             } else {
               interim += piece;
@@ -3229,10 +3267,10 @@
             pendingTranscript = interim.trim();
             voiceInput.value = pendingTranscript;
             document.getElementById("liveTranscriptText").textContent = `Hearing live: "${pendingTranscript}..."`;
-            spawnRipple(false);
+
             clearTimeout(turnFlushTimer);
             turnFlushTimer = setTimeout(() => {
-              if (state.callActive && !state.isMuted && pendingTranscript) {
+              if (state.callActive && !state.isMuted && pendingTranscript && !confirmationWord.test(pendingTranscript)) {
                 commitRecognizedTurn(pendingTranscript);
               }
             }, 950);
@@ -3245,12 +3283,13 @@
             micDenied = true;
             liveRec = null;
             if (state.callActive) {
-              document.getElementById("liveTranscriptText").textContent = "Mic blocked — open http://127.0.0.1:8000 or use Wispr Flow / type below.";
+              document.getElementById("liveTranscriptText").textContent = "Microphone blocked. Allow access in your browser or open Type / Photo.";
+              playEarcon("error");
             }
             return;
           }
           if ((code === "network" || code === "audio-capture") && state.callActive) {
-            document.getElementById("liveTranscriptText").textContent = `Web Speech ${code} — check mic/internet or use Wispr Flow hotkey below.`;
+            document.getElementById("liveTranscriptText").textContent = `Web Speech ${code} — check mic/internet or open Type / Photo.`;
           }
         };
         liveRec.onend = () => {
@@ -3272,14 +3311,13 @@
       unlockAudioGesture();
       if (state.callActive) {
         if (state.isMuted) toggleMute();
-        voiceInput.focus();
         return;
       }
       state.callActive = true;
       state.isMuted = false;
       micDenied = false;
       pendingTranscript = "";
-      state.agentPhase = "listening";
+      if (state.agentPhase === "idle") state.agentPhase = "listening";
       callSeconds = 0;
       clearInterval(callTimerInterval);
       callTimerInterval = setInterval(() => {
@@ -3289,7 +3327,6 @@
         document.getElementById("callTimer").textContent = `${m}:${s}`;
       }, 1000);
 
-      spawnRipple(true);
       if (state.turns.length === 0) {
         const persona = getAgentPersona();
         const welcome = state.lang === "ta"
@@ -3303,11 +3340,10 @@
         updateStatusPill();
       }
       if (window.location.protocol === "file:") {
-        document.getElementById("liveTranscriptText").textContent = "Note: Browser re-asks mic on file:// — serve http://127.0.0.1:8000 to remember mic permission.";
+        document.getElementById("liveTranscriptText").textContent = "The browser may ask for microphone permission again in file preview.";
       }
       updateCallDockUi();
       startSpeechCapture();
-      voiceInput.focus();
     }
 
     function toggleMute() {
@@ -3315,21 +3351,21 @@
       if (!state.isMuted) {
         // Flush any unsubmitted spoken/typed buffer right before muting!
         const unsubmitted = (pendingTranscript || voiceInput.value || "").trim();
-        if (unsubmitted && unsubmitted !== lastCommittedText) {
+        if (pendingTranscript && !confirmationWord.test(unsubmitted) && unsubmitted !== lastCommittedText) {
           commitRecognizedTurn(unsubmitted);
         }
         state.isMuted = true;
         if (vadStream) vadStream.getAudioTracks().forEach(t => { t.enabled = false; });
         // NEVER cancel agent speechSynthesis on mic mute — agent keeps speaking!
-        if (state.agentPhase !== "speaking") state.agentPhase = "idle";
+
         document.getElementById("liveTranscriptText").textContent = "Mic muted — agent finishes replying. Tap Unmute to speak again.";
         showToast("Mic muted (pending speech processed)");
       } else {
         state.isMuted = false;
         if (vadStream) vadStream.getAudioTracks().forEach(t => { t.enabled = true; });
-        state.agentPhase = (window.speechSynthesis && window.speechSynthesis.speaking) ? "speaking" : "listening";
-        if (!liveRec && state.sttMode !== "wispr") startSpeechCapture();
-        spawnRipple(true);
+        if (state.agentPhase === "idle") state.agentPhase = "listening";
+        if (!liveRec) startSpeechCapture();
+
         document.getElementById("liveTranscriptText").textContent = "Listening in Tanglish / Tamil...";
         showToast("Mic unmuted");
       }
@@ -3340,7 +3376,7 @@
     function endCall() {
       if (!state.callActive && !liveRec) return;
       const unsubmitted = (pendingTranscript || voiceInput.value || "").trim();
-      if (unsubmitted && unsubmitted !== lastCommittedText) {
+      if (pendingTranscript && !confirmationWord.test(unsubmitted) && unsubmitted !== lastCommittedText) {
         commitRecognizedTurn(unsubmitted);
       }
       stopSpeechCapture();
@@ -3348,9 +3384,7 @@
       clearInterval(callTimerInterval);
       state.callActive = false;
       state.isMuted = false;
-      if (state.agentPhase === "listening" || state.agentPhase === "speaking") {
-        state.agentPhase = state.turns.some(t => t.role === "user") ? "hitl_review" : "idle";
-      }
+      if (state.agentPhase === "listening") state.agentPhase = "idle";
       document.getElementById("liveTranscriptText").textContent = state.turns.length
         ? "Call ended — review your gathered details or transcript below."
         : "";
@@ -3398,13 +3432,12 @@
       state.llmMode = document.getElementById("llmEngineSelect").value;
       state.stateCode = document.getElementById("statePackSelect").value;
       const sttLabels = {
-        "hybrid-ta": "Tamil + Code-Mix Live (ta-IN) + Wispr Flow",
-        hybrid: "Indian English Live (en-IN) + Wispr Flow",
-        wispr: "Wispr Flow Hotkey Only",
+        "hybrid-ta": "Tamil + Code-Mix Live (ta-IN)",
+        hybrid: "Indian English Live (en-IN)",
         browser: "Browser SpeechRecognition (ta-IN)"
       };
       const llmLabels = {
-        auto: "Auto (Unsloth Local LLM if running → Offline Engine)",
+        auto: "Auto (Cloud, local model, then offline FSM)",
         unsloth: "Unsloth Studio Local LLM (127.0.0.1:8888)",
         offline: "Built-in Zero-Key Tanglish Engine",
         ollama: "Local Ollama (localhost:11434 fallback to offline)",
@@ -3491,7 +3524,7 @@
         const convRes = await apiCall("/api/conversations?limit=60");
         const items = convRes?.items || [];
         box.innerHTML = items.length
-          ? items.map(c => `<div><span style="color:#94A3B8;">[${c.time}]</span> <strong style="color:${c.role === "user" ? "#93C5FD" : "#5EEAD4"};">${c.role === "user" ? "Citizen" : (c.persona || "Agent")}</strong> ${c.ward ? `[${c.ward}] ` : ""}${c.text}</div>`).join("")
+          ? items.map(c => `<div><span style="color:#94A3B8;">[${c.time}]</span> <strong style="color:${c.role === "user" ? "#93C5FD" : "#5EEAD4"};">${c.role === "user" ? "Citizen" : (c.persona || "Agent")}</strong> ${c.ward ? `[${c.ward}] ` : ""}${htmlText(c.text)}</div>`).join("")
           : `<div style="color:#94A3B8;">No persisted past conversations yet. Start a call on http://127.0.0.1:8000!</div>`;
         return;
       }
@@ -3535,6 +3568,9 @@
       document.getElementById("historyModalBackdrop").setAttribute("data-open", "false");
     });
 
+    document.getElementById("attachPhotoBtn").addEventListener("click", () => {
+      document.getElementById("runtimeAttachInput").click();
+    });
     document.getElementById("runtimeAttachInput").addEventListener("change", async (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
@@ -3561,6 +3597,12 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone_masked: "+91 98XXXXXX10" })
       });
+      if (!res && window.location.protocol !== "file:") {
+        showToast("Could not request a demo OTP. Try again.");
+        return;
+      }
+      state.otpVerified = false;
+      state.pendingVoiceSeal = null;
       state.otpSessionId = res?.otp_session_id || "local-demo";
       const demo = res?.demo_otp_hint || "4829";
       document.getElementById("otpCodeInput").value = demo;
@@ -3575,7 +3617,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ otp_session_id: state.otpSessionId || "local", code })
       });
-      const ok = res ? res.verified : (code === "4829" || code === "0000");
+      const ok = res?.verified || (window.location.protocol === "file:" && state.otpSessionId === "local-demo" && code === "4829");
       if (!ok) {
         showToast(res?.error || "Enter demo OTP 4829");
         return;
@@ -3585,36 +3627,35 @@
       showToast("Citizen Mobile OTP verified ✓");
     });
 
-    /* Dynamic Clarity Popup + Native Spoken Seal */
-    document.getElementById("hitlApproveBtn").addEventListener("click", () => {
+    document.getElementById("hitlApproveBtn").addEventListener("click", (event) => {
+      unlockAudioGesture();
       state.modalOkChecked = false;
       document.getElementById("modalOkBtn").setAttribute("aria-pressed", "false");
-      document.getElementById("modalSealBtn").disabled = true;
-      document.getElementById("modalSealInput").value = "";
+      document.getElementById("sealVoiceHint").textContent = "";
       renderAll(false);
-      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "true");
+      clarityPanel.dataset.open = "true";
+      event.currentTarget.setAttribute("aria-expanded", "true");
+      clarityAnnouncement.textContent = "புகார் சரிபார்ப்பு / Review your complaint.";
+      document.getElementById("clarityModalTitle").focus();
+      playEarcon("ready");
     });
 
-    document.getElementById("clarityCloseBtn").addEventListener("click", () => {
-      document.getElementById("clarityModalBackdrop").setAttribute("data-open", "false");
+    document.getElementById("clarityCloseBtn").addEventListener("click", () => closeClarity());
+    clarityPanel.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeClarity();
     });
 
-    document.getElementById("modalOkBtn").addEventListener("click", (e) => {
+    document.getElementById("reviewMicBtn").addEventListener("click", startCall);
+    document.getElementById("modalOkBtn").addEventListener("click", (event) => {
       state.modalOkChecked = true;
-      e.currentTarget.setAttribute("aria-pressed", "true");
-      document.getElementById("modalSealBtn").disabled = false;
-      if (!document.getElementById("modalSealInput").value.trim()) {
-        document.getElementById("modalSealInput").focus();
-      }
-      showToast("Popup checked — now speak or enter 'உறுதி / Confirm'");
-    });
-
-    document.getElementById("modalSealBtn").addEventListener("click", () => {
-      const phrase = document.getElementById("modalSealInput").value.trim() || "உறுதி";
-      attemptHitlSeal("modal_plus_voice", phrase, state.modalOkChecked);
+      event.currentTarget.setAttribute("aria-pressed", "true");
+      document.getElementById("sealVoiceHint").textContent =
+        "Say உறுதி or Confirm once. If microphone capture is paused, use Call or Resume.";
     });
 
     document.getElementById("hitlEditBtn").addEventListener("click", () => {
+      closeClarity(false);
+      openComposer();
       state.agentPhase = "clarifying";
       state.turns.push({
         role: "agent",
@@ -3653,6 +3694,11 @@
 
     document.getElementById("newChatBtn").addEventListener("click", () => {
       endCall();
+      closeClarity(false);
+      showSafetyAlert("");
+      state.otpSessionId = null;
+      state.otpVerified = false;
+      state.pendingVoiceSeal = null;
       state.turns = [];
       state.clarifyOptions = [];
       state.appendedNote = "";
@@ -3772,7 +3818,6 @@
       state.lite = !state.lite;
       document.documentElement.setAttribute("data-lite", state.lite ? "true" : "false");
       e.currentTarget.setAttribute("aria-pressed", state.lite ? "true" : "false");
-      if (!state.lite) drawOrb();
       showToast(state.lite ? "2G Lite Mode active" : "Standard Voice Agent mode");
     });
 
@@ -3785,16 +3830,38 @@
       const servers = (rtc.iceServers || []).flatMap(x => x.urls || []);
       rtcEl.textContent = `Transport: Self-owned WebRTC (${rtc.transport}) · ICE: ${servers.join(", ")}`;
     });
+    const composerToggle = document.getElementById("secondaryToggle");
+    const composer = document.getElementById("secondaryControls");
+
+    function setComposer(open) {
+      composer.dataset.expanded = String(open);
+      composerToggle.setAttribute("aria-expanded", String(open));
+    }
+
+    function openComposer() {
+      setComposer(true);
+      voiceInput.focus();
+    }
+
+    composerToggle.addEventListener("click", () => setComposer(composer.dataset.expanded !== "true"));
+    document.getElementById("themeToggle").addEventListener("click", (event) => {
+      const dark = document.documentElement.dataset.theme !== "dark";
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      event.currentTarget.setAttribute("aria-pressed", String(dark));
+    });
+
     apiCall("/api/health").then(info => {
-      const statusEl = document.getElementById("modelSetupStatus");
-      if (!info || !statusEl) return;
-      if (info.local_llm?.available) {
-        statusEl.textContent = `Active: Unsloth Local LLM (${info.local_llm.active_model}) + Deterministic Ward/HITL Router`;
-      } else if (info.voice_mode === "live-neural") {
-        statusEl.textContent = "Active: Live Neural Voice + Optional Keys Detected on Backend";
-      } else {
-        statusEl.textContent = "Active: Offline Tanglish Civic Engine (0 secret keys needed; Docker / FastAPI Connected)";
-      }
+      const labels = {
+        offline_fsm: "Offline FSM (No Key Set)",
+        local_gpu: "Local Gemma-4",
+        cloud_api: "Cloud API"
+      };
+      const selected = labels[info?.engine_mode];
+      const pill = document.getElementById("engineModePill");
+      if (selected) pill.textContent = "Mode: " + selected;
+      else if (window.location.protocol !== "file:") pill.textContent = "Mode: unavailable";
+      document.getElementById("voiceKeyNotice").hidden = info?.optional_keys?.SARVAM_API_KEY === "configured";
+      if (selected) document.getElementById("modelSetupStatus").textContent = "Active: " + selected;
     });
   </script>
 </body>

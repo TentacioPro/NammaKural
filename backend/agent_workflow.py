@@ -385,16 +385,16 @@ def _generate_natural_reply(
         )
 
     sys_msg = (
-        f"You are {persona_name}, a warm, friendly human civic voice assistant for NammaKural ({state_name}). "
-        f"{lang_rule} Ground facts ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
-        f"If fsm_state is TRIAGE, respond naturally to whatever the citizen just said (even casual chat like 'appadiya', 'ennanga', 'appuram') like a helpful neighbor, and gently invite them to share their street issue or area without repeating the exact same phrasing as earlier turns. "
-        "Never re-ask for an issue or location already present in slots. A captured landmark without a verified_ward "
-        "needs a nearby known intersection or GPS for ward verification, not a repeat of the complaint. "
-        "If fsm_state is DISAMBIGUATE, ask for only the missing detail. "
-        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி' / 'Confirm' in two separate turns (or approve the Clarity Popup and say it once)."
+        f"You are {persona_name}, a warm, natural human-like civic voice assistant for NammaKural ({state_name}). "
+        f"{lang_rule} Use this verified backend state only for factual Ward/agency grounding: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
+        "Have a genuine, natural back-and-forth conversation with the citizen. "
+        "If they greet you, make small talk, or ask how you work, reply warmly and naturally without forcing a form or repeating scripted lines. "
+        "If they describe a civic issue or location, acknowledge it naturally, never re-ask for an issue or location already in slots, "
+        "and if verified_ward is still missing, gently ask for a nearby landmark or junction (never invent a Ward number). "
+        "If fsm_state is HITL_SEAL, confirm the exact verified_ward and guide them to verify Mobile OTP and say 'உறுதி' / 'Confirm' in two separate turns (or use the Clarity Popup)."
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
-    for h in history[-4:]:
+    for h in history[-8:]:
         messages.append({
             "role": "assistant" if h.get("role") == "agent" else "user",
             "content": scrub_pii_and_aadhaar(h.get("text", ""))["clean_text"],
@@ -619,7 +619,7 @@ def _node_safety_and_vad(state: _GraphState) -> dict[str, Any]:
         return {"early_return": {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, **speech_fields("", ""), "tool_trace": []}}
 
     chitchat = classify_conversational_chitchat(clean_latest)
-    if chitchat is not None:
+    if chitchat is not None and state.get("llm_mode", "offline") == "offline":
         reply = chitchat["reply_ta"] if lang == "ta" else (chitchat.get("reply_tanglish", chitchat["reply_en"]) if lang == "tanglish" else chitchat["reply_en"])
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
         return {

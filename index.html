@@ -1293,7 +1293,7 @@
       </div>
       <section class="transcript-stage" aria-labelledby="transcriptTitle">
         <h2 id="transcriptTitle"><span lang="ta">உரையாடல்</span> / Conversation</h2>
-        <p id="voiceKeyNotice" role="status" aria-live="polite">Sarvam key not set. Using browser voice (ta-IN).</p>
+        <p id="voiceKeyNotice" role="status" aria-live="polite">Sarvam key not set. Using browser speech recognition (ta-IN).</p>
         <div id="safetyAlert" aria-live="assertive" aria-atomic="true"></div>
         <!-- Subtle Borderless Live Transcript Stream & Gathered Particulars -->
         <div id="liveTranscriptText" style="font-size:0.88rem;color:var(--ink-2);min-height:20px;max-width:620px;" aria-live="polite"></div>
@@ -2636,7 +2636,7 @@
     function pickTtsVoice(isTamil) {
       if (!ttsVoices.length) refreshTtsVoices();
       if (isTamil) {
-        return ttsVoices.find(v => /^ta/i.test(v.lang) || /tamil/i.test(v.name)) || null;
+        return ttsVoices.find(v => /^ta(?:-|$)/i.test(v.lang) || /tamil/i.test(v.name)) || null;
       }
       return (
         ttsVoices.find(v => /^en-IN/i.test(v.lang)) ||
@@ -2657,9 +2657,10 @@
         earconContext?.resume().catch(() => {});
       } catch {}
       try {
-        sharedPlayer.src = SILENT_WAV_URI;
-        const p = sharedPlayer.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
+        if (!ttsAudioEl) {
+          sharedPlayer.src = SILENT_WAV_URI;
+          sharedPlayer.play().catch(() => {});
+        }
       } catch {}
     }
 
@@ -2698,9 +2699,56 @@
       }
     }
 
-    function fallbackBrowserSpeak(text, myGen) {
-      if (!("speechSynthesis" in window)) return;
-      const segments = String(text)
+    const tamilScript = /[\u0B80-\u0BFF]/;
+
+    function finishSpeech(myGen) {
+      if (myGen === ttsGeneration && state.agentPhase === "speaking") {
+        state.agentPhase = phaseBeforeSpeech;
+        updateStatusPill();
+      }
+    }
+
+    function playSpeechAudio(src, myGen, onError, objectUrl = false) {
+      const audio = sharedPlayer;
+      ttsAudioEl = audio;
+      ttsAudioUrl = objectUrl ? src : null;
+      let finished = false;
+      const finish = failed => {
+        if (finished || myGen !== ttsGeneration) return;
+        finished = true;
+        audio.onended = audio.onerror = null;
+        ttsAudioEl = ttsAudioUrl = null;
+        if (objectUrl) URL.revokeObjectURL(src);
+        if (failed) onError();
+        else finishSpeech(myGen);
+      };
+      audio.onended = () => finish(false);
+      audio.onerror = () => finish(true);
+      audio.src = src;
+      audio.play().catch(() => finish(true));
+    }
+
+    function fallbackBrowserSpeak(text, myGen, cue) {
+      if (myGen !== ttsGeneration) return;
+      const hasTamil = tamilScript.test(text);
+      const taVoice = pickTtsVoice(true);
+      const useTamilCue = cue && (state.lang !== "en" || (hasTamil && !/[a-z]/i.test(text)));
+      const playTamilCue = () => {
+        logPipelineEvent("tts.bundled", "Playing a bundled Tamil prompt", { cue });
+        playSpeechAudio(new URL("assets/voice/" + cue + ".mp3", document.baseURI).href, myGen, () => {
+          logPipelineEvent("tts.unavailable", "Bundled Tamil audio could not play", { cue }, "WARN");
+          finishSpeech(myGen);
+        });
+      };
+      if (useTamilCue && (!hasTamil || !taVoice)) {
+        playTamilCue();
+        return;
+      }
+      if (!("speechSynthesis" in window)) {
+        finishSpeech(myGen);
+        return;
+      }
+      const segments = text
         .split(/([\u0B80-\u0BFF][\u0B80-\u0BFF\s.,!?0-9\-]*)/g)
         .map(x => x.trim())
         .filter(Boolean);
@@ -2708,16 +2756,10 @@
 
       function speakChunk(i) {
         if (myGen !== ttsGeneration) return;
-        if (i >= chunks.length) {
-          if (state.agentPhase === "speaking") {
-            state.agentPhase = phaseBeforeSpeech;
-            updateStatusPill();
-          }
-          return;
-        }
-        let chunk = chunks[i];
-        const isTamil = /[\u0B80-\u0BFF]/.test(chunk);
-        const taVoice = isTamil ? pickTtsVoice(true) : null;
+        if (i >= chunks.length) return finishSpeech(myGen);
+        const chunk = chunks[i];
+        const isTamil = tamilScript.test(chunk);
+        if (isTamil && !taVoice) return speakChunk(i + 1);
         const u = new SpeechSynthesisUtterance(chunk);
         u.lang = isTamil ? "ta-IN" : "en-IN";
         const voice = isTamil ? taVoice : pickTtsVoice(false);
@@ -2727,14 +2769,19 @@
         }
         u.rate = 0.96;
         u.onend = () => speakChunk(i + 1);
-        u.onerror = () => speakChunk(i + 1);
+        u.onerror = () => {
+          if (myGen !== ttsGeneration) return;
+          if (isTamil && useTamilCue) playTamilCue();
+          else speakChunk(i + 1);
+        };
         window.speechSynthesis.speak(u);
       }
       speakChunk(0);
     }
 
-    async function speakReply(text, browserOnly = false) {
+    async function speakReply(text, { browserOnly = false, cue = "" } = {}) {
       if (!state.autoSpeak || !text) return;
+      text = String(text);
       interruptAgentSpeech();
       const myGen = ++ttsGeneration;
       if (state.agentPhase !== "speaking") phaseBeforeSpeech = state.agentPhase;
@@ -2746,12 +2793,13 @@
       if (!browserOnly && window.location.protocol !== "file:" && !state.lite) {
         const controller = new AbortController();
         ttsController = controller;
+        const deadline = setTimeout(() => controller.abort(), 5000);
         try {
           const resp = await fetch("/api/tts", {
             method: "POST",
             signal: controller.signal,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: String(text), voice: state.ttsVoice || "auto", lang: state.lang })
+            body: JSON.stringify({ text, voice: state.ttsVoice || "auto", lang: state.lang })
           });
           if (myGen !== ttsGeneration) return;
           if (resp.status === 200) {
@@ -2759,39 +2807,38 @@
             const cached = resp.headers.get("X-NammaKural-Cached") === "true";
             const blob = await resp.blob();
             if (myGen !== ttsGeneration) return;
-            const url = URL.createObjectURL(blob);
-            const audio = sharedPlayer;
-            audio.src = url;
-            ttsAudioEl = audio;
-            ttsAudioUrl = url;
-            logPipelineEvent("tts.speak", String(text).slice(0, 60), { voice: voiceUsed, cached, mode: "neural-mp3" });
-            const finish = () => {
-              URL.revokeObjectURL(url);
-              if (ttsAudioUrl === url) {
-                ttsAudioEl = null;
-                ttsAudioUrl = null;
-              }
-              if (myGen === ttsGeneration && state.agentPhase === "speaking") {
-                state.agentPhase = phaseBeforeSpeech;
-                updateStatusPill();
-              }
-            };
-            audio.onended = finish;
-            audio.onerror = finish;
-            await audio.play().catch(() => {
-              finish();
-              fallbackBrowserSpeak(text, myGen);
-            });
+            logPipelineEvent("tts.speak", "Playing neural audio", { voice: voiceUsed, cached, mode: "neural-mp3" });
+            playSpeechAudio(URL.createObjectURL(blob), myGen, () => fallbackBrowserSpeak(text, myGen, cue), true);
             return;
           }
         } catch {
-          if (controller.signal.aborted) return;
+          if (myGen !== ttsGeneration) return;
         } finally {
+          clearTimeout(deadline);
           if (ttsController === controller) ttsController = null;
         }
       }
-      if (myGen !== ttsGeneration) return;
-      fallbackBrowserSpeak(text, myGen);
+      fallbackBrowserSpeak(text, myGen, cue);
+    }
+
+    function workflowSpeechCue(result) {
+      const analysis = result.analysis || {};
+      if (result.fsm_state === "LIFE_SAFETY") {
+        return "emergency-" + analysis.urgency.helpline;
+      }
+      if (analysis.urgency?.tier === "CRITICAL_SAFETY") return "critical";
+      if (result.aadhaar_blocked) return "aadhaar";
+      if (result.chitchat) return "mic-check";
+      if (result.fsm_state === "TRIAGE") return "triage";
+      if (result.cooldown?.override_allowed === false) return "cooldown";
+      if (result.fsm_state === "HITL_SEAL") return "review";
+      if (result.fsm_state === "DISAMBIGUATE") {
+        if (analysis.ambiguous_area === "velachery") return "velachery";
+        if (analysis.ambiguous_area === "anna_nagar") return "anna-nagar";
+        if (!analysis.has_place) return "ask-place";
+        return analysis.landmark?.ward ? "ask-issue" : "verify-place";
+      }
+      return "";
     }
 
     function classifyConversationalGreeting(msg) {
@@ -2891,7 +2938,8 @@
         voiceInput.value = "";
         renderAll(false);
         showSafetyAlert(emergency);
-        speakReply(tamil);
+        speakReply(state.lang === "en" ? "Call " + emergency + " now for emergency help." : tamil,
+          { cue: "emergency-" + emergency });
         return;
       }
       showSafetyAlert("");
@@ -2910,7 +2958,7 @@
         state.turns.push({ role: "agent", text: warn, needsInput: true });
         if (!fromPreset) voiceInput.value = "";
         renderAll(false);
-        speakReply(warn);
+        speakReply(warn, { cue: "aadhaar" });
         showToast("Blocked raw Aadhaar digits (UIDAI compliant)");
         return;
       }
@@ -2924,7 +2972,7 @@
         if (!fromPreset) voiceInput.value = "";
         document.getElementById("liveTranscriptText").textContent = `Heard: "${msg}"`;
         renderAll(false);
-        speakReply(replyText);
+        speakReply(replyText, { cue: "mic-check" });
         return;
       }
 
@@ -2955,7 +3003,7 @@
         state.turns.push({ role: "agent", text: reply, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        speakReply(reply);
+        speakReply(reply, { cue: "attachment" });
         return;
       }
 
@@ -2986,7 +3034,8 @@
         controller = new AbortController();
         workflowController = controller;
         const ack = spoken && state.callActive ? setTimeout(() => {
-          if (!controller.signal.aborted) speakReply(state.lang === "en" ? "One moment, I’m checking." : "ஒரு நிமிஷம், சரிபார்க்கிறேன்.", true);
+          if (!controller.signal.aborted) speakReply(state.lang === "en" ? "One moment, I’m checking." : "ஒரு நிமிஷம், சரிபார்க்கிறேன்.",
+            { browserOnly: true, cue: "checking" });
         }, 350) : null;
         const wfRes = await apiCall("/api/workflow/turn", {
           method: "POST",
@@ -3049,7 +3098,7 @@
           if (display) state.turns.push({ role: "agent", text: display, needsInput: state.agentPhase === "clarifying" });
           voiceInput.value = "";
           renderAll(false);
-          speakReply(wfRes.tts_text || wfRes.reply);
+          speakReply(state.lang === "en" ? display : wfRes.tts_text || display, { cue: workflowSpeechCue(wfRes) });
           return;
         }
       }
@@ -3102,7 +3151,7 @@
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        speakReply(ask);
+        speakReply(ask, { cue: "triage" });
         return;
       }
       if (workflowController === controller) workflowController = null;
@@ -3121,7 +3170,7 @@
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        speakReply(ask);
+        speakReply(ask, { cue: "ask-issue" });
         return;
       }
 
@@ -3144,7 +3193,7 @@
           state.gpsAskedOnce = true;
           document.getElementById("gpsModalBackdrop").setAttribute("data-open", "true");
         }
-        speakReply(ask);
+        speakReply(ask, { cue: "ask-place" });
         return;
       }
 
@@ -3161,7 +3210,7 @@
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        speakReply(ask);
+        speakReply(ask, { cue: "velachery" });
         return;
       }
 
@@ -3178,7 +3227,7 @@
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        speakReply(ask);
+        speakReply(ask, { cue: "anna-nagar" });
         return;
       }
 
@@ -3191,7 +3240,7 @@
           : `I noted ${parsed.landmarkText}. Share a nearby junction to verify its ward.`;
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         renderAll(false);
-        speakReply(ask);
+        speakReply(ask, { cue: "verify-place" });
         return;
       }
 
@@ -3219,7 +3268,7 @@
       if (urgency.tier === "CRITICAL_SAFETY") showSafetyAlert("1912");
       if (!fromPreset) voiceInput.value = "";
       renderAll(true);
-      speakReply(promptReply);
+      speakReply(promptReply, { cue: urgency.tier === "CRITICAL_SAFETY" ? "critical" : "review" });
     }
 
     async function attemptHitlSeal(mode, spokenPhrase, modalOk) {
@@ -3561,7 +3610,7 @@
           : (state.lang === "en" ? persona.greetEn : persona.greetTanglish);
         state.turns.push({ role: "agent", text: welcome, needsInput: true });
         renderAll(false);
-        speakReply(welcome);
+        speakReply(welcome, { cue: "greeting" });
       } else {
         renderParticulars();
         updateStatusPill();
@@ -3922,9 +3971,8 @@
     document.getElementById("quickVoiceTestBtn").addEventListener("click", () => {
       unlockAudioGesture();
       const persona = getAgentPersona();
-      const sample = state.lang === "en" ? persona.greetEn : persona.greetTanglish;
-      speakReply(sample);
-      showToast(`Playing ${persona.name}...`);
+      const tamilVoice = state.ttsVoice.startsWith("ta-");
+      speakReply(tamilVoice ? persona.greetTa : persona.greetEn, { cue: tamilVoice ? "greeting" : "" });
     });
     voiceInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {

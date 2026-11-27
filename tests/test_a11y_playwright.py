@@ -37,7 +37,7 @@ def app_url(tmp_path_factory):
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
-            server = uvicorn.Server(uvicorn.Config(main.app, log_level="error"))
+            server = uvicorn.Server(uvicorn.Config(main.app, log_level="error", timeout_graceful_shutdown=3))
             thread = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
             thread.start()
             try:
@@ -338,3 +338,43 @@ def test_transliterated_complaint_keeps_issue_until_ward_is_verified(app_url, op
     submit("இல்ல, அண்ணா ஆர்ச் பக்கத்துல")
     expect(page.locator("#particularsStrip")).to_contain_text("Ward 102")
     expect(page.locator("#hitlApproveBtn")).to_be_visible()
+
+
+@pytest.mark.parametrize("preview", [False, True], ids=["http", "file"])
+@pytest.mark.parametrize("native_tamil", [False, True], ids=["missing-voice", "unusable-voice"])
+def test_tamil_speech_without_a_working_tamil_voice(app_url, open_page, preview, native_tamil):
+    def setup(page):
+        install_test_recognizer(page)
+        page.add_init_script("""(() => {
+            const voices = [{lang: 'en-US', name: 'Desktop English'}];
+            if (HAS_TAMIL) voices.push({lang: 'ta-IN', name: 'Unavailable Tamil'});
+            speechSynthesis.getVoices = () => voices;
+            window.SpeechSynthesisUtterance = class {
+                constructor(text) { this.text = text; }
+            };
+            speechSynthesis.speak = utterance => setTimeout(() => {
+                if (utterance.lang.startsWith('ta')) utterance.onerror?.({error: 'language-unavailable'});
+                else utterance.onend?.();
+            }, 0);
+            window.playedVoiceClips = [];
+            const play = HTMLMediaElement.prototype.play;
+            HTMLMediaElement.prototype.play = function () {
+                const asset = this.src.includes('/assets/voice/') ? new URL(this.src).pathname.split('/').pop() : null;
+                return play.call(this).then(() => {
+                    if (asset) playedVoiceClips.push(asset);
+                });
+            };
+        })();""".replace("HAS_TAMIL", json.dumps(native_tamil)))
+        if not preview:
+            page.route("**/api/tts", lambda route: route.fulfill(status=204))
+
+    page = open_page((ROOT / "index.html").as_uri() if preview else app_url, setup=setup)
+    page.locator("#startCallBtn").click()
+    page.wait_for_function("playedVoiceClips.includes('greeting.mp3')", timeout=2000)
+    page.evaluate("testRecognizer.hear('சாரி நீங்க பேசுறது கேக்கல')")
+    page.wait_for_function("playedVoiceClips.includes('triage.mp3')", timeout=2000)
+    page.locator("#secondaryToggle").click()
+    page.get_by_role("button", name="EN", exact=True).click()
+    page.evaluate("playedVoiceClips.length = 0")
+    page.locator("#quickVoiceTestBtn").click()
+    page.wait_for_function("playedVoiceClips.includes('greeting.mp3')", timeout=2000)

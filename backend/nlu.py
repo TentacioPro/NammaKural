@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 import unicodedata
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 from typing import Any
 
 from backend.state_packs import REGISTRY
@@ -263,7 +262,7 @@ def classify_semantic_vad(transcript: str, assistant_speaking: bool = False) -> 
             "reason": "explicit_stop_cue",
             "truncate_audio": True,
         }
-    if assistant_speaking and not life_safety_helpline(cleaned) and (
+    if assistant_speaking and not life_safety_helpline(cleaned) and not resolve_explicit_place(cleaned) and (
         cleaned in _BACKCHANNEL_SET or len(words) < 3 or all(word in _BACKCHANNEL_SET for word in words)
     ):
         return {
@@ -380,36 +379,21 @@ def validate_phone_digits(text: str) -> dict[str, Any]:
 
 
 def resolve_explicit_place(txt: str) -> dict[str, Any] | None:
-    """Prefer the most recently named fixture landmark when handling a correction."""
+    """Prefer the most recently named fixture landmark when handling a correction (via regex + RapidFuzz)."""
     matches = [(m.start(), service, idx) for service, idx, pattern in _VERIFIED_PLACES for m in re.finditer(pattern, txt)]
     if matches:
         _, service, idx = max(matches)
         return SERVICE_CATALOG[service]["landmarks"][idx]
 
-    try:
-        from rapidfuzz import fuzz
+    from rapidfuzz import fuzz
 
-        rf_scores = [
-            (fuzz.token_set_ratio(alias, txt), service, idx)
-            for service, idx, alias in _FUZZY_PLACES
-        ]
-        rf_scores.sort(reverse=True)
-        if rf_scores and rf_scores[0][0] >= 86 and (len(rf_scores) == 1 or rf_scores[0][0] - rf_scores[1][0] >= 8):
-            _, service, idx = rf_scores[0]
-            return SERVICE_CATALOG[service]["landmarks"][idx]
-    except Exception:
-        pass
-
-    words = re.findall(r"\b[a-z0-9]+\b", txt)
-    scores = []
-    for service, idx, alias in _FUZZY_PLACES:
-        width = len(alias.split())
-        score = max((SequenceMatcher(None, alias, " ".join(words[i:i+width])).ratio()
-                     for i in range(len(words) - width + 1)), default=0)
-        scores.append((score, service, idx))
-    scores.sort(reverse=True)
-    score, service, idx = scores[0]
-    if score >= 0.90 and score - scores[1][0] >= 0.05:
+    rf_scores = [
+        (fuzz.partial_ratio(alias, txt), service, idx)
+        for service, idx, alias in _FUZZY_PLACES
+    ]
+    rf_scores.sort(reverse=True)
+    if rf_scores and rf_scores[0][0] >= 88 and (len(rf_scores) == 1 or rf_scores[0][0] - rf_scores[1][0] >= 6):
+        _, service, idx = rf_scores[0]
         return SERVICE_CATALOG[service]["landmarks"][idx]
     return None
 

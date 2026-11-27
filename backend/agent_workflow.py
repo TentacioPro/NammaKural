@@ -372,28 +372,28 @@ def _generate_natural_reply(
     }
     has_ta_script = bool(re.search(r"[\u0B80-\u0BFF]", utterance))
     if lang == "en" and not has_ta_script:
-        lang_rule = (
-            "Reply in warm, conversational Indian English (1-2 short sentences). "
-            "Respond with plain text (no JSON)."
-        )
+        lang_rule = "Reply in warm, intelligent, natural Indian English (1-2 concise sentences, plain text)."
     else:
         lang_rule = (
-            "Reply in warm, natural Chennai-style spoken Tamil (Kodunthamizh) mixed naturally with everyday English words. "
-            "Respond ONLY with strict JSON (no markdown fences): "
-            '{"display_text": "<1-2 short natural sentences mixing Tamil script and English words>", '
-            '"tts_text": "<exact same 1-2 sentences with ALL English words phonetically written in Tamil script so a Tamil voice speaks every word cleanly, e.g. லொகேஷன், லேண்ட்மார்க், ஜங்ஷன், பிலிம், ஹெல்ப்>"}. '
-            "Never repeat the same scripted line."
+            "Reply in warm, intelligent, natural Chennai-style spoken Tamil mixed naturally with everyday English words "
+            "(plain text only, 1-2 concise conversational sentences, no JSON, no markdown)."
         )
 
-    sys_msg = (
-        f"You are {persona_name}, a warm, natural human-like civic voice assistant for NammaKural ({state_name}). "
-        f"{lang_rule} Use this verified backend state only for factual Ward/agency grounding: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
-        "Have a genuine, natural back-and-forth conversation with the citizen. "
-        "If they greet you, make small talk, or ask how you work, reply warmly and naturally without forcing a form or repeating scripted lines. "
-        "If they describe a civic issue or location, acknowledge it naturally, never re-ask for an issue or location already in slots, "
-        "and if verified_ward is still missing, gently ask for a nearby landmark or junction (never invent a Ward number). "
-        "If fsm_state is HITL_SEAL, confirm the exact verified_ward and guide them to verify Mobile OTP and say 'உறுதி' / 'Confirm' in two separate turns (or use the Clarity Popup)."
-    )
+    has_active_complaint = bool(slots or analysis.get("has_issue") or analysis.get("has_place"))
+    if has_active_complaint:
+        sys_msg = (
+            f"You are {persona_name}, a sharp, warm, human-like assistant for NammaKural ({state_name}). {lang_rule} "
+            f"Active civic state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
+            "Respond naturally to what the user just said. Do not re-ask for an issue or place already in slots. "
+            "If verified_ward is missing and they are reporting an issue, naturally ask for a nearby landmark or junction (never invent a Ward number). "
+            "If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'Confirm' / 'உறுதி' twice."
+        )
+    else:
+        sys_msg = (
+            f"You are {persona_name}, an intelligent, warm, witty Tamil/Tanglish conversational assistant for NammaKural ({state_name}). {lang_rule} "
+            "Answer any general question, movie/life reference, or casual conversation with genuine intelligence and warmth — "
+            "do NOT force civic forms or ask for a location unless the user actually mentions a problem or asks for civic help."
+        )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
     for h in history[-8:]:
         messages.append({
@@ -707,8 +707,13 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
     model_used = "deterministic-tanglish-v1"
     llm_mode = state.get("llm_mode", "offline")
 
-    if llm_mode != "offline" and ctx["analysis"]["urgency"]["tier"] != "CRITICAL_SAFETY" and (
-        llm_mode == "unsloth" or (key and not (latest_analysis["has_issue"] and latest_analysis["landmark"].get("ward")))
+    first_backend = next(iter(chat_backends(llm_mode)), None) if llm_mode != "offline" else None
+    if (
+        llm_mode != "offline"
+        and ctx["analysis"]["urgency"]["tier"] != "CRITICAL_SAFETY"
+        and first_backend is not None
+        and first_backend.get("provider") != "sarvam-cloud"
+        and (llm_mode == "unsloth" or (key and not (latest_analysis["has_issue"] and latest_analysis["landmark"].get("ward"))))
     ):
         tool_reply, tool_trace, model_used = _run_llm_tool_loop(clean_latest, state_code, state.get("lang", "tanglish"), ctx, llm_mode)
         if not key:

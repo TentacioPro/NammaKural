@@ -14,6 +14,15 @@ import httpx
 from backend.logger import log_event
 from backend.state_packs import REGISTRY
 
+_HTTP_CLIENT: httpx.AsyncClient | None = None
+
+
+def _get_async_client() -> httpx.AsyncClient:
+    global _HTTP_CLIENT
+    if _HTTP_CLIENT is None or _HTTP_CLIENT.is_closed:
+        _HTTP_CLIENT = httpx.AsyncClient(timeout=8.0, http2=False)
+    return _HTTP_CLIENT
+
 
 def get_dynamic_keyterms(state_code: str = "tn", locality_hint: str = "") -> list[str]:
     """Return call-state-dependent landmark/civic keyterms (Venky B §2: boost active locality, not whole state)."""
@@ -98,8 +107,8 @@ async def stream_bulbul_mp3(
         "Content-Type": "application/json",
     }
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
-            async with client.stream("POST", "https://api.sarvam.ai/text-to-speech/stream", json=payload, headers=headers) as resp:
+        client = _get_async_client()
+        async with client.stream("POST", "https://api.sarvam.ai/text-to-speech/stream", json=payload, headers=headers) as resp:
                 if resp.status_code != 200:
                     log_event("tts.sarvam_stream_error", f"HTTP {resp.status_code}", level="WARN")
                     return

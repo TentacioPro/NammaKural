@@ -56,17 +56,16 @@ interface PreviewPacket {
 
 const VOICE_THEMES: Record<string, OrbVoiceTheme> = {
   auto: { rgb: "30, 58, 138", top: "#3B82F6", mid: "#1E3A8A", bot: "#0F766E" },
-  "ta-IN-PallaviNeural": { rgb: "190, 24, 93", top: "#F472B6", mid: "#BE185D", bot: "#831843" },
-  "ta-IN-ValluvarNeural": { rgb: "15, 118, 110", top: "#2DD4BF", mid: "#0F766E", bot: "#115E59" },
-  "ta-SG-VenbaNeural": { rgb: "5, 150, 105", top: "#34D399", mid: "#059669", bot: "#065F46" },
-  "ta-SG-AnbuNeural": { rgb: "217, 119, 6", top: "#FBBF24", mid: "#D97706", bot: "#92400E" },
-  "ta-MY-KaniNeural": { rgb: "124, 58, 237", top: "#A78BFA", mid: "#7C3AED", bot: "#4C1D95" },
-  "ta-MY-SuryaNeural": { rgb: "234, 88, 12", top: "#FB923C", mid: "#EA580C", bot: "#9A3412" },
-  "ta-LK-SaranyaNeural": { rgb: "8, 145, 178", top: "#22D3EE", mid: "#0891B2", bot: "#155E75" },
-  "ta-LK-KumarNeural": { rgb: "71, 85, 105", top: "#94A3B8", mid: "#475569", bot: "#1E293B" },
+  "sarvam-kavitha": { rgb: "190, 24, 93", top: "#F472B6", mid: "#BE185D", bot: "#831843" },
+  "sarvam-shubh": { rgb: "15, 118, 110", top: "#2DD4BF", mid: "#0F766E", bot: "#115E59" },
+  "sarvam-priya": { rgb: "124, 58, 237", top: "#A78BFA", mid: "#7C3AED", bot: "#4C1D95" },
+  "sarvam-mani": { rgb: "217, 119, 6", top: "#FBBF24", mid: "#D97706", bot: "#92400E" },
+  "sarvam-shruti": { rgb: "5, 150, 105", top: "#34D399", mid: "#059669", bot: "#065F46" },
+  "sarvam-gokul": { rgb: "8, 145, 178", top: "#22D3EE", mid: "#0891B2", bot: "#155E75" },
+  "ta-IN-PallaviNeural": { rgb: "234, 88, 12", top: "#FB923C", mid: "#EA580C", bot: "#9A3412" },
+  "ta-IN-ValluvarNeural": { rgb: "71, 85, 105", top: "#94A3B8", mid: "#475569", bot: "#1E293B" },
   "en-IN-PrabhatNeural": { rgb: "37, 99, 235", top: "#60A5FA", mid: "#2563EB", bot: "#1E40AF" },
   "en-IN-NeerjaExpressiveNeural": { rgb: "162, 28, 175", top: "#E879F9", mid: "#A21CAF", bot: "#701A75" },
-  "en-IN-NeerjaNeural": { rgb: "109, 40, 217", top: "#C084FC", mid: "#6D28D9", bot: "#4C1D95" },
 };
 
 function getVoiceTheme(id: string): OrbVoiceTheme {

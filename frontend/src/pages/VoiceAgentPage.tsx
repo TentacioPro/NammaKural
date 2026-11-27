@@ -692,7 +692,7 @@ export default function VoiceAgentPage() {
             <span className="nk-pill mono" style={{ fontSize: "0.72rem" }}>session: {sessionId}</span>
           </div>
 
-          <div className="nk-chat-stream">
+          <div className="nk-chat-stream" aria-live="polite" aria-label="Conversation transcript">
             {messages.length === 0 && (
               <div style={{ padding: "24px 12px", textAlign: "center", color: "var(--ink-3)", fontSize: "0.92rem" }}>
                 Tap <strong>Start Call</strong> or type in Tamil / Tanglish below to begin a natural conversation.
@@ -709,11 +709,11 @@ export default function VoiceAgentPage() {
             <div ref={chatEndRef} />
           </div>
 
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input
               aria-label="Civic complaint input"
               className="nk-input"
-              style={{ flex: 1 }}
+              style={{ flex: "1 1 200px", minWidth: 0 }}
               placeholder="Speak or type in Tamil / Tanglish (e.g. Anna Nagar-la streetlight eriyala)..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
@@ -727,19 +727,23 @@ export default function VoiceAgentPage() {
             </button>
           </div>
 
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {SAMPLE_PROMPTS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                className="nk-pill"
-                style={{ cursor: "pointer" }}
-                onClick={() => submitTurn(p)}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
+          <details>
+            <summary style={{ cursor: "pointer", fontSize: "0.84rem", fontWeight: 600, color: "var(--ink-2)", padding: "6px 0" }}>
+              Sample Tanglish / Tamil Prompts
+            </summary>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
+              {SAMPLE_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="nk-pill"
+                  onClick={() => submitTurn(p)}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </details>
         </section>
 
         {/* Extracted Slots Summary */}
@@ -760,7 +764,11 @@ export default function VoiceAgentPage() {
         )}
 
         {/* Progressive OTP + Dual-Confirm HITL Gate + GCC Preview */}
-        <section className="nk-card" style={{ borderColor: lastTurn?.fsm_state === "HITL_SEAL" ? "var(--emerald)" : "var(--border)" }}>
+        <section
+          className="nk-card"
+          aria-live="assertive"
+          style={{ borderColor: lastTurn?.fsm_state === "HITL_SEAL" ? "var(--emerald)" : "var(--border)" }}
+        >
           <h2 style={{ margin: "0 0 12px", fontSize: "1rem", display: "flex", alignItems: "center", gap: 7 }}>
             <ShieldCheck size={18} />
             Citizen Verification &amp; GCC Pre-Submit Packet

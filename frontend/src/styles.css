@@ -98,7 +98,7 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
+  min-height: 44px;
   padding: 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
@@ -124,18 +124,21 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
 .nk-main {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 24px 20px 72px;
+  padding: 20px 14px 72px;
+  overflow-x: hidden;
 }
 
 .nk-studio {
   display: grid;
-  grid-template-columns: minmax(310px, 400px) minmax(0, 1fr);
+  grid-template-columns: minmax(290px, 390px) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
 
+.nk-studio > * { min-width: 0; }
+
 @media (max-width: 860px) {
-  .nk-studio { grid-template-columns: 1fr; }
+  .nk-studio { grid-template-columns: 1fr; gap: 16px; }
 }
 
 .nk-card {
@@ -203,6 +206,12 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   color: var(--ink-2);
   font-size: 0.78rem;
   font-weight: 600;
+  max-width: 100%;
+}
+
+button.nk-pill {
+  min-height: 44px;
+  cursor: pointer;
 }
 
 .nk-pill.accent { background: var(--accent-soft); color: var(--accent); border-color: transparent; }

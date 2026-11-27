@@ -135,6 +135,7 @@ def health_check() -> dict[str, Any]:
         "vercel_region": os.getenv("VERCEL_REGION", "local"),
         "sarvam_stt": sarvam_ready,
         "sarvam_tts": sarvam_ready,
+        "livekit_ready": bool(_read_env_value("LIVEKIT_URL") and _read_env_value("LIVEKIT_API_KEY") and _read_env_value("LIVEKIT_API_SECRET")),
         "pregenerated_prompts": pregenerated,
         "local_llm": local_llm,
         "optional_keys": {
@@ -415,6 +416,45 @@ def rtc_offer_signaling(req: RtcOfferRequest) -> dict[str, Any]:
         "turn_enabled": True,
         "audio_codec": "opus/16000",
     }
+
+
+@app.get("/api/livekit/token")
+def issue_livekit_token(room: str = "nammakural-room", identity: str = "citizen") -> dict[str, Any]:
+    """Issue a signed LiveKit room JWT using stdlib HMAC-SHA256 (zero extra Vercel dependencies)."""
+    lk_url = _read_env_value("LIVEKIT_URL")
+    lk_key = _read_env_value("LIVEKIT_API_KEY")
+    lk_secret = _read_env_value("LIVEKIT_API_SECRET")
+    if not (lk_url and lk_key and lk_secret):
+        return {
+            "configured": False,
+            "url": "",
+            "token": "",
+            "message": "Set LIVEKIT_URL, LIVEKIT_API_KEY, and LIVEKIT_API_SECRET in .env to enable LiveKit Agents WebRTC.",
+        }
+    import base64
+    import hashlib
+    import hmac
+    import time
+
+    def _b64u(raw: bytes) -> str:
+        return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+    now = int(time.time())
+    header = _b64u(json.dumps({"alg": "HS256", "typ": "JWT"}, separators=(",", ":")).encode("utf-8"))
+    payload = _b64u(
+        json.dumps(
+            {
+                "iss": lk_key,
+                "sub": identity[:64],
+                "nbf": now - 5,
+                "exp": now + 3600,
+                "video": {"roomJoin": True, "room": room[:64], "canPublish": True, "canSubscribe": True},
+            },
+            separators=(",", ":"),
+        ).encode("utf-8")
+    )
+    sig = _b64u(hmac.new(lk_secret.encode("utf-8"), f"{header}.{payload}".encode("ascii"), hashlib.sha256).digest())
+    return {"configured": True, "url": lk_url, "room": room, "identity": identity, "token": f"{header}.{payload}.{sig}"}
 
 
 class ClientLogRequest(BaseModel):

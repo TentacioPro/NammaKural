@@ -11,6 +11,7 @@ interface HealthInfo {
   vercel_region: string;
   sarvam_stt: boolean;
   sarvam_tts: boolean;
+  livekit_ready?: boolean;
   pregenerated_prompts: number;
 }
 
@@ -66,6 +67,7 @@ const SAMPLE_PROMPTS = [
 export default function VoiceAgentPage() {
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [consentGranted, setConsentGranted] = useState<boolean>(true);
+  const [sessionId, setSessionId] = useState<string>("browser");
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [callActive, setCallActive] = useState<boolean>(false);
   const [listening, setListening] = useState<boolean>(false);
@@ -303,7 +305,7 @@ export default function VoiceAgentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           utterance: trimmed,
-          session_id: "browser",
+          session_id: sessionId,
           state_code: "tn",
           dpdp_consented: consentGranted,
           otp_verified: otpVerified,
@@ -330,10 +332,11 @@ export default function VoiceAgentPage() {
         setOrbState("urgent");
       }
       const ambig = (data.analysis as any)?.ambiguous_area;
+      const isDeterministic = data.model === "deterministic-tanglish-v1";
       const cachedUrl =
-        data.fsm_state === "DISAMBIGUATE" && ambig === "anna_nagar"
+        isDeterministic && data.fsm_state === "DISAMBIGUATE" && ambig === "anna_nagar"
           ? "/assets/voice/anna-nagar.mp3"
-          : data.fsm_state === "DISAMBIGUATE" && ambig === "velachery"
+          : isDeterministic && data.fsm_state === "DISAMBIGUATE" && ambig === "velachery"
             ? "/assets/voice/velachery.mp3"
             : undefined;
       const speechTarget = data.tts_text || replyText;
@@ -591,8 +594,27 @@ export default function VoiceAgentPage() {
       <section className="nk-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
         <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span className="nk-pill" title="Runtime Engine Mode">
-            {health ? `${health.engine_mode} · ${health.store_backend}` : "Loading engine..."}
+            {health
+              ? `${health.engine_mode} · ${health.store_backend}${health.livekit_ready ? " · livekit" : ""}`
+              : "Loading engine..."}
           </span>
+          <button
+            type="button"
+            className="nk-pill"
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              endCall();
+              setSessionId(`nk-${Date.now().toString(36)}`);
+              setMessages([]);
+              setLastTurn(null);
+              setPreviewPacket(null);
+              setOtpVerified(false);
+              setHitlApproved(false);
+              setHitlStatus("");
+            }}
+          >
+            New Call
+          </button>
           <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem", cursor: "pointer" }}>
             <input
               type="checkbox"

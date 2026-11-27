@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Response, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from backend.agent_workflow import run_workflow_turn, split_tts_clauses
 from backend.llm_bridge import generate_civic_turn, probe_local_llm
 from backend.logger import LOG_FILE, clear_logs, get_logs, log_event
+from backend.tts_service import VOICE_CATALOG, synthesize_neural_mp3
 from backend.nlu import (
     SERVICE_CATALOG,
     analyze_turn,
@@ -398,3 +399,71 @@ def wipe_logs() -> dict[str, Any]:
     """Clear in-memory log ring buffer cleanly."""
     clear_logs()
     return {"cleared": True}
+
+
+class TtsRequest(BaseModel):
+    text: str
+    voice: str = "auto"
+    lang: str = "en"
+
+
+@app.get("/api/tts/voices")
+def list_tts_voices() -> dict[str, Any]:
+    """List available neural Tamil Nadu & Indian English voices."""
+    return {"voices": VOICE_CATALOG}
+
+
+@app.post("/api/tts")
+async def synthesize_tts(req: TtsRequest) -> Response:
+    """Stream neural Tamil / Indian-English MP3 via edge-tts, or 204 for client fallback."""
+    res = await synthesize_neural_mp3(req.text, preferred_voice=req.voice, lang=req.lang)
+    if not res["ok"] or not res["audio"]:
+        return Response(status_code=204)
+    return Response(
+        content=res["audio"],
+        media_type="audio/mpeg",
+        headers={"X-NammaKural-Voice": res["voice"], "X-NammaKural-Cached": str(res.get("cached", False)).lower()},
+    )
+
+
+@app.post("/api/stt")
+async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-IN") -> JSONResponse:
+    """Optional backend STT endpoint routing recorded WebM/WAV clips to Sarvam Saaras or local whisper-server."""
+    raw = await audio.read()
+    size_kb = round(len(raw) / 1024, 1)
+    sarvam_key = os.getenv("SARVAM_API_KEY", "").strip()
+    if sarvam_key:
+        import urllib.request
+
+        boundary = "----NammaKuralBoundary7MA4YWxkTrZu0gW"
+        body = (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="{audio.filename or "speech.webm"}"\r\n'
+            f"Content-Type: {audio.content_type or 'audio/webm'}\r\n\r\n"
+        ).encode("utf-8") + raw + f"\r\n--{boundary}--\r\n".encode("utf-8")
+        try:
+            req = urllib.request.Request(
+                "https://api.sarvam.ai/speech-to-text-translate",
+                data=body,
+                headers={
+                    "api-subscription-key": sarvam_key,
+                    "Content-Type": f"multipart/form-data; boundary={boundary}",
+                },
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                parsed = __import__("json").loads(resp.read().decode("utf-8"))
+                txt = str(parsed.get("transcript", "")).strip()
+                log_event("stt.sarvam_saaras", txt[:80], {"size_kb": size_kb, "lang": lang})
+                return JSONResponse({"ok": True, "provider": "sarvam-saaras", "transcript": txt})
+        except Exception as exc:
+            log_event("stt.sarvam_error", type(exc).__name__, {"size_kb": size_kb}, level="WARN")
+
+    log_event("stt.clip_received", "Audio clip inspected; set SARVAM_API_KEY or whisper-server for server ASR", {"size_kb": size_kb, "lang": lang}, level="WARN")
+    return JSONResponse(
+        {
+            "ok": False,
+            "provider": "browser-fallback",
+            "size_kb": size_kb,
+            "message": "Server STT key/daemon not set — use ta-IN browser speech or Wispr Flow hotkey.",
+        }
+    )

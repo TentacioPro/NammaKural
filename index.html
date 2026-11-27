@@ -1399,9 +1399,20 @@
       <div class="hitl-box">
         <span class="hitl-label">Speech-to-Text (STT) Layer</span>
         <select id="sttEngineSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
-          <option value="hybrid">Hybrid: Browser Web Speech Live (ta-IN/en-IN) + Wispr Flow</option>
+          <option value="hybrid-ta">Hybrid: Tamil &amp; Code-Mix Live (ta-IN) + Wispr Flow</option>
+          <option value="hybrid">Hybrid: Indian English &amp; Tanglish Live (en-IN) + Wispr Flow</option>
           <option value="wispr">Wispr Flow Hotkey System Dictation Only</option>
           <option value="browser">Browser SpeechRecognition Only (ta-IN)</option>
+        </select>
+      </div>
+      <div class="hitl-box">
+        <span class="hitl-label">Neural Voice Output (Tamil Nadu &amp; Indian English TTS)</span>
+        <select id="ttsVoiceSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
+          <option value="auto">Auto-Switch Neural Voice (Pallavi Tamil / Neerja Indian EN)</option>
+          <option value="ta-IN-PallaviNeural">Pallavi · Tamil Nadu Female (ta-IN Neural)</option>
+          <option value="ta-IN-ValluvarNeural">Valluvar · Tamil Nadu Male (ta-IN Neural)</option>
+          <option value="en-IN-NeerjaNeural">Neerja · Indian English Female (en-IN Neural)</option>
+          <option value="en-IN-PrabhatNeural">Prabhat · Indian English Male (en-IN Neural)</option>
         </select>
       </div>
       <div class="hitl-box">
@@ -1742,7 +1753,8 @@
       showOnboarding: true,
       callActive: false,
       isMuted: false,
-      sttMode: "hybrid",
+      sttMode: "hybrid-ta",
+      ttsVoice: "auto",
       llmMode: "auto",
       stateCode: "tn",
       dpdpConsented: true,
@@ -2397,9 +2409,17 @@
       );
     }
 
+    let ttsAudioEl = null;
+
     function interruptAgentSpeech() {
-      const wasSpeaking = state.agentPhase === "speaking" || ("speechSynthesis" in window && window.speechSynthesis.speaking);
+      const wasAudioPlaying = Boolean(ttsAudioEl && !ttsAudioEl.paused);
+      const wasSynthSpeaking = "speechSynthesis" in window && window.speechSynthesis.speaking;
+      const wasSpeaking = state.agentPhase === "speaking" || wasAudioPlaying || wasSynthSpeaking;
       ttsGeneration++;
+      if (ttsAudioEl) {
+        try { ttsAudioEl.pause(); ttsAudioEl.currentTime = 0; } catch {}
+        ttsAudioEl = null;
+      }
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       if (wasSpeaking) {
         logPipelineEvent("tts.barge_in", "Interrupted agent speech");
@@ -2411,16 +2431,8 @@
       }
     }
 
-    function speakReply(text) {
-      if (!state.autoSpeak || !("speechSynthesis" in window) || !text) return;
-      window.speechSynthesis.cancel();
-      const myGen = ++ttsGeneration;
-      if (state.agentPhase !== "speaking") phaseBeforeSpeech = state.agentPhase;
-      state.agentPhase = "speaking";
-      updateStatusPill();
-      spawnRipple(true);
-
-      // Split Tamil-script chunks from Latin/English chunks so bilingual replies actually speak Tamil in ta-IN
+    function fallbackBrowserSpeak(text, myGen) {
+      if (!("speechSynthesis" in window)) return;
       const segments = String(text)
         .split(/([\u0B80-\u0BFF][\u0B80-\u0BFF\s.,!?0-9\-]*)/g)
         .map(x => x.trim())
@@ -2440,7 +2452,6 @@
         const isTamil = /[\u0B80-\u0BFF]/.test(chunk);
         const taVoice = isTamil ? pickTtsVoice(true) : null;
         if (isTamil && !taVoice) {
-          // Windows/Chrome without a local Tamil voice pack silently drops Unicode Tamil; transliterate key cues for en-IN voice
           chunk = chunk
             .replace(/வணக்கம்!?/g, "Vanakkam!")
             .replace(/நான் நம்ம குரல்/g, "Naan Namma Kural")
@@ -2458,7 +2469,7 @@
         const voice = (isTamil && taVoice) ? taVoice : pickTtsVoice(false);
         if (voice) u.voice = voice;
         if (i === 0) {
-          logPipelineEvent("tts.speak", chunk.slice(0, 60), { lang: u.lang, voice: voice ? voice.name : "default", chunks: chunks.length });
+          logPipelineEvent("tts.speak_fallback", chunk.slice(0, 60), { lang: u.lang, voice: voice ? voice.name : "default" });
         }
         u.rate = 0.96;
         u.onend = () => speakChunk(i + 1);
@@ -2466,6 +2477,55 @@
         window.speechSynthesis.speak(u);
       }
       speakChunk(0);
+    }
+
+    async function speakReply(text) {
+      if (!state.autoSpeak || !text) return;
+      interruptAgentSpeech();
+      const myGen = ++ttsGeneration;
+      if (state.agentPhase !== "speaking") phaseBeforeSpeech = state.agentPhase;
+      state.agentPhase = "speaking";
+      updateStatusPill();
+      spawnRipple(true);
+
+      // Try real neural Tamil / Indian-English TTS over FastAPI (/api/tts) first!
+      if (window.location.protocol !== "file:" && !state.lite) {
+        try {
+          const resp = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: String(text), voice: state.ttsVoice || "auto", lang: state.lang })
+          });
+          if (myGen !== ttsGeneration) return;
+          if (resp.status === 200) {
+            const voiceUsed = resp.headers.get("X-NammaKural-Voice") || "neural";
+            const cached = resp.headers.get("X-NammaKural-Cached") === "true";
+            const blob = await resp.blob();
+            if (myGen !== ttsGeneration) return;
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            ttsAudioEl = audio;
+            logPipelineEvent("tts.speak", String(text).slice(0, 60), { voice: voiceUsed, cached, mode: "neural-mp3" });
+            const finish = () => {
+              URL.revokeObjectURL(url);
+              if (ttsAudioEl === audio) ttsAudioEl = null;
+              if (myGen === ttsGeneration && state.agentPhase === "speaking") {
+                state.agentPhase = (state.callActive && !state.isMuted) ? "listening" : phaseBeforeSpeech;
+                updateStatusPill();
+              }
+            };
+            audio.onended = finish;
+            audio.onerror = finish;
+            await audio.play().catch(() => {
+              finish();
+              fallbackBrowserSpeak(text, myGen);
+            });
+            return;
+          }
+        } catch {}
+      }
+      if (myGen !== ttsGeneration) return;
+      fallbackBrowserSpeak(text, myGen);
     }
 
     function classifyConversationalGreeting(msg) {
@@ -3039,7 +3099,8 @@
         liveRec = new SR();
         liveRec.continuous = true;
         liveRec.interimResults = true;
-        liveRec.lang = state.lang === "ta" ? "ta-IN" : "en-IN";
+        const recLang = (state.sttMode === "hybrid-ta" || state.sttMode === "browser" || state.lang === "ta") ? "ta-IN" : "en-IN";
+        liveRec.lang = recLang;
         liveRec.onstart = () => logPipelineEvent("stt.start", `Listening (${liveRec?.lang || "en-IN"})`);
         liveRec.onspeechstart = () => {
           logPipelineEvent("stt.speech_start", "Detected user voice onset");
@@ -3221,6 +3282,7 @@
 
     document.getElementById("modelSetupOpenBtn").addEventListener("click", () => {
       document.getElementById("sttEngineSelect").value = state.sttMode;
+      document.getElementById("ttsVoiceSelect").value = state.ttsVoice;
       document.getElementById("llmEngineSelect").value = state.llmMode;
       document.getElementById("statePackSelect").value = state.stateCode;
       document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "true");
@@ -3230,10 +3292,12 @@
     });
     document.getElementById("modelSetupSaveBtn").addEventListener("click", () => {
       state.sttMode = document.getElementById("sttEngineSelect").value;
+      state.ttsVoice = document.getElementById("ttsVoiceSelect").value;
       state.llmMode = document.getElementById("llmEngineSelect").value;
       state.stateCode = document.getElementById("statePackSelect").value;
       const sttLabels = {
-        hybrid: "Hybrid Web Speech + Wispr Flow",
+        "hybrid-ta": "Tamil + Code-Mix Live (ta-IN) + Wispr Flow",
+        hybrid: "Indian English Live (en-IN) + Wispr Flow",
         wispr: "Wispr Flow Hotkey Only",
         browser: "Browser SpeechRecognition (ta-IN)"
       };
@@ -3247,7 +3311,10 @@
       document.getElementById("modelSetupStatus").textContent =
         `Active [${state.stateCode.toUpperCase()}]: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
       document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "false");
-      if (state.callActive && !state.isMuted) startSpeechCapture();
+      if (state.callActive) {
+        if (liveRec) { try { liveRec.stop(); } catch {} liveRec = null; }
+        if (!state.isMuted) startSpeechCapture();
+      }
       showToast(`Voice setup updated (${sttLabels[state.sttMode]})`);
     });
 
@@ -3548,8 +3615,18 @@
       }
     });
 
-    document.getElementById("langEnBtn").addEventListener("click", () => { state.lang = "en"; renderAll(false); });
-    document.getElementById("langTaBtn").addEventListener("click", () => { state.lang = "ta"; renderAll(false); });
+    function switchUiAndSpeechLang(nextLang) {
+      state.lang = nextLang;
+      state.sttMode = nextLang === "ta" ? "hybrid-ta" : "hybrid";
+      renderAll(false);
+      if (state.callActive && !state.isMuted) {
+        if (liveRec) { try { liveRec.stop(); } catch {} liveRec = null; }
+        startSpeechCapture();
+        logPipelineEvent("stt.lang_switched", `Switched live recognition to ${nextLang === "ta" ? "ta-IN" : "en-IN"}`);
+      }
+    }
+    document.getElementById("langEnBtn").addEventListener("click", () => switchUiAndSpeechLang("en"));
+    document.getElementById("langTaBtn").addEventListener("click", () => switchUiAndSpeechLang("ta"));
 
     document.getElementById("a11yBtn").addEventListener("click", (e) => {
       const on = document.documentElement.getAttribute("data-a11y-large") === "true";

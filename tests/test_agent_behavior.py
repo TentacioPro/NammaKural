@@ -162,3 +162,7 @@ def test_llm_tool_calling_loop_and_webrtc_coturn_endpoints(monkeypatch) -> None:
     assert "[REDACTED_NUM]" in cl["entry"]["message"]
     logs_res = client.get("/api/logs?limit=20").json()
     assert logs_res["count"] >= 1
+
+    voices_res = client.get("/api/tts/voices").json()
+    assert "ta-IN-PallaviNeural" in voices_res["voices"]
+    assert "en-IN-NeerjaNeural" in voices_res["voices"]

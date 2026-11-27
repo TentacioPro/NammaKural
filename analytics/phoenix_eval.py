@@ -29,7 +29,7 @@ if str(ROOT) not in sys.path:
 
 from analytics.eval_gate import replay_case
 from backend.agent_workflow import run_workflow_turn
-from backend.telemetry import emit_otlp_span, get_otlp_endpoint
+from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION, emit_otlp_span, get_otlp_endpoint
 
 _RAW_PII_RE = re.compile(r"(?:\b[6-9]\d{9}\b|\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b|[\w.\-]+@[\w.\-]+\.\w+)")
 
@@ -50,26 +50,100 @@ def _get_nested(obj: dict[str, Any], dotted: str) -> Any:
     return cur
 
 
-def _sync_phoenix_dataset(rows: list[dict[str, Any]]) -> str:
-    """Upload evaluation dataset to local Arize Phoenix if reachable."""
+def _run_phoenix_experiment(cases: list[dict[str, Any]], rows: list[dict[str, Any]]) -> str:
+    """Create/sync dataset and run a versioned Phoenix Experiment with 6 evaluators."""
     try:
         from phoenix.client import Client
 
         client = Client(base_url=os.getenv("PHOENIX_BASE_URL", "http://localhost:6006"))
-        ds_name = "nammakural-e2e-golden"
+        ds_name = "nammakural-e2e-golden-v2"
         try:
-            ds = client.datasets.get_dataset(dataset=ds_name)
-            return f"dataset:{ds_name}(existing)"
+            dataset = client.datasets.get_dataset(dataset=ds_name)
         except Exception:
-            client.datasets.create_dataset(
+            dataset = client.datasets.create_dataset(
                 name=ds_name,
-                inputs=[{"id": r["id"], "utterance": r["utterance"], "lang": r["lang"]} for r in rows],
-                outputs=[{"fsm_state": r["fsm_state"], "ward": r["ward"], "service_id": r["service_id"]} for r in rows],
-                metadata=[{"score": r["score"], "latency_ms": r["latency_ms"]} for r in rows],
+                inputs=[{"case": c} for c in cases],
+                outputs=[{"expected": (c.get("turns") or [{}])[-1].get("expect", {})} for c in cases],
+                metadata=[{"case_id": c.get("id", "")} for c in cases],
             )
-            return f"dataset:{ds_name}(created)"
+
+        def task(example: Any) -> dict[str, Any]:
+            inp = getattr(example, "input", None) or example.get("input", {})
+            case = inp["case"]
+            turns = case.get("turns") or []
+            sid = f"px-exp-{case.get('id', 'c')}-{int(time.time())}" if case.get("use_session") else None
+            res: dict[str, Any] = {}
+            t0 = time.monotonic()
+            for t in turns:
+                ti = t.get("input") or t
+                res = run_workflow_turn(
+                    utterance=ti.get("utterance", ""),
+                    combined_text=ti.get("combined_text", ti.get("utterance", "")),
+                    state_code=ti.get("state_code", case.get("state_code", "tn")),
+                    lang=ti.get("lang", "tanglish"),
+                    llm_mode=ti.get("llm_mode", "offline"),
+                    session_id=sid,
+                    dpdp_consented=ti.get("dpdp_consented", True),
+                    otp_verified=ti.get("otp_verified", False),
+                    assistant_speaking=ti.get("assistant_speaking", False),
+                )
+            elapsed_ms = round((time.monotonic() - t0) * 1000, 2)
+            return {
+                "case": case,
+                "fsm_state": res.get("fsm_state", ""),
+                "ward": str(_get_nested(res, "analysis.landmark.ward") or ""),
+                "service_id": str(_get_nested(res, "analysis.service_id") or ""),
+                "display_text": res.get("display_text", ""),
+                "tts_text": res.get("tts_text", ""),
+                "latency_ms": elapsed_ms,
+                "agent_version": AGENT_VERSION,
+            }
+
+        def eval_contract(output: dict[str, Any]) -> float:
+            return 1.0 if not replay_case(output["case"]) else 0.0
+
+        def eval_ward(output: dict[str, Any], expected: dict[str, Any]) -> float:
+            exp = (expected or {}).get("expected", {})
+            if "analysis.landmark.ward" not in exp:
+                return 1.0
+            return 1.0 if output.get("ward") == exp["analysis.landmark.ward"] else 0.0
+
+        def eval_service(output: dict[str, Any], expected: dict[str, Any]) -> float:
+            exp = (expected or {}).get("expected", {})
+            if "analysis.service_id" not in exp:
+                return 1.0
+            return 1.0 if output.get("service_id") == exp["analysis.service_id"] else 0.0
+
+        def eval_tts_purity(output: dict[str, Any]) -> float:
+            return 0.0 if re.search(r"[A-Za-z]", str(output.get("tts_text") or "")) else 1.0
+
+        def eval_pii_safe(output: dict[str, Any]) -> float:
+            txt = f"{output.get('display_text', '')} {output.get('tts_text', '')}"
+            return 0.0 if _RAW_PII_RE.search(txt) else 1.0
+
+        def eval_under_500ms(output: dict[str, Any]) -> float:
+            return 1.0 if float(output.get("latency_ms", 9999)) <= 500.0 else 0.0
+
+        ran = client.experiments.run_experiment(
+            dataset=dataset,
+            task=task,
+            evaluators={
+                "contract_pass": eval_contract,
+                "ward_accuracy": eval_ward,
+                "service_accuracy": eval_service,
+                "tts_purity": eval_tts_purity,
+                "pii_safe": eval_pii_safe,
+                "under_500ms": eval_under_500ms,
+            },
+            experiment_name=f"nammakural-{AGENT_VERSION}",
+            experiment_metadata={"agent_version": AGENT_VERSION, "schema_version": TELEMETRY_SCHEMA_VERSION},
+            print_summary=False,
+        )
+        exp_id = ran["id"] if isinstance(ran, dict) else ran.id
+        url = client.experiments.get_experiment_url(dataset_id=dataset.id, experiment_id=exp_id)
+        return f"phoenix_experiment:{url}"
     except Exception as exc:
-        return f"dataset:skipped({type(exc).__name__})"
+        return f"phoenix_experiment:skipped({type(exc).__name__}: {exc})"
 
 
 def run_phoenix_eval(golden_path: Path) -> int:
@@ -165,14 +239,14 @@ def run_phoenix_eval(golden_path: Path) -> int:
         )
 
     total = len(cases)
-    ds_status = _sync_phoenix_dataset(dataset_rows)
+    exp_status = _run_phoenix_experiment(cases, dataset_rows)
     ep = get_otlp_endpoint() or "disabled"
     print(
-        f"Phoenix E2E Eval: {full_pass}/{total} passed | "
+        f"Phoenix E2E Eval ({AGENT_VERSION}): {full_pass}/{total} passed | "
         f"FSM={metrics['fsm']}/{total} Ward={metrics['ward']}/{total} Service={metrics['service']}/{total} "
         f"TTS_Purity={metrics['tts_purity']}/{total} PII_Safe={metrics['pii_safe']}/{total} "
         f"Under500ms={metrics['under_500ms']}/{total} | "
-        f"P50={_pct(latencies, 0.5)}ms P95={_pct(latencies, 0.95)}ms | {ds_status} | otlp={ep}"
+        f"P50={_pct(latencies, 0.5)}ms P95={_pct(latencies, 0.95)}ms | {exp_status} | otlp={ep}"
     )
     return 0 if full_pass == total else 1
 

@@ -378,10 +378,11 @@ def _generate_natural_reply(
         )
     else:
         lang_rule = (
-            "Reply directly in warm, natural Chennai-style spoken Tamil (Kodunthamizh) mixed naturally with everyday English words "
-            "(like street, light, pipe, area, help, Ward, OTP). Write Tamil words in Tamil script (தமிழ்) and English words in English, "
-            "1-2 short friendly sentences, plain text only (no JSON, no markdown). "
-            "Vary your phrasing naturally like a warm neighbor—never repeat the same scripted line."
+            "Reply in warm, natural Chennai-style spoken Tamil (Kodunthamizh) mixed naturally with everyday English words. "
+            "Respond ONLY with strict JSON (no markdown fences): "
+            '{"display_text": "<1-2 short natural sentences mixing Tamil script and English words>", '
+            '"tts_text": "<exact same 1-2 sentences with ALL English words phonetically written in Tamil script so a Tamil voice speaks every word cleanly, e.g. லொகேஷன், லேண்ட்மார்க், ஜங்ஷன், பிலிம், ஹெல்ப்>"}. '
+            "Never repeat the same scripted line."
         )
 
     sys_msg = (

@@ -73,6 +73,11 @@ _TA_TTS_REPLACEMENTS: tuple[tuple[str, str], ...] = (
     (r"\bpower\b", "பவர்"),
     (r"\bAI\b", "ஏ ஐ"),
     (r"\bNammaKural\b", "நம்ம குரல்"),
+    (r"\blocation\b", "லொகேஷன்"),
+    (r"\blandmark\b", "லேண்ட்மார்க்"),
+    (r"\bjunction\b", "ஜங்ஷன்"),
+    (r"\bfilm\b", "பிலிம்"),
+    (r"\breference\b", "ரெஃபரன்ஸ்"),
 )
 
 

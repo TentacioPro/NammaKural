@@ -1239,6 +1239,20 @@
               </label>
               <button type="button" class="attach-chip" id="gpsTriggerBtn">Check GPS</button>
               <button type="button" class="attach-chip" id="autoSpeakToggleBtn" aria-pressed="true">Voice: ON</button>
+              <select id="quickVoiceSelect" class="attach-chip" aria-label="Test voice accent" style="padding:3px 8px;">
+                <option value="ta-IN-PallaviNeural">Pallavi · TN தமிழ் (F)</option>
+                <option value="ta-IN-ValluvarNeural">Valluvar · TN தமிழ் (M)</option>
+                <option value="ta-SG-VenbaNeural">Venba · SG தமிழ் (F)</option>
+                <option value="ta-SG-AnbuNeural">Anbu · SG தமிழ் (M)</option>
+                <option value="ta-MY-KaniNeural">Kani · MY தமிழ் (F)</option>
+                <option value="ta-MY-SuryaNeural">Surya · MY தமிழ் (M)</option>
+                <option value="ta-LK-SaranyaNeural">Saranya · LK தமிழ் (F)</option>
+                <option value="ta-LK-KumarNeural">Kumar · LK தமிழ் (M)</option>
+                <option value="en-IN-PrabhatNeural">Prabhat · IN EN (M)</option>
+                <option value="en-IN-NeerjaExpressiveNeural">Neerja+ · IN EN (F)</option>
+                <option value="en-IN-NeerjaNeural">Neerja · IN EN (F)</option>
+              </select>
+              <button type="button" class="attach-chip" id="quickVoiceTestBtn" title="Audition selected voice">Test Voice</button>
             </div>
             <div style="display:flex;gap:6px;align-items:center;">
               <button type="button" class="btn-outline" id="newChatBtn" style="min-height:34px;padding:4px 10px;font-size:0.82rem;">+ New</button>
@@ -1409,10 +1423,17 @@
       <div class="hitl-box">
         <span class="hitl-label">Neural Voice Output (Tamil Nadu &amp; Indian English TTS)</span>
         <select id="ttsVoiceSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
-          <option value="en-IN-NeerjaNeural">Neerja · Tanglish &amp; Indian EN (Female Neural)</option>
-          <option value="en-IN-PrabhatNeural">Prabhat · Tanglish &amp; Indian EN (Male Neural)</option>
-          <option value="ta-IN-PallaviNeural">Pallavi · தமிழ் Female (ta-IN Neural)</option>
-          <option value="ta-IN-ValluvarNeural">Valluvar · தமிழ் Male (ta-IN Neural)</option>
+          <option value="ta-IN-PallaviNeural">Pallavi · Tamil Nadu தமிழ் (Female Neural · Recommended)</option>
+          <option value="ta-IN-ValluvarNeural">Valluvar · Tamil Nadu தமிழ் (Male Neural)</option>
+          <option value="ta-SG-VenbaNeural">Venba · Singapore தமிழ் (Female Neural)</option>
+          <option value="ta-SG-AnbuNeural">Anbu · Singapore தமிழ் (Male Neural)</option>
+          <option value="ta-MY-KaniNeural">Kani · Malaysia தமிழ் (Female Neural)</option>
+          <option value="ta-MY-SuryaNeural">Surya · Malaysia தமிழ் (Male Neural)</option>
+          <option value="ta-LK-SaranyaNeural">Saranya · Sri Lanka தமிழ் (Female Neural)</option>
+          <option value="ta-LK-KumarNeural">Kumar · Sri Lanka தமிழ் (Male Neural)</option>
+          <option value="en-IN-PrabhatNeural">Prabhat · Indian English (Male Neural)</option>
+          <option value="en-IN-NeerjaExpressiveNeural">Neerja Expressive · Indian English (Female Neural)</option>
+          <option value="en-IN-NeerjaNeural">Neerja · Indian English (Female Neural)</option>
         </select>
       </div>
       <div class="hitl-box">
@@ -1463,32 +1484,33 @@
   </div>
 
   <script>
-    const AGENT_PERSONAS = {
-      "en-IN-NeerjaNeural": {
-        name: "Neerja",
-        greetTanglish: "Vanakkam! Naan Neerja, NammaKural civic helper. Ungal theru problem enna, endha landmark pakkam-nu sollunga?",
-        greetEn: "Vanakkam! I am Neerja from NammaKural. Tell me what needs fixing on your street and your nearest landmark.",
-        greetTa: "வணக்கம்! நான் நீரஜா, நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
-      },
-      "en-IN-PrabhatNeural": {
-        name: "Prabhat",
-        greetTanglish: "Vanakkam! Naan Prabhat from NammaKural. Ungal area issue enna, landmark enna-nu sollunga?",
-        greetEn: "Vanakkam! I am Prabhat from NammaKural. Share your street issue and nearest landmark.",
-        greetTa: "வணக்கம்! நான் பிரபாத், நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
-      },
-      "ta-IN-PallaviNeural": {
-        name: "Pallavi",
-        greetTanglish: "Vanakkam! Naan Pallavi, NammaKural voice agent. Ungal theru problem enna, landmark sollunga?",
-        greetEn: "Vanakkam! I am Pallavi from NammaKural. Tell me your street complaint and nearest landmark.",
-        greetTa: "வணக்கம்! நான் பல்லவி, நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்."
-      },
-      "ta-IN-ValluvarNeural": {
-        name: "Valluvar",
-        greetTanglish: "Vanakkam! Naan Valluvar from NammaKural. Ungal street problem enna, endha area-nu sollunga?",
-        greetEn: "Vanakkam! I am Valluvar from NammaKural. Tell me your street complaint and nearest landmark.",
-        greetTa: "வணக்கம்! நான் வள்ளுவர், நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
-      }
-    };
+    const AGENT_PERSONAS = (() => {
+      const defs = [
+        ["ta-IN-PallaviNeural", "Pallavi", "பல்லவி", "ta"],
+        ["ta-IN-ValluvarNeural", "Valluvar", "வள்ளுவர்", "ta"],
+        ["ta-SG-VenbaNeural", "Venba", "வெண்பா", "ta"],
+        ["ta-SG-AnbuNeural", "Anbu", "அன்பு", "ta"],
+        ["ta-MY-KaniNeural", "Kani", "கனி", "ta"],
+        ["ta-MY-SuryaNeural", "Surya", "சூர்யா", "ta"],
+        ["ta-LK-SaranyaNeural", "Saranya", "சரண்யா", "ta"],
+        ["ta-LK-KumarNeural", "Kumar", "குமார்", "ta"],
+        ["en-IN-PrabhatNeural", "Prabhat", "பிரபாத்", "en"],
+        ["en-IN-NeerjaExpressiveNeural", "Neerja+", "நீரஜா", "en"],
+        ["en-IN-NeerjaNeural", "Neerja", "நீரஜா", "en"]
+      ];
+      const map = {};
+      defs.forEach(([id, enName, taName, kind]) => {
+        map[id] = {
+          name: enName,
+          greetTanglish: kind === "ta"
+            ? `வணக்கம்! நான் ${taName}, நம்ம குரல். உங்கள் street-ல என்ன problem, எந்த area-னு சொல்லுங்க?`
+            : `Vanakkam! I am ${enName} from NammaKural. Tell me your street problem and nearest landmark.`,
+          greetTa: `வணக்கம்! நான் ${taName}, நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்.`,
+          greetEn: `Vanakkam! I am ${enName} from NammaKural. Tell me what needs fixing on your street and your nearest landmark.`
+        };
+      });
+      return map;
+    })();
 
     const COPY = {
       tanglish: {
@@ -1810,7 +1832,7 @@
       callActive: false,
       isMuted: false,
       sttMode: "hybrid-ta",
-      ttsVoice: "en-IN-NeerjaNeural",
+      ttsVoice: "ta-IN-PallaviNeural",
       logsTab: "pipeline",
       llmMode: "auto",
       stateCode: "tn",
@@ -2042,7 +2064,7 @@
     }
 
     function getAgentPersona() {
-      return AGENT_PERSONAS[state.ttsVoice] || AGENT_PERSONAS["en-IN-NeerjaNeural"];
+      return AGENT_PERSONAS[state.ttsVoice] || AGENT_PERSONAS["ta-IN-PallaviNeural"];
     }
 
     function updateStatusPill() {
@@ -2473,6 +2495,16 @@
     }
 
     let ttsAudioEl = null;
+    const sharedPlayer = new Audio();
+    const SILENT_WAV_URI = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+    function unlockAudioGesture() {
+      try {
+        sharedPlayer.src = SILENT_WAV_URI;
+        const p = sharedPlayer.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch {}
+    }
 
     function interruptAgentSpeech() {
       const wasAudioPlaying = Boolean(ttsAudioEl && !ttsAudioEl.paused);
@@ -2566,7 +2598,8 @@
             const blob = await resp.blob();
             if (myGen !== ttsGeneration) return;
             const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
+            const audio = sharedPlayer;
+            audio.src = url;
             ttsAudioEl = audio;
             logPipelineEvent("tts.speak", String(text).slice(0, 60), { voice: voiceUsed, cached, mode: "neural-mp3" });
             const finish = () => {
@@ -2729,7 +2762,8 @@
             gps_lat: state.gpsCoords?.lat ?? null,
             gps_lon: state.gpsCoords?.lon ?? null,
             otp_verified: state.otpVerified,
-            dpdp_consented: state.dpdpConsented
+            dpdp_consented: state.dpdpConsented,
+            persona_name: getAgentPersona().name
           })
         });
         if (wfRes && wfRes.analysis) {
@@ -2738,9 +2772,10 @@
             ward: wfRes.analysis.landmark?.ward,
             latency_ms: wfRes.latency_ms
           });
-          // Apply non-TN State Pack or unclear-turn LLM replies directly from workflow FSM
-          if (state.stateCode !== "tn" || wfRes.fsm_state === "TRIAGE") {
+          // Use natural LLM conversational reply whenever model is active or on non-TN/TRIAGE turns!
+          if (state.stateCode !== "tn" || wfRes.fsm_state === "TRIAGE" || (wfRes.model && wfRes.model !== "offline-tanglish-v1")) {
             const lm = wfRes.analysis.landmark;
+            state.serviceId = wfRes.analysis.service_id || state.serviceId;
             state.resolvedLandmark = {
               name: lm.name,
               district: lm.district,
@@ -3234,6 +3269,7 @@
     }
 
     function startCall() {
+      unlockAudioGesture();
       if (state.callActive) {
         if (state.isMuted) toggleMute();
         voiceInput.focus();
@@ -3357,6 +3393,8 @@
     document.getElementById("modelSetupSaveBtn").addEventListener("click", () => {
       state.sttMode = document.getElementById("sttEngineSelect").value;
       state.ttsVoice = document.getElementById("ttsVoiceSelect").value;
+      const qSel = document.getElementById("quickVoiceSelect");
+      if (qSel) qSel.value = state.ttsVoice;
       state.llmMode = document.getElementById("llmEngineSelect").value;
       state.stateCode = document.getElementById("statePackSelect").value;
       const sttLabels = {
@@ -3590,7 +3628,22 @@
     });
 
     /* Core Interaction Listeners */
-    document.getElementById("runAgentBtn").addEventListener("click", () => handleAgentTurn(voiceInput.value));
+    document.getElementById("runAgentBtn").addEventListener("click", () => {
+      unlockAudioGesture();
+      handleAgentTurn(voiceInput.value);
+    });
+    document.getElementById("quickVoiceSelect").addEventListener("change", (e) => {
+      state.ttsVoice = e.target.value;
+      updateStatusPill();
+      showToast(`Agent voice switched to ${getAgentPersona().name}`);
+    });
+    document.getElementById("quickVoiceTestBtn").addEventListener("click", () => {
+      unlockAudioGesture();
+      const persona = getAgentPersona();
+      const sample = state.lang === "en" ? persona.greetEn : persona.greetTanglish;
+      speakReply(sample);
+      showToast(`Playing ${persona.name}...`);
+    });
     voiceInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();

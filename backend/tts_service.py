@@ -1,8 +1,8 @@
-"""Zero-Key Neural Tamil & Indian-English TTS Service (edge-tts + optional Sarvam Bulbul).
+"""Zero-Key Neural Tamil (India/SG/MY/LK) & Indian-English TTS Service (edge-tts + LRU cache).
 
-Replaces robotic desktop SpeechSynthesis with neural `ta-IN-PallaviNeural`, `ta-IN-ValluvarNeural`,
-`en-IN-NeerjaNeural`, and `en-IN-PrabhatNeural` voices, backed by an in-memory LRU cache so
-repeated greetings/HITL prompts play in <2ms.
+Includes native Tamil Nadu voices (`ta-IN-PallaviNeural`, `ta-IN-ValluvarNeural`), Tamil diaspora
+accents (`ta-SG-*`, `ta-MY-*`, `ta-LK-*`), and Indian-English voices (`en-IN-*`), with strict
+guarding so `en-IN-*` voices never receive raw Tamil Unicode (which triggers NoAudioReceived).
 """
 
 from __future__ import annotations
@@ -15,32 +15,43 @@ from typing import Any
 from backend.logger import log_event
 
 VOICE_CATALOG: dict[str, dict[str, str]] = {
-    "en-IN-NeerjaNeural": {"name": "Neerja", "label": "Neerja · Tanglish & Indian EN (Female Neural)", "lang": "en-IN"},
-    "en-IN-PrabhatNeural": {"name": "Prabhat", "label": "Prabhat · Tanglish & Indian EN (Male Neural)", "lang": "en-IN"},
-    "ta-IN-PallaviNeural": {"name": "Pallavi", "label": "Pallavi · Tamil Nadu தமிழ் (Female Neural)", "lang": "ta-IN"},
-    "ta-IN-ValluvarNeural": {"name": "Valluvar", "label": "Valluvar · Tamil Nadu தமிழ் (Male Neural)", "lang": "ta-IN"},
+    "ta-IN-PallaviNeural": {"name": "Pallavi", "label": "Pallavi · Tamil Nadu தமிழ் (Female)", "lang": "ta-IN"},
+    "ta-IN-ValluvarNeural": {"name": "Valluvar", "label": "Valluvar · Tamil Nadu தமிழ் (Male)", "lang": "ta-IN"},
+    "ta-SG-VenbaNeural": {"name": "Venba", "label": "Venba · Singapore தமிழ் (Female)", "lang": "ta-SG"},
+    "ta-SG-AnbuNeural": {"name": "Anbu", "label": "Anbu · Singapore தமிழ் (Male)", "lang": "ta-SG"},
+    "ta-MY-KaniNeural": {"name": "Kani", "label": "Kani · Malaysia தமிழ் (Female)", "lang": "ta-MY"},
+    "ta-MY-SuryaNeural": {"name": "Surya", "label": "Surya · Malaysia தமிழ் (Male)", "lang": "ta-MY"},
+    "ta-LK-SaranyaNeural": {"name": "Saranya", "label": "Saranya · Sri Lanka தமிழ் (Female)", "lang": "ta-LK"},
+    "ta-LK-KumarNeural": {"name": "Kumar", "label": "Kumar · Sri Lanka தமிழ் (Male)", "lang": "ta-LK"},
+    "en-IN-PrabhatNeural": {"name": "Prabhat", "label": "Prabhat · Indian EN Only (Male)", "lang": "en-IN"},
+    "en-IN-NeerjaExpressiveNeural": {"name": "Neerja+", "label": "Neerja Expressive · Indian EN Only (Female)", "lang": "en-IN"},
+    "en-IN-NeerjaNeural": {"name": "Neerja", "label": "Neerja · Indian EN Only (Female)", "lang": "en-IN"},
 }
 
 _TTS_CACHE: OrderedDict[tuple[str, str], bytes] = OrderedDict()
-_MAX_CACHE_ITEMS = 64
+_MAX_CACHE_ITEMS = 96
+
+
+def _has_tamil_script(text: str) -> bool:
+    return bool(re.search(r"[\u0B80-\u0BFF]", text))
 
 
 def select_neural_voice(text: str, preferred_voice: str = "auto", lang: str = "tanglish") -> str:
-    has_tamil_script = bool(re.search(r"[\u0B80-\u0BFF]", text))
-    # Only route to ta-IN-Pallavi/Valluvar when Unicode Tamil dominates; Roman Tanglish sounds far better on en-IN-Neerja/Prabhat!
+    has_ta = _has_tamil_script(text)
     if preferred_voice in VOICE_CATALOG:
-        if preferred_voice.startswith("ta-IN") and not has_tamil_script:
-            return "en-IN-PrabhatNeural" if "Valluvar" in preferred_voice else "en-IN-NeerjaNeural"
+        # Never pass raw Tamil Unicode to en-IN voices (edge-tts returns NoAudioReceived)
+        if preferred_voice.startswith("en-IN") and has_ta:
+            return "ta-IN-ValluvarNeural" if "Prabhat" in preferred_voice else "ta-IN-PallaviNeural"
         return preferred_voice
-    if has_tamil_script or lang == "ta":
+    if has_ta or lang in ("ta", "tanglish"):
         return "ta-IN-PallaviNeural"
-    return "en-IN-NeerjaNeural"
+    return "en-IN-PrabhatNeural"
 
 
 async def synthesize_neural_mp3(
     text: str,
     preferred_voice: str = "auto",
-    lang: str = "en",
+    lang: str = "tanglish",
 ) -> dict[str, Any]:
     """Synthesize spoken MP3 bytes using free zero-key edge-tts neural voices with LRU cache."""
     clean_text = re.sub(r"[`*_#>\[\]]", "", text).strip()

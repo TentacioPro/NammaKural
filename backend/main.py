@@ -283,7 +283,7 @@ class WorkflowTurnRequest(BaseModel):
     utterance: str
     combined_text: str
     state_code: str = "tn"
-    lang: str = "en"
+    lang: str = "tanglish"
     llm_mode: str = "offline"
     history: list[dict[str, str]] = Field(default_factory=list)
     gps_lat: float | None = None
@@ -291,6 +291,7 @@ class WorkflowTurnRequest(BaseModel):
     otp_verified: bool = False
     dpdp_consented: bool = True
     assistant_speaking: bool = False
+    persona_name: str = "Pallavi"
 
 
 class DpdpConsentRequest(BaseModel):
@@ -325,6 +326,7 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         otp_verified=req.otp_verified,
         dpdp_consented=req.dpdp_consented,
         assistant_speaking=req.assistant_speaking,
+        persona_name=req.persona_name,
     )
     record_telemetry_span(
         {
@@ -335,8 +337,8 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         }
     )
     ward_lbl = res.get("analysis", {}).get("landmark", {}).get("ward", "")
-    save_conversation_turn("browser", "user", req.utterance, fsm_state=res.get("fsm_state", ""), ward=ward_lbl)
-    save_conversation_turn("browser", "agent", res.get("reply", ""), fsm_state=res.get("fsm_state", ""), ward=ward_lbl)
+    save_conversation_turn("browser", "user", req.utterance, fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=req.persona_name)
+    save_conversation_turn("browser", "agent", res.get("reply", ""), fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=req.persona_name)
     return res
 
 

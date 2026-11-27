@@ -236,6 +236,97 @@ def _derive_fsm_state(analysis: dict[str, Any], seal_res: dict[str, Any] | None)
     return "HITL_SEAL"
 
 
+def _generate_natural_reply(
+    utterance: str,
+    combined_clean: str,
+    state_code: str,
+    lang: str,
+    fsm_state: str,
+    analysis: dict[str, Any],
+    cooldown: dict[str, Any] | None,
+    history: list[dict[str, str]],
+    persona_name: str = "Pallavi",
+) -> tuple[str | None, str]:
+    """Single fast (~450ms) LLM conversational turn grounded directly on deterministic tool output.
+
+    Skips Gemma-4's slow hidden thinking loop (`reasoning_effort='none'`) so natural Tamil/Tanglish
+    conversation replies stream fast without falling back to rigid templates.
+    """
+    status = probe_local_llm()
+    if not status["available"] or not status["active_model"]:
+        return None, "offline-tanglish-v1"
+
+    url = (
+        f"{_read_env_value('UNSLOTH_STUDIO_URL', 'http://127.0.0.1:8888').rstrip('/')}/v1/chat/completions"
+        if status["provider"] == "unsloth-studio"
+        else f"{_read_env_value('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')}/v1/chat/completions"
+    )
+    headers = {"Content-Type": "application/json"}
+    if status["provider"] == "unsloth-studio":
+        key = _read_env_value("UNSLOTH_API_KEY", "")
+        if key:
+            headers["Authorization"] = f"Bearer {key}"
+
+    pack = REGISTRY.get(state_code)
+    lm = analysis.get("landmark", {})
+    grounded_ctx = {
+        "fsm_state": fsm_state,
+        "has_issue": analysis.get("has_issue"),
+        "has_place": analysis.get("has_place"),
+        "ambiguous_area": analysis.get("ambiguous_area"),
+        "verified_ward": lm.get("ward") if analysis.get("has_place") else None,
+        "landmark": lm.get("name") if analysis.get("has_place") else None,
+        "service_id": analysis.get("service_id") if analysis.get("has_issue") else None,
+        "urgency": analysis.get("urgency", {}).get("tier"),
+        "in_cooldown": bool(cooldown and cooldown.get("in_cooldown")),
+    }
+    has_ta_script = bool(re.search(r"[\u0B80-\u0BFF]", utterance))
+    if lang == "en" and not has_ta_script:
+        lang_rule = "Reply in warm, concise Indian English (1-2 sentences)."
+    else:
+        lang_rule = (
+            "Reply naturally in warm spoken Tamil script mixed only with common English civic nouns "
+            "(like streetlight, pipe, bus stand, Ward, OTP) so a native Tamil speaker hears authentic Tamil. "
+            "NEVER lecture the user to speak English. Example: 'பரவாயில்லை! தாராளமாகத் தமிழிலேயே பேசுங்கள். "
+            "உங்கள் தெருவில் என்ன பிரச்சனை, எந்த area பக்கத்துல என்று சொல்லுங்கள்?'"
+        )
+
+    sys_msg = (
+        f"You are {persona_name}, a warm human-like civic voice assistant for NammaKural ({pack.state_name}). "
+        f"{lang_rule} Ground your answer ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
+        f"If fsm_state is TRIAGE, chat warmly, acknowledge what they said, and gently ask what street problem and area they need help with. "
+        f"If fsm_state is DISAMBIGUATE, ask for the one missing detail cleanly. "
+        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி, உறுதி' (or open the Clarity Popup)."
+    )
+    messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
+    for h in history[-3:]:
+        messages.append({
+            "role": "assistant" if h.get("role") == "agent" else "user",
+            "content": scrub_pii_and_aadhaar(h.get("text", ""))["clean_text"],
+        })
+    messages.append({"role": "user", "content": utterance})
+
+    payload = json.dumps({
+        "model": status["active_model"],
+        "messages": messages,
+        "max_tokens": 130,
+        "temperature": 0.45,
+        "reasoning_effort": "none",
+    }).encode("utf-8")
+
+    try:
+        t_llm = time.time()
+        req = urllib.request.Request(url, data=payload, headers=headers)
+        with urllib.request.urlopen(req, timeout=5.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            content = str(data["choices"][0]["message"].get("content", "")).strip()
+            log_event("llm.fast_turn", content[:70], {"model": status["active_model"], "latency_ms": round((time.time() - t_llm) * 1000, 1)})
+            return (content or None), status["active_model"]
+    except Exception as exc:
+        log_event("llm.fast_fallback", type(exc).__name__, level="WARN")
+        return None, "offline-tanglish-v1"
+
+
 def _run_llm_tool_loop(
     utterance: str,
     combined_clean: str,
@@ -288,8 +379,9 @@ def _run_llm_tool_loop(
             "messages": messages,
             "tools": TOOL_SCHEMAS,
             "tool_choice": "auto",
-            "max_tokens": 360,
-            "temperature": 0.2,
+            "max_tokens": 180,
+            "temperature": 0.25,
+            "reasoning_effort": "none",
         }).encode("utf-8")
         try:
             req = urllib.request.Request(url, data=payload, headers=headers)
@@ -327,7 +419,7 @@ def run_workflow_turn(
     utterance: str,
     combined_text: str,
     state_code: str = "tn",
-    lang: str = "en",
+    lang: str = "tanglish",
     llm_mode: str = "offline",
     history: list[dict[str, str]] | None = None,
     gps_lat: float | None = None,
@@ -335,6 +427,7 @@ def run_workflow_turn(
     otp_verified: bool = False,
     dpdp_consented: bool = True,
     assistant_speaking: bool = False,
+    persona_name: str = "Pallavi",
 ) -> dict[str, Any]:
     """Run full DPDP-guarded workflow turn with optional live tool-calling & deterministic parity."""
     if not dpdp_consented:
@@ -392,18 +485,17 @@ def run_workflow_turn(
     llm_reply: str | None = None
     model_used = "deterministic-tanglish-v1"
 
-    if llm_mode != "offline":
+    if llm_mode == "unsloth":
         llm_reply, tool_trace, model_used = _run_llm_tool_loop(
             clean_latest, clean_combined, state_code, lang, ctx, history or []
         )
 
-    # Guarantee deterministic tool execution even if LLM omitted a tool or runs offline
+    # Run deterministic grounding & repair checks cleanly (<1ms)
     if "analysis" not in ctx:
         res = execute_tool("lookup_landmark_and_ward", {"query": clean_combined, "state_code": state_code}, ctx)
         tool_trace.append({"tool": "lookup_landmark_and_ward", "result": res})
     analysis = ctx["analysis"]
 
-    # Detect repair utterances cleanly ("change to ...", "illa ...", "not tower park") before cooldown check
     if re.search(r"\b(illa|change|actually|no\s+not|instead|மாற்று|இல்ல)\b", clean_latest, re.IGNORECASE):
         matched_repair = REGISTRY.match_landmark(clean_latest, state_code)
         if matched_repair:
@@ -425,6 +517,22 @@ def run_workflow_turn(
 
     fsm_state = _derive_fsm_state(analysis, ctx.get("seal_result"))
     lm = analysis["landmark"]
+
+    # Fast (~450ms) conversational Tamil/Tanglish synthesis grounded in tool output!
+    if llm_mode != "offline" and not llm_reply:
+        llm_reply, fast_model = _generate_natural_reply(
+            utterance=clean_latest,
+            combined_clean=clean_combined,
+            state_code=state_code,
+            lang=lang,
+            fsm_state=fsm_state,
+            analysis=analysis,
+            cooldown=ctx.get("cooldown"),
+            history=history or [],
+            persona_name=persona_name,
+        )
+        if llm_reply:
+            model_used = fast_model
 
     if not llm_reply:
         if fsm_state == "TRIAGE":

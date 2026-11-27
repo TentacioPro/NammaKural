@@ -179,8 +179,9 @@ def generate_civic_turn(
         {
             "model": status["active_model"],
             "messages": messages,
-            "max_tokens": 360,
-            "temperature": 0.25,
+            "max_tokens": 180,
+            "temperature": 0.35,
+            "reasoning_effort": "none",
         }
     ).encode("utf-8")
 

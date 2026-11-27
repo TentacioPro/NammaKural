@@ -26,6 +26,7 @@ VOICE_CATALOG: dict[str, dict[str, str]] = {
     "ta-IN-ValluvarNeural": {"name": "Valluvar", "label": "Valluvar · Edge Neural தமிழ் (Male)", "lang": "ta-IN"},
     "en-IN-PrabhatNeural": {"name": "Prabhat", "label": "Prabhat · Indian EN Only (Male)", "lang": "en-IN"},
     "en-IN-NeerjaExpressiveNeural": {"name": "Neerja+", "label": "Neerja Expressive · Indian EN Only (Female)", "lang": "en-IN"},
+    "en-IN-NeerjaNeural": {"name": "Neerja", "label": "Neerja · Indian EN Only (Female)", "lang": "en-IN"},
 }
 
 _TTS_CACHE: OrderedDict[tuple[str, str], bytes] = OrderedDict()

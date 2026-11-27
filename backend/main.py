@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from backend.agent_workflow import run_workflow_turn, split_tts_clauses
 from backend.llm_bridge import generate_civic_turn, probe_local_llm
-from backend.logger import LOG_FILE, clear_logs, get_logs, log_event
+from backend.logger import LOG_FILE, clear_logs, get_conversations, get_logs, log_event, observability_status, save_conversation_turn
 from backend.tts_service import VOICE_CATALOG, synthesize_neural_mp3
 from backend.nlu import (
     SERVICE_CATALOG,
@@ -334,6 +334,9 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
             "note": scrub_pii_and_aadhaar(res.get("reply", ""))["clean_text"][:120],
         }
     )
+    ward_lbl = res.get("analysis", {}).get("landmark", {}).get("ward", "")
+    save_conversation_turn("browser", "user", req.utterance, fsm_state=res.get("fsm_state", ""), ward=ward_lbl)
+    save_conversation_turn("browser", "agent", res.get("reply", ""), fsm_state=res.get("fsm_state", ""), ward=ward_lbl)
     return res
 
 
@@ -391,7 +394,19 @@ def ingest_client_log(req: ClientLogRequest) -> dict[str, Any]:
 def read_logs(limit: int = 80) -> dict[str, Any]:
     """Expose recent structured pipeline logs (browser + backend + workflow tools)."""
     items = get_logs(limit)
-    return {"count": len(items), "log_file": str(LOG_FILE.name), "items": items}
+    return {
+        "count": len(items),
+        "log_file": str(LOG_FILE.name),
+        "observability": observability_status(),
+        "items": items,
+    }
+
+
+@app.get("/api/conversations")
+def read_past_conversations(limit: int = 60) -> dict[str, Any]:
+    """Return persisted PII-redacted past conversation turns across sessions."""
+    items = get_conversations(limit)
+    return {"count": len(items), "items": items}
 
 
 @app.delete("/api/logs")

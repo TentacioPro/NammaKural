@@ -15,20 +15,23 @@ from typing import Any
 from backend.logger import log_event
 
 VOICE_CATALOG: dict[str, dict[str, str]] = {
-    "ta-IN-PallaviNeural": {"label": "Pallavi · Tamil Nadu (Female Neural)", "lang": "ta-IN"},
-    "ta-IN-ValluvarNeural": {"label": "Valluvar · Tamil Nadu (Male Neural)", "lang": "ta-IN"},
-    "en-IN-NeerjaNeural": {"label": "Neerja · Indian English (Female Neural)", "lang": "en-IN"},
-    "en-IN-PrabhatNeural": {"label": "Prabhat · Indian English (Male Neural)", "lang": "en-IN"},
+    "en-IN-NeerjaNeural": {"name": "Neerja", "label": "Neerja · Tanglish & Indian EN (Female Neural)", "lang": "en-IN"},
+    "en-IN-PrabhatNeural": {"name": "Prabhat", "label": "Prabhat · Tanglish & Indian EN (Male Neural)", "lang": "en-IN"},
+    "ta-IN-PallaviNeural": {"name": "Pallavi", "label": "Pallavi · Tamil Nadu தமிழ் (Female Neural)", "lang": "ta-IN"},
+    "ta-IN-ValluvarNeural": {"name": "Valluvar", "label": "Valluvar · Tamil Nadu தமிழ் (Male Neural)", "lang": "ta-IN"},
 }
 
 _TTS_CACHE: OrderedDict[tuple[str, str], bytes] = OrderedDict()
 _MAX_CACHE_ITEMS = 64
 
 
-def select_neural_voice(text: str, preferred_voice: str = "auto", lang: str = "en") -> str:
-    if preferred_voice in VOICE_CATALOG:
-        return preferred_voice
+def select_neural_voice(text: str, preferred_voice: str = "auto", lang: str = "tanglish") -> str:
     has_tamil_script = bool(re.search(r"[\u0B80-\u0BFF]", text))
+    # Only route to ta-IN-Pallavi/Valluvar when Unicode Tamil dominates; Roman Tanglish sounds far better on en-IN-Neerja/Prabhat!
+    if preferred_voice in VOICE_CATALOG:
+        if preferred_voice.startswith("ta-IN") and not has_tamil_script:
+            return "en-IN-PrabhatNeural" if "Valluvar" in preferred_voice else "en-IN-NeerjaNeural"
+        return preferred_voice
     if has_tamil_script or lang == "ta":
         return "ta-IN-PallaviNeural"
     return "en-IN-NeerjaNeural"

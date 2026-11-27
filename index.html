@@ -1158,8 +1158,9 @@
 
       <div class="nav-controls">
         <div class="segmented" role="group" aria-label="Language">
-          <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="true">EN</button>
+          <button type="button" class="seg-btn" id="langTanglishBtn" aria-pressed="true">Tanglish</button>
           <button type="button" class="seg-btn" id="langTaBtn" aria-pressed="false">தமிழ்</button>
+          <button type="button" class="seg-btn" id="langEnBtn" aria-pressed="false">EN</button>
         </div>
 
         <button type="button" class="btn-pill-quiet" id="modelSetupOpenBtn">STT & Model</button>
@@ -1408,11 +1409,10 @@
       <div class="hitl-box">
         <span class="hitl-label">Neural Voice Output (Tamil Nadu &amp; Indian English TTS)</span>
         <select id="ttsVoiceSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
-          <option value="auto">Auto-Switch Neural Voice (Pallavi Tamil / Neerja Indian EN)</option>
-          <option value="ta-IN-PallaviNeural">Pallavi · Tamil Nadu Female (ta-IN Neural)</option>
-          <option value="ta-IN-ValluvarNeural">Valluvar · Tamil Nadu Male (ta-IN Neural)</option>
-          <option value="en-IN-NeerjaNeural">Neerja · Indian English Female (en-IN Neural)</option>
-          <option value="en-IN-PrabhatNeural">Prabhat · Indian English Male (en-IN Neural)</option>
+          <option value="en-IN-NeerjaNeural">Neerja · Tanglish &amp; Indian EN (Female Neural)</option>
+          <option value="en-IN-PrabhatNeural">Prabhat · Tanglish &amp; Indian EN (Male Neural)</option>
+          <option value="ta-IN-PallaviNeural">Pallavi · தமிழ் Female (ta-IN Neural)</option>
+          <option value="ta-IN-ValluvarNeural">Valluvar · தமிழ் Male (ta-IN Neural)</option>
         </select>
       </div>
       <div class="hitl-box">
@@ -1450,7 +1450,9 @@
     <div class="modal-dialog" style="max-width:680px;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
         <h3 id="logsModalTitle" style="font-size:1.05rem;">Live Voice Pipeline Logs (PII-Redacted)</h3>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="btn-outline" id="logsTabPipelineBtn" aria-pressed="true" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Pipeline Logs</button>
+          <button type="button" class="btn-outline" id="logsTabConvBtn" aria-pressed="false" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Past Conversations</button>
           <button type="button" class="btn-outline" id="logsRefreshBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Refresh</button>
           <button type="button" class="btn-outline" id="logsClearBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Clear</button>
           <button type="button" class="btn-outline" id="logsCloseBtn" style="min-height:32px;padding:4px 10px;font-size:0.8rem;">Close</button>
@@ -1461,7 +1463,61 @@
   </div>
 
   <script>
+    const AGENT_PERSONAS = {
+      "en-IN-NeerjaNeural": {
+        name: "Neerja",
+        greetTanglish: "Vanakkam! Naan Neerja, NammaKural civic helper. Ungal theru problem enna, endha landmark pakkam-nu sollunga?",
+        greetEn: "Vanakkam! I am Neerja from NammaKural. Tell me what needs fixing on your street and your nearest landmark.",
+        greetTa: "வணக்கம்! நான் நீரஜா, நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
+      },
+      "en-IN-PrabhatNeural": {
+        name: "Prabhat",
+        greetTanglish: "Vanakkam! Naan Prabhat from NammaKural. Ungal area issue enna, landmark enna-nu sollunga?",
+        greetEn: "Vanakkam! I am Prabhat from NammaKural. Share your street issue and nearest landmark.",
+        greetTa: "வணக்கம்! நான் பிரபாத், நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
+      },
+      "ta-IN-PallaviNeural": {
+        name: "Pallavi",
+        greetTanglish: "Vanakkam! Naan Pallavi, NammaKural voice agent. Ungal theru problem enna, landmark sollunga?",
+        greetEn: "Vanakkam! I am Pallavi from NammaKural. Tell me your street complaint and nearest landmark.",
+        greetTa: "வணக்கம்! நான் பல்லவி, நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்."
+      },
+      "ta-IN-ValluvarNeural": {
+        name: "Valluvar",
+        greetTanglish: "Vanakkam! Naan Valluvar from NammaKural. Ungal street problem enna, endha area-nu sollunga?",
+        greetEn: "Vanakkam! I am Valluvar from NammaKural. Tell me your street complaint and nearest landmark.",
+        greetTa: "வணக்கம்! நான் வள்ளுவர், நம்ம குரல். உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்."
+      }
+    };
+
     const COPY = {
+      tanglish: {
+        headerSub: "Wispr Flow Civic Voice Agent · Tamil Nadu",
+        a11y: "A+ Text",
+        lite: "2G Lite",
+        agentReady: "Ready · Tanglish / தமிழ்-la sollunga",
+        agentThinking: "Ward & urgency check panren...",
+        agentClarifying: "Oru chinna detail venum...",
+        agentHitl: "Final Check · Ungal confirm-ku wait panren",
+        agentApproved: "Approved · 1-Tap Official Dispatch Ready",
+        headline: "Ungal theru problem-a sollunga",
+        subline: "Tanglish or Tamil-la pesunga. Neerja urgency detect panni, confirm pannathuku apparam send pannuvaanga.",
+        wisprHint: "Form illai · Natural-aa pesunga",
+        runAgent: "Send / Pesu",
+        speakBtn: "Listen in Tamil",
+        upload: "Upload Photo",
+        savePhoto: "Save Stamped Photo",
+        drawer: "Manual Government Web Portal Paste? Show Exact Fields",
+        hitlKicker: "Step 3 · Final Citizen Clarity Check",
+        hitlTitle: "Dispatch unlock panra munnaadi check pannunga",
+        hitlEdit: "Change Sollunga",
+        hitlApprove: "Popup Check & Confirm",
+        hitlApprovedBtn: "Approved · Dispatch Ready",
+        copy: "Copy",
+        copied: "Copied!",
+        copyAll: "Copy All",
+        openSite: "Open Portal"
+      },
       en: {
         headerSub: "Wispr Flow Civic Voice Agent · Tamil Nadu",
         a11y: "A+ Text",
@@ -1727,7 +1783,7 @@
     let state = {
       serviceId: "streetlight_eb",
       landmarkIdx: 0,
-      lang: "en",
+      lang: "tanglish",
       appendedNote: "",
       ringX: 48,
       ringY: 22,
@@ -1754,7 +1810,8 @@
       callActive: false,
       isMuted: false,
       sttMode: "hybrid-ta",
-      ttsVoice: "auto",
+      ttsVoice: "en-IN-NeerjaNeural",
+      logsTab: "pipeline",
       llmMode: "auto",
       stateCode: "tn",
       dpdpConsented: true,
@@ -1984,17 +2041,22 @@
       };
     }
 
+    function getAgentPersona() {
+      return AGENT_PERSONAS[state.ttsVoice] || AGENT_PERSONAS["en-IN-NeerjaNeural"];
+    }
+
     function updateStatusPill() {
       const stateLabel = document.getElementById("agentStateLabel");
-      const t = COPY[state.lang];
+      const t = COPY[state.lang] || COPY.tanglish;
+      const persona = getAgentPersona();
       const map = {
-        idle: t.agentReady,
-        listening: state.lang === "ta" ? "கேட்டுக்கொண்டிருக்கிறது (தமிழ் / Tanglish)..." : "Listening in Tanglish / Tamil...",
+        idle: `${persona.name} Ready · ${state.lang === "ta" ? "தமிழ் / Tanglish" : state.lang === "tanglish" ? "Tanglish-la pesunga" : "Speak in English / Tanglish"}`,
+        listening: state.lang === "ta" ? `${persona.name} கேட்கிறது (தமிழ்)...` : `${persona.name} Listening (Tanglish / Tamil)...`,
         thinking: t.agentThinking,
         clarifying: t.agentClarifying,
         hitl_review: t.agentHitl,
         approved_dispatch: t.agentApproved,
-        speaking: state.lang === "ta" ? "நம்ம குரல் பேசுகிறது..." : "NammaKural is speaking..."
+        speaking: state.lang === "ta" ? `${persona.name} பேசுகிறது...` : `${persona.name} is speaking...`
       };
       stateLabel.textContent = map[state.agentPhase] || t.agentReady;
       orbStage.setAttribute("data-agent-state", state.agentPhase);
@@ -2054,9 +2116,10 @@
     }
 
     function applyCopy() {
-      const t = COPY[state.lang];
-      document.getElementById("langEnBtn").setAttribute("aria-pressed", state.lang === "en" ? "true" : "false");
+      const t = COPY[state.lang] || COPY.tanglish;
+      document.getElementById("langTanglishBtn").setAttribute("aria-pressed", state.lang === "tanglish" ? "true" : "false");
       document.getElementById("langTaBtn").setAttribute("aria-pressed", state.lang === "ta" ? "true" : "false");
+      document.getElementById("langEnBtn").setAttribute("aria-pressed", state.lang === "en" ? "true" : "false");
       document.getElementById("a11yBtn").textContent = t.a11y;
       document.getElementById("liteBtn").textContent = t.lite;
       document.getElementById("headerSub").textContent = t.headerSub;
@@ -2082,7 +2145,7 @@
     }
 
     function buildPortalCardsHTML(container, svc, lm, urgencyMeta) {
-      const t = COPY[state.lang];
+      const t = COPY[state.lang] || COPY.tanglish;
       container.innerHTML = "";
       svc.portals.forEach(p => {
         const card = document.createElement("article");
@@ -3192,9 +3255,10 @@
 
       spawnRipple(true);
       if (state.turns.length === 0) {
+        const persona = getAgentPersona();
         const welcome = state.lang === "ta"
-          ? "வணக்கம்! நான் நம்ம குரல் — உங்கள் தெருப் பிரச்சனையையும் அருகிலுள்ள அடையாளத்தையும் சொல்லுங்கள்."
-          : "வணக்கம்! நான் நம்ம குரல். Tell me what needs fixing on your street in Tamil or Tanglish.";
+          ? persona.greetTa
+          : (state.lang === "en" ? persona.greetEn : persona.greetTanglish);
         state.turns.push({ role: "agent", text: welcome, needsInput: true });
         renderAll(false);
         speakReply(welcome);
@@ -3308,8 +3372,10 @@
         ollama: "Local Ollama (localhost:11434 fallback to offline)",
         sarvam: "Sarvam / Gemini Live (.env optional key fallback to offline)"
       };
+      const persona = getAgentPersona();
+      updateStatusPill();
       document.getElementById("modelSetupStatus").textContent =
-        `Active [${state.stateCode.toUpperCase()}]: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
+        `Active [${state.stateCode.toUpperCase()} · ${persona.name}]: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
       document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "false");
       if (state.callActive) {
         if (liveRec) { try { liveRec.stop(); } catch {} liveRec = null; }
@@ -3380,6 +3446,17 @@
 
     async function openLogsModal() {
       document.getElementById("logsModalBackdrop").setAttribute("data-open", "true");
+      document.getElementById("logsTabPipelineBtn").setAttribute("aria-pressed", state.logsTab === "pipeline" ? "true" : "false");
+      document.getElementById("logsTabConvBtn").setAttribute("aria-pressed", state.logsTab === "conversations" ? "true" : "false");
+      if (state.logsTab === "conversations") {
+        const box = document.getElementById("logsList");
+        const convRes = await apiCall("/api/conversations?limit=60");
+        const items = convRes?.items || [];
+        box.innerHTML = items.length
+          ? items.map(c => `<div><span style="color:#94A3B8;">[${c.time}]</span> <strong style="color:${c.role === "user" ? "#93C5FD" : "#5EEAD4"};">${c.role === "user" ? "Citizen" : (c.persona || "Agent")}</strong> ${c.ward ? `[${c.ward}] ` : ""}${c.text}</div>`).join("")
+          : `<div style="color:#94A3B8;">No persisted past conversations yet. Start a call on http://127.0.0.1:8000!</div>`;
+        return;
+      }
       renderLogsView();
       const apiRes = await apiCall("/api/logs?limit=80");
       if (apiRes?.items?.length) {
@@ -3388,6 +3465,8 @@
     }
     document.getElementById("logsOpenBtn").addEventListener("click", openLogsModal);
     document.getElementById("logsRefreshBtn").addEventListener("click", openLogsModal);
+    document.getElementById("logsTabPipelineBtn").addEventListener("click", () => { state.logsTab = "pipeline"; openLogsModal(); });
+    document.getElementById("logsTabConvBtn").addEventListener("click", () => { state.logsTab = "conversations"; openLogsModal(); });
     document.getElementById("logsClearBtn").addEventListener("click", async () => {
       state.logs = [];
       await apiCall("/api/logs", { method: "DELETE" });
@@ -3617,14 +3696,15 @@
 
     function switchUiAndSpeechLang(nextLang) {
       state.lang = nextLang;
-      state.sttMode = nextLang === "ta" ? "hybrid-ta" : "hybrid";
+      state.sttMode = (nextLang === "ta" || nextLang === "tanglish") ? "hybrid-ta" : "hybrid";
       renderAll(false);
       if (state.callActive && !state.isMuted) {
         if (liveRec) { try { liveRec.stop(); } catch {} liveRec = null; }
         startSpeechCapture();
-        logPipelineEvent("stt.lang_switched", `Switched live recognition to ${nextLang === "ta" ? "ta-IN" : "en-IN"}`);
+        logPipelineEvent("stt.lang_switched", `Switched UI=${nextLang}, recognizer=${state.sttMode}`);
       }
     }
+    document.getElementById("langTanglishBtn").addEventListener("click", () => switchUiAndSpeechLang("tanglish"));
     document.getElementById("langEnBtn").addEventListener("click", () => switchUiAndSpeechLang("en"));
     document.getElementById("langTaBtn").addEventListener("click", () => switchUiAndSpeechLang("ta"));
 

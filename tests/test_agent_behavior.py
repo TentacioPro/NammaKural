@@ -166,3 +166,61 @@ def test_llm_tool_calling_loop_and_webrtc_coturn_endpoints(monkeypatch) -> None:
     voices_res = client.get("/api/tts/voices").json()
     assert "ta-IN-PallaviNeural" in voices_res["voices"]
     assert "en-IN-NeerjaNeural" in voices_res["voices"]
+    assert voices_res["voices"]["en-IN-NeerjaNeural"]["name"] == "Neerja"
+
+
+def test_e2e_websocket_tts_stt_and_past_conversations(monkeypatch) -> None:
+    # 1. WebSocket live bidirectional voice stream (interim -> chitchat -> civic -> disconnect)
+    with client.websocket_connect("/ws/voice") as ws:
+        ws.send_json({"type": "interim", "text": "Anna Nagar..."})
+        ack = ws.receive_json()
+        assert ack["type"] == "interim_ack"
+
+        ws.send_json({"type": "turn", "latest_text": "hi hello", "combined_text": "hi hello"})
+        chat = ws.receive_json()
+        assert chat["phase"] == "chitchat"
+
+        ws.send_json({
+            "type": "turn",
+            "latest_text": "streetlight eriyala",
+            "combined_text": "Anna Nagar Tower Park Vth Ave streetlight eriyala",
+        })
+        civic = ws.receive_json()
+        assert civic["phase"] == "civic"
+        assert civic["analysis"]["landmark"]["ward"] == "Ward 103"
+
+    # 2. TTS Layer: mock neural MP3 output & voice header
+    async def fake_synth(text: str, preferred_voice: str = "auto", lang: str = "tanglish"):
+        return {"ok": True, "voice": preferred_voice if preferred_voice != "auto" else "en-IN-NeerjaNeural", "audio": b"ID3MOCKMP3", "cached": False}
+
+    monkeypatch.setattr("backend.main.synthesize_neural_mp3", fake_synth)
+    tts = client.post("/api/tts", json={"text": "Vanakkam! Naan Neerja", "voice": "en-IN-NeerjaNeural", "lang": "tanglish"})
+    assert tts.status_code == 200
+    assert tts.headers["X-NammaKural-Voice"] == "en-IN-NeerjaNeural"
+    assert tts.content == b"ID3MOCKMP3"
+
+    # 3. STT Audio Clip endpoint: graceful fallback without key
+    stt = client.post(
+        "/api/stt",
+        files={"audio": ("clip.webm", b"WEBM_DUMMY_AUDIO_BYTES", "audio/webm")},
+        data={"lang": "ta-IN"},
+    )
+    assert stt.status_code == 200
+    assert stt.json()["provider"] == "browser-fallback"
+
+    # 4. Tanglish default workflow + Past Conversation Log Persistence
+    wf_t = client.post(
+        "/api/workflow/turn",
+        json={
+            "utterance": "Anna Nagar Tower Park streetlight eriyala",
+            "combined_text": "Anna Nagar Tower Park streetlight eriyala",
+            "lang": "tanglish",
+            "llm_mode": "offline",
+        },
+    ).json()
+    assert wf_t["fsm_state"] == "HITL_SEAL"
+    assert "Seri!" in wf_t["reply"]
+
+    conv = client.get("/api/conversations?limit=10").json()
+    assert conv["count"] >= 2
+    assert any("Anna Nagar" in item["text"] for item in conv["items"])

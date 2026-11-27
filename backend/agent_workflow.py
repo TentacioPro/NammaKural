@@ -266,10 +266,15 @@ def _run_llm_tool_loop(
         "languages": pack.languages,
         "otp_verified": bool(ctx.get("otp_verified", False)),
     }
+    lang_instruction = (
+        "Tamil script (தமிழ்)"
+        if lang == "ta"
+        else ("natural Romanized Tanglish (Tamil spoken in English letters + simple English civic terms)" if lang == "tanglish" else "natural Indian English / Tanglish")
+    )
     sys_msg = (
         f"You are NammaKural ({pack.state_name} Civic Voice Agent). "
         f"Call tools first before citing any Ward or cooldown. Keep final speech <= 2 short sentences in "
-        f"{'Tamil script' if lang == 'ta' else 'natural Tanglish/English'}. Compacted state: {json.dumps(compacted_slot)}"
+        f"{lang_instruction}. Compacted state: {json.dumps(compacted_slot)}"
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
     for h in history[-2:]:
@@ -370,7 +375,7 @@ def run_workflow_turn(
 
     chitchat = classify_conversational_chitchat(clean_latest)
     if chitchat is not None:
-        reply = chitchat["reply_ta"] if lang == "ta" else chitchat["reply_en"]
+        reply = chitchat["reply_ta"] if lang == "ta" else (chitchat.get("reply_tanglish", chitchat["reply_en"]) if lang == "tanglish" else chitchat["reply_en"])
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
         return {"fsm_state": "GREET", "vad": vad, "chitchat": chitchat, "reply": reply, "clauses": split_tts_clauses(reply), "tool_trace": []}
 
@@ -423,25 +428,27 @@ def run_workflow_turn(
 
     if not llm_reply:
         if fsm_state == "TRIAGE":
-            llm_reply = (
-                f'"{clean_latest}" — உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்.'
-                if lang == "ta"
-                else f'I heard "{clean_latest}". Tell me what civic problem needs fixing and where.'
-            )
+            if lang == "ta":
+                llm_reply = f'"{clean_latest}" — உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்.'
+            elif lang == "tanglish":
+                llm_reply = f'"{clean_latest}" keten. Ungal theru problem enna, endha landmark pakkam-nu sollunga?'
+            else:
+                llm_reply = f'I heard "{clean_latest}". Tell me what civic problem needs fixing and where.'
         elif fsm_state == "DISAMBIGUATE":
             if analysis.get("ambiguous_area"):
                 _, spec = REGISTRY.check_ambiguous_area(clean_combined, state_code)
                 llm_reply = (spec.prompt_ta or spec.prompt_en) if (spec and lang == "ta") else (spec.prompt_en if spec else "Which landmark is closest?")
             elif not analysis.get("has_place"):
-                llm_reply = "Understood the issue. Allow GPS or share your nearest street landmark?"
+                llm_reply = "Issue purinjidhu. GPS allow pannunga illa nearest landmark sollunga?" if lang == "tanglish" else "Understood the issue. Allow GPS or share your nearest street landmark?"
             else:
-                llm_reply = "Got the location. What civic problem needs fixing there?"
+                llm_reply = "Location note pannitten. Anga enna civic issue-nu sollunga?" if lang == "tanglish" else "Got the location. What civic problem needs fixing there?"
         elif fsm_state == "HITL_SEAL":
-            llm_reply = (
-                f"{lm['ward']} கண்டறியப்பட்டது ({analysis['urgency']['badge_ta']}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும்."
-                if lang == "ta"
-                else f"Resolved {lm['ward']} ({analysis['urgency']['badge_en']}). Verify OTP and say 'Confirm, Confirm' or review the Clarity Popup."
-            )
+            if lang == "ta":
+                llm_reply = f"{lm['ward']} கண்டறியப்பட்டது ({analysis['urgency']['badge_ta']}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும்."
+            elif lang == "tanglish":
+                llm_reply = f"Seri! {lm['ward']} ({analysis['urgency']['badge_en']}) ready-aa irukku. OTP check panni 'Confirm, Confirm' sollunga illa Clarity Popup open pannunga."
+            else:
+                llm_reply = f"Resolved {lm['ward']} ({analysis['urgency']['badge_en']}). Verify OTP and say 'Confirm, Confirm' or review the Clarity Popup."
         else:
             llm_reply = f"Complaint sealed for {lm['ward']}."
 

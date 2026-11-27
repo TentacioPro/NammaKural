@@ -1,6 +1,7 @@
 """Responsive, keyboard and spoken-review checks in headless Chromium."""
 from __future__ import annotations
 
+import json
 import re
 import socket
 import threading
@@ -241,3 +242,99 @@ def test_workflow_renders_display_text_and_sends_tamil_to_speech(app_url, open_p
     page.locator("#runAgentBtn").click()
     expect(page.locator("#safetyAlert a")).to_have_attribute("href", "tel:1906")
     expect(page.locator("#dispatchSection")).to_be_hidden()
+
+
+def install_test_recognizer(page):
+    page.add_init_script("""(() => {
+        Object.defineProperty(navigator, 'mediaDevices', {value: undefined});
+        window.SpeechRecognition = class {
+            constructor() { window.testRecognizer = this; }
+            start() {}
+            stop() {}
+            hear(text, final = true) {
+                const result = [{transcript: text, confidence: 1}];
+                result.isFinal = final;
+                this.onresult({resultIndex: 0, results: [result]});
+            }
+        };
+    })();""")
+
+
+@pytest.mark.parametrize("pending", ["workflow/turn", "tts"])
+def test_recognized_interruption_aborts_pending_fetch(app_url, open_page, pending):
+    def init(page):
+        install_test_recognizer(page)
+        page.add_init_script("""(() => {
+            const pending = __PENDING__;
+            window.voiceRequests = [];
+            const realFetch = window.fetch.bind(window);
+            window.fetch = (url, options = {}) => {
+                if (url === '/api/tts' && (pending !== 'tts' || !window.holdTts || voiceRequests.length)) {
+                    return Promise.resolve(new Response(null, {status: 204}));
+                }
+                if (url !== '/api/' + pending || voiceRequests.length) return realFetch(url, options);
+                const record = {aborted: false};
+                voiceRequests.push(record);
+                return new Promise((resolve, reject) => {
+                    options.signal?.addEventListener('abort', () => {
+                        record.aborted = true;
+                        reject(options.signal.reason);
+                    }, {once: true});
+                });
+            };
+            speechSynthesis.speak = utterance => setTimeout(() => utterance.onend?.(), 0);
+        })();""".replace("__PENDING__", json.dumps(pending)))
+
+    page = open_page(app_url, setup=init)
+    page.locator("#startCallBtn").click()
+    page.evaluate("""() => {
+        window.holdTts = true;
+        testRecognizer.hear('Tower Park streetlight eriyala');
+    }""")
+    page.wait_for_function("voiceRequests.length === 1")
+    page.evaluate("testRecognizer.hear('seri ok')")
+    assert not page.evaluate("voiceRequests[0].aborted")
+    assert page.evaluate("""() => {
+        const start = performance.now();
+        testRecognizer.hear('wait Anna Arch', false);
+        return voiceRequests[0].aborted && performance.now() - start < 150;
+    }""")
+    page.evaluate("testRecognizer.hear('wait Anna Arch streetlight eriyala')")
+    expect(page.locator("#agentThread")).to_contain_text("Ward 102")
+
+
+def test_short_webspeech_fragment_waits_for_complete_utterance(app_url, open_page):
+    page = open_page(app_url, setup=install_test_recognizer)
+    page.locator("#secondaryToggle").click()
+    page.locator("#autoSpeakToggleBtn").click()
+    page.locator("#startCallBtn").click()
+    page.clock.install()
+    page.evaluate("testRecognizer.hear('ஸ்ட்ர', false)")
+    page.clock.run_for(1750)
+    expect(page.locator("#agentThread")).not_to_contain_text("ஸ்ட்ர")
+    with page.expect_request("**/api/workflow/turn") as request:
+        page.evaluate("testRecognizer.hear('ஸ்ட்ரீட் லைட் எரியல')")
+    assert request.value.post_data_json["utterance"] == "ஸ்ட்ரீட் லைட் எரியல"
+
+
+@pytest.mark.parametrize("preview", [False, True], ids=["http", "file"])
+def test_transliterated_complaint_keeps_issue_until_ward_is_verified(app_url, open_page, preview):
+    url = (ROOT / "index.html").as_uri() if preview else app_url
+    page = open_page(url)
+    page.locator("#secondaryToggle").click()
+    page.locator("#autoSpeakToggleBtn").click()
+
+    def submit(text):
+        page.locator("#voiceInput").fill(text)
+        page.locator("#runAgentBtn").click()
+
+    submit("இல்ல இல்ல ஸ்ட்ரீட் லைட் வந்து தெளிவா எரியல")
+    expect(page.locator("#particularsStrip")).to_contain_text("Streetlight")
+    expect(page.locator("#hitlApproveBtn")).to_be_hidden()
+    submit("நான் வந்து சோழிங்கநல்லூர் தாண்டி நாவலூர்ல இருக்கேன், மெரினா மாலை ஆப்போசிட்ல")
+    expect(page.locator("#particularsStrip")).to_contain_text("மெரினா மாலை")
+    expect(page.locator("#agentThread")).to_contain_text("verify its ward")
+    expect(page.locator("#hitlApproveBtn")).to_be_hidden()
+    submit("இல்ல, அண்ணா ஆர்ச் பக்கத்துல")
+    expect(page.locator("#particularsStrip")).to_contain_text("Ward 102")
+    expect(page.locator("#hitlApproveBtn")).to_be_visible()

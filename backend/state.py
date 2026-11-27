@@ -107,13 +107,17 @@ def redact_pii(text: str) -> str:
 def record_dpdp_consent(session_id: str, consented: bool) -> dict[str, Any]:
     """Record DPDP Act Section 5-6 explicit consent or withdrawal per session (volatile memory only)."""
     entry = {
-        "session_id": session_id[:24],
+        "session_id": session_id[:128],
         "consented": consented,
         "purpose": "civic_grievance_routing_only",
         "ts": round(time.time(), 2),
     }
-    _CONSENT_LOG[session_id[:24]] = entry
+    _CONSENT_LOG[entry["session_id"]] = entry
     return entry
+
+
+def has_dpdp_consent(session_id: str | None) -> bool:
+    return session_id is None or _CONSENT_LOG.get(session_id[:128], {}).get("consented", True)
 
 
 def list_request_history() -> list[dict[str, Any]]:
@@ -266,6 +270,7 @@ _CONFIRMATION = re.compile(r"[\s.!?,]*(?:confirm|உறுதி|urudhi|yes|ச�
 def seal_verified_turn(
     otp_session_id: str, mode: str, spoken_phrase: str, modal_ok: bool,
     ward: str, service_id: str, urgency_tier: str,
+    complaint_revision: str = "",
 ) -> dict[str, Any]:
     """Track each confirmation server-side against the verified OTP and complaint."""
     with _HITL_LOCK:
@@ -276,7 +281,7 @@ def seal_verified_turn(
             session.pop("pending_confirmation", None)
             return {"approved": False, "reason": "Say only Confirm or உறுதி in a separate turn."}
 
-        complaint = (ward, service_id, urgency_tier)
+        complaint = (ward, service_id, urgency_tier, complaint_revision)
         previous = session.pop("pending_confirmation", None)
         distinct_turns = 1 + int(previous == complaint)
         result = verify_hitl_seal(mode, spoken_phrase, modal_ok, True,

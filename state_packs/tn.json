@@ -5,6 +5,19 @@
   "accents": ["madras", "madurai", "kongu", "tirunelveli", "delta"],
   "fallback_helpline": "1100",
   "fallback_email": "cmcell@tn.gov.in",
+  "spoken_areas": {
+    "OMR": "\\bomr\\b|ஓ\\s*எம்\\s*ஆர்|ஒய்?\\s*எம்\\s*ஆர்|\\bold mahaba?lipuram road\\b",
+    "Sholinganallur": "\\b(?:sho?lingana?llur|sozhinga?nallur)(?=\\b|la\\b)|சோ[ழலி]+ங்?கநல்லூர்|சோழிங்கநல்லூர்",
+    "Navalur": "\\bnaava?lur(?=\\b|la\\b)|\\bnaval(?:ur|oor)(?=\\b|la\\b)|நாவலூர்",
+    "Tambaram": "\\btha?mbaram(?=\\b|la\\b)|\\btambaram(?=\\b|la\\b)|தாம்பரம்",
+    "Adyar": "\\bad[ai]?yar(?=\\b|la\\b)|அடையா[றர்]+",
+    "Anna Nagar": "\\banna\\s*nagar(?=\\b|la\\b)|அண்ணா\\s*நகர்",
+    "Velachery": "\\bvela?ch[ae]ry(?=\\b|la\\b)|வேளச்சேரி",
+    "Madurai": "\\bmadurai(?=\\b|la\\b)|மதுரை",
+    "Coimbatore": "\\b(?:coimbatore|kovai)(?=\\b|la\\b)|கோவை|கோயம்புத்தூர்",
+    "Tirunelveli": "\\b(?:tirunelveli|thirunelveli|nellai)(?=\\b|la\\b)|திருநெல்வேலி|நெல்லை",
+    "Tiruchirappalli": "\\b(?:trichy|tiruchi|tiruchirappalli)(?=\\b|la\\b)|திருச்சி"
+  },
   "issue_lexicon": {
     "streetlight_eb": ["streetlight", "light", "eriyala", "wire", "transformer", "spark", "தெருவிளக்கு", "மின் கம்பி"],
     "sewage_pothole": ["sewage", "saakkadai", "sakadai", "pothole", "drainage", "சாக்கடை", "குழி"],

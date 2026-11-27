@@ -12,13 +12,15 @@ from __future__ import annotations
 import json
 import re
 import time
+from collections import OrderedDict
+from threading import Lock
 from typing import Any
 
 from backend.llm_bridge import chat_backends, chat_message
-from backend.nlu import life_safety_helpline, resolve_gps_to_landmark
+from backend.nlu import TN_FIXTURE_MAX_DISTANCE_SQUARED, extract_landmark_text, life_safety_helpline, resolve_gps_to_landmark
 from backend.logger import log_event
 from backend.nlu import analyze_turn, classify_conversational_chitchat, classify_semantic_vad, classify_sentiment_urgency
-from backend.state import check_cooldown, scrub_pii_and_aadhaar, verify_hitl_seal
+from backend.state import check_cooldown, has_dpdp_consent, record_dpdp_consent, scrub_pii_and_aadhaar, verify_hitl_seal
 from backend.state_packs import REGISTRY
 
 WORKFLOW_STATES = (
@@ -29,6 +31,33 @@ WORKFLOW_STATES = (
     "HITL_SEAL",
     "DISPATCH",
 )
+
+_SLOT_LOCK = Lock()
+_SESSIONS: OrderedDict[tuple[str, str], tuple[float, dict[str, Any]]] = OrderedDict()
+_SESSION_TTL = 30 * 60
+_SESSION_LIMIT = 512
+_CORRECTION = re.compile(r"^\s*(?:\b(?:illa|change|actually|instead|no)\b|மாற்று|இல்ல)", re.I)
+
+
+def set_workflow_consent(session_id: str, consented: bool) -> dict[str, Any]:
+    with _SLOT_LOCK:
+        if not consented:
+            for key in list(_SESSIONS):
+                if key[0] == session_id:
+                    del _SESSIONS[key]
+        return record_dpdp_consent(session_id, consented)
+
+
+def _remember(key: tuple[str, str], slots: dict[str, Any]) -> None:
+    now = time.monotonic()
+    _SESSIONS[key] = now, slots
+    _SESSIONS.move_to_end(key)
+    while len(_SESSIONS) > _SESSION_LIMIT or next(iter(_SESSIONS.values()))[0] < now - _SESSION_TTL:
+        _SESSIONS.popitem(last=False)
+
+
+def _public_slots(slots: dict[str, Any]) -> dict[str, str]:
+    return {key: slots[key] for key in ("issue", "landmark", "area", "note", "ticket_ref") if slots.get(key)}
 
 TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
@@ -104,13 +133,14 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 def _resolve_pack_turn(query: str, state_code: str = "tn", gps_lat: float | None = None, gps_lon: float | None = None) -> dict[str, Any]:
     """Unified multi-state resolver supporting pluggable JSON State Packs while keeping TN deep fidelity."""
     if not REGISTRY.list_summaries():
-        gps = resolve_gps_to_landmark(gps_lat, gps_lon)["landmark"] if gps_lat is not None and gps_lon is not None else None
-        return {**analyze_turn(query, gps), "state_code": "tn"}
+        gps = resolve_gps_to_landmark(gps_lat, gps_lon) if gps_lat is not None and gps_lon is not None else {}
+        return {**analyze_turn(query, gps["landmark"] if gps.get("verified") else None), "state_code": "tn"}
     pack = REGISTRY.get(state_code)
     gps_lm = None
     if gps_lat is not None and gps_lon is not None:
-        nearest, _ = REGISTRY.nearest_gps_landmark(gps_lat, gps_lon, pack.state_code)
-        gps_lm = nearest.model_dump()
+        nearest, distance_squared = REGISTRY.nearest_gps_landmark(gps_lat, gps_lon, pack.state_code)
+        if pack.state_code != "tn" or distance_squared <= TN_FIXTURE_MAX_DISTANCE_SQUARED:
+            gps_lm = nearest.model_dump()
 
     if pack.state_code == "tn":
         analysis = analyze_turn(query, gps_lm)
@@ -129,12 +159,14 @@ def _resolve_pack_turn(query: str, state_code: str = "tn", gps_lat: float | None
     matched = REGISTRY.match_landmark(query, pack.state_code)
     has_place = matched is not None or gps_lm is not None
     ambiguous_key, _ = REGISTRY.check_ambiguous_area(query, pack.state_code)
-    lm_dict = gps_lm or (matched.model_dump() if matched else pack.landmarks[0].model_dump())
+    lm_dict = gps_lm or (matched.model_dump() if matched else {"name": "", "ward": ""})
     urgency = classify_sentiment_urgency(query).__dict__
     return {
         "state_code": pack.state_code,
         "has_place": has_place,
         "has_issue": has_issue,
+        "landmark_text": lm_dict["name"],
+        "area": None,
         "ambiguous_area": ambiguous_key,
         "wants_attachment": False,
         "service_id": svc_id if has_issue else lm_dict.get("default_service", "streetlight_eb"),
@@ -145,42 +177,87 @@ def _resolve_pack_turn(query: str, state_code: str = "tn", gps_lat: float | None
     }
 
 
+def _capture_slots(slots: dict[str, Any], candidate: dict[str, Any], text: str) -> None:
+    if candidate["has_issue"] and candidate["urgency"]["tier"] != "LIFE_SAFETY":
+        slots.update(issue=candidate["service_id"], urgency=candidate["urgency"])
+    if candidate["has_place"]:
+        slots.update(landmark=candidate["landmark_text"], area=candidate["area"],
+                     match=candidate["landmark"], ambiguous_area=candidate["ambiguous_area"])
+    if re.search(r"\b(?:add|note|also)\b|^(?:pole|pillar)\s+\d+\b|குறிப்பு|கூடவே", text, re.I):
+        slots["note"] = text[:180]
+    if re.search(r"\b[A-Z]{2,5}-?\d{4,6}\b", text, re.I):
+        slots["ticket_ref"] = candidate["ticket_ref"]
+
+
+def _with_slots(analysis: dict[str, Any], slots: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **analysis,
+        "has_issue": bool(slots.get("issue")),
+        "has_place": bool(slots.get("landmark")),
+        "service_id": slots.get("issue", analysis["service_id"]),
+        "landmark_text": slots.get("landmark", ""),
+        "landmark": slots.get("match", analysis["landmark"]),
+        "area": slots.get("area"),
+        "ambiguous_area": slots.get("ambiguous_area"),
+        "urgency": slots.get("urgency", analysis["urgency"]),
+        "ticket_ref": slots.get("ticket_ref", analysis["ticket_ref"]),
+    }
+
+
 def execute_tool(name: str, args: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
     """Deterministic Code > LLM tool execution bounded by DPDP/HITL invariants."""
     state_code = str(args.get("state_code") or ctx.get("state_code", "tn"))
     if name == "lookup_landmark_and_ward":
         query = str(args.get("query") or ctx.get("combined_text", ""))
-        analysis = _resolve_pack_turn(query, state_code, ctx.get("gps_lat"), ctx.get("gps_lon"))
-        ctx["analysis"] = analysis
+        analysis = ctx.get("analysis") or _resolve_pack_turn(query, state_code, ctx.get("gps_lat"), ctx.get("gps_lon"))
         return {
             "has_issue": analysis["has_issue"],
             "has_place": analysis["has_place"],
             "ambiguous_area": analysis["ambiguous_area"],
             "ward": analysis["landmark"]["ward"],
             "landmark_name": analysis["landmark"]["name"],
+            "landmark_text": analysis["landmark_text"],
             "service_id": analysis["service_id"],
             "urgency_tier": analysis["urgency"]["tier"],
         }
 
     if name == "update_complaint_slot":
         field = str(args.get("field", ""))
-        value = scrub_pii_and_aadhaar(str(args.get("value", "")))["clean_text"]
-        if field == "landmark":
-            matched = REGISTRY.match_landmark(value, state_code)
-            ctx["repaired_landmark"] = value
-            if matched:
-                ctx.setdefault("analysis", {})["landmark"] = matched.model_dump()
-                ctx["analysis"]["has_place"] = True
-                ctx["analysis"]["ambiguous_area"] = None
-                return {"updated": "landmark", "ward": matched.ward, "name": matched.name}
-            return {"updated": "landmark_text", "value": value}
-        if field == "issue":
-            ctx["repaired_issue"] = value
-            return {"updated": "issue", "value": value}
+        scrubbed = scrub_pii_and_aadhaar(str(args.get("value", "")))
+        value = scrubbed["clean_text"].strip()
+        latest = ctx.get("latest", "")
+        if (scrubbed["pii_masked"] or not 2 <= len(value) <= 180
+                or value.casefold() not in latest.casefold() or "[REDACTED" in value):
+            return {"updated": False, "error": "Use a short phrase quoted from the current turn."}
+        slots = ctx["slots"]
         if field == "note":
-            ctx["note"] = value
-            return {"updated": "note", "value": value}
-        return {"updated": False, "error": f"Unknown field {field}"}
+            slots["note"] = value
+        elif field in {"issue", "landmark", "ticket_ref"}:
+            candidate = _resolve_pack_turn(value, ctx["state_code"])
+            if field == "issue" and candidate["has_issue"]:
+                # An excerpt cannot downgrade urgency or replace the code-selected route.
+                if slots.get("issue") not in (None, candidate["service_id"]):
+                    return {"updated": False, "error": "Use the issue selected from the complete turn."}
+                if not slots.get("issue"):
+                    slots.update(issue=candidate["service_id"], urgency=candidate["urgency"])
+            elif field == "landmark" and ctx["state_code"] == "tn":
+                current_place = ctx["latest_analysis"].get("landmark_text")
+                can_replace = not slots.get("landmark") or (
+                    _CORRECTION.search(latest) and extract_landmark_text(value, awaiting_location=True)
+                )
+                if not current_place and can_replace and not candidate["has_issue"]:
+                    slots.update(landmark=value, area=candidate["area"], ambiguous_area=candidate["ambiguous_area"],
+                                 match={**candidate["landmark"], "name": candidate["landmark_text"] or value})
+                elif not current_place or not slots.get("landmark"):
+                    return {"updated": False, "error": "A correction must identify a place in the current turn."}
+            elif field == "ticket_ref" and re.fullmatch(r"#?[A-Z]{2,5}-?\d{4,6}", value, re.I):
+                slots["ticket_ref"] = candidate["ticket_ref"]
+            else:
+                return {"updated": False, "error": "The quoted value does not identify this field."}
+        else:
+            return {"updated": False, "error": "Unknown complaint field."}
+        ctx["analysis"] = _with_slots(ctx["analysis"], slots)
+        return {"updated": field, "value": slots[field]}
 
     if name == "check_ward_cooldown":
         res = check_cooldown(
@@ -215,10 +292,10 @@ def post_guardrail_reply(reply: str, allowed_wards: set[str]) -> str:
     clean = scrub_pii_and_aadhaar(reply)["clean_text"]
     clean = re.sub(r"[`*_#>\[\]]", "", clean).strip()
     # Prevent hallucinated Ward IDs not returned by lookup tools
-    for m in re.finditer(r"\bWard\s+(\d{1,3})\b", clean, re.IGNORECASE):
+    for m in re.finditer(r"(?:\bWard|வார்டு)\s+(\d{1,3})\b", clean, re.IGNORECASE):
         ward_tok = f"Ward {m.group(1)}"
-        if allowed_wards and ward_tok not in allowed_wards:
-            clean = clean.replace(m.group(0), "your verified Ward")
+        if ward_tok not in allowed_wards:
+            clean = clean.replace(m.group(0), "your verified Ward" if allowed_wards else "your area")
     sentences = [s.strip() for s in re.split(r"(?<=[.!?।])\s+", clean) if s.strip()]
     return " ".join(sentences[:2]) if sentences else clean[:220]
 
@@ -234,7 +311,7 @@ def _derive_fsm_state(analysis: dict[str, Any], seal_res: dict[str, Any] | None)
         return "DISPATCH"
     if not analysis.get("has_issue") and not analysis.get("has_place"):
         return "TRIAGE"
-    if not analysis.get("has_issue") or not analysis.get("has_place") or analysis.get("ambiguous_area"):
+    if not analysis.get("has_issue") or not analysis["landmark"].get("ward") or analysis.get("ambiguous_area"):
         return "DISAMBIGUATE"
     return "HITL_SEAL"
 
@@ -264,6 +341,7 @@ def _generate_natural_reply(
     analysis: dict[str, Any],
     cooldown: dict[str, Any] | None,
     history: list[dict[str, str]],
+    slots: dict[str, str],
     persona_name: str = "Pallavi",
 ) -> tuple[str | None, str | None, str]:
     """Single fast (~450ms) LLM conversational turn grounded directly on deterministic tool output.
@@ -276,11 +354,12 @@ def _generate_natural_reply(
     lm = analysis.get("landmark", {})
     grounded_ctx = {
         "fsm_state": fsm_state,
+        "slots": slots,
         "has_issue": analysis.get("has_issue"),
         "has_place": analysis.get("has_place"),
         "ambiguous_area": analysis.get("ambiguous_area"),
-        "verified_ward": lm.get("ward") if analysis.get("has_place") else None,
-        "landmark": lm.get("name") if analysis.get("has_place") else None,
+        "verified_ward": lm.get("ward") or None,
+        "landmark": analysis["landmark_text"] or None,
         "service_id": analysis.get("service_id") if analysis.get("has_issue") else None,
         "urgency": analysis.get("urgency", {}).get("tier"),
         "in_cooldown": bool(cooldown and cooldown.get("in_cooldown")),
@@ -303,7 +382,9 @@ def _generate_natural_reply(
         f"You are {persona_name}, a warm, friendly human civic voice assistant for NammaKural ({state_name}). "
         f"{lang_rule} Ground facts ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
         f"If fsm_state is TRIAGE, respond naturally to whatever the citizen just said (even casual chat like 'appadiya', 'ennanga', 'appuram') like a helpful neighbor, and gently invite them to share their street issue or area without repeating the exact same phrasing as earlier turns. "
-        f"If fsm_state is DISAMBIGUATE, ask for the one missing detail cleanly. "
+        "Never re-ask for an issue or location already present in slots. A captured landmark without a verified_ward "
+        "needs a nearby known intersection or GPS for ward verification, not a repeat of the complaint. "
+        "If fsm_state is DISAMBIGUATE, ask for only the missing detail. "
         f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி' / 'Confirm' in two separate turns (or approve the Clarity Popup and say it once)."
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
@@ -333,19 +414,17 @@ def _generate_natural_reply(
 
 def _run_llm_tool_loop(
     utterance: str,
-    combined_clean: str,
     state_code: str,
     lang: str,
     ctx: dict[str, Any],
-    history: list[dict[str, str]],
+    preferred_mode: str,
 ) -> tuple[str | None, list[dict[str, Any]], str]:
     """Execute bounded OpenAI tool_calls loop against Bharat-safe Unsloth/Ollama server."""
-    backend = next(chat_backends("unsloth"), None)
+    backend = next(iter(chat_backends(preferred_mode)), None)
     if not backend:
         return None, [], "deterministic-tanglish-v1"
 
-    # Tools can inspect the grounded complaint without changing it or sealing it.
-    allowed_tools = {"lookup_landmark_and_ward", "check_ward_cooldown"}
+    allowed_tools = {"lookup_landmark_and_ward", "check_ward_cooldown", "update_complaint_slot"}
     tool_schemas = [tool for tool in TOOL_SCHEMAS if tool["function"]["name"] in allowed_tools]
     pack = REGISTRY.get(state_code) if REGISTRY.list_summaries() else None
     state_name = pack.state_name if pack else "Tamil Nadu"
@@ -353,6 +432,7 @@ def _run_llm_tool_loop(
         "state_pack": state_name,
         "languages": pack.languages if pack else ["ta", "en"],
         "otp_verified": bool(ctx.get("otp_verified", False)),
+        "slots": _public_slots(ctx["slots"]),
     }
     lang_instruction = (
         "Tamil script (தமிழ்)"
@@ -361,13 +441,12 @@ def _run_llm_tool_loop(
     )
     sys_msg = (
         f"You are NammaKural ({state_name} Civic Voice Agent). "
-        f"Call tools first before citing any Ward or cooldown. Keep final speech <= 2 short sentences in "
-        f"{lang_instruction}. Compacted state: {json.dumps(compacted_slot)}"
+        "Use update_complaint_slot for relevant fields. Quote a short exact phrase from the latest user turn, "
+        "including for a correction. Use lookup_landmark_and_ward for verified routing. "
+        f"Keep any final speech to two short sentences in {lang_instruction}. State: {json.dumps(compacted_slot, ensure_ascii=False)}"
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
-    for h in history[-2:]:
-        messages.append({"role": "assistant" if h.get("role") == "agent" else "user", "content": scrub_pii_and_aadhaar(h.get("text", ""))["clean_text"]})
-    messages.append({"role": "user", "content": f"Latest: {utterance} | Accumulated: {combined_clean}"})
+    messages.append({"role": "user", "content": utterance})
 
     tool_trace: list[dict[str, Any]] = []
     for _ in range(3):
@@ -390,7 +469,8 @@ def _run_llm_tool_loop(
                 fn_args = json.loads(fn.get("arguments") or "{}")
             except json.JSONDecodeError:
                 fn_args = {}
-            out = (execute_tool(fn_name, fn_args, ctx.copy()) if fn_name in allowed_tools and isinstance(fn_args, dict)
+            out = (execute_tool(fn_name, fn_args, ctx if fn_name == "update_complaint_slot" else ctx.copy())
+                   if fn_name in allowed_tools and isinstance(fn_args, dict)
                    else {"error": "Tool unavailable to the language model"})
             tool_trace.append({"tool": fn_name, "result": out})
             messages.append({
@@ -412,6 +492,18 @@ def speech_fields(display: str, spoken: str) -> dict[str, Any]:
     }
 
 
+def _consent_blocked() -> dict[str, Any]:
+    return {
+        "fsm_state": "GREET",
+        "blocked_reason": "dpdp_consent_withdrawn",
+        **speech_fields(
+            "DPDP consent withdrawn. Dial helpline 1913 / 1100 directly for human assistance.",
+            "உங்க ஒப்புதல் திரும்பப் பெறப்பட்டது. உதவிக்கு 1913 அல்லது 1100 எண்ணை அழையுங்க.",
+        ),
+        "tool_trace": [],
+    }
+
+
 def _tamil_prompt(state: str, analysis: dict[str, Any], cooldown: dict[str, Any] | None) -> str:
     if cooldown and not cooldown["override_allowed"]:
         return "இந்தப் புகார் ஏற்கனவே இருக்கு. மேல் உதவிக்கு 1100 எண்ணை அழையுங்க."
@@ -421,6 +513,8 @@ def _tamil_prompt(state: str, analysis: dict[str, Any], cooldown: dict[str, Any]
             return "விஜயநகர் பேருந்து நிலையம் பக்கமா, பீனிக்ஸ் மால் பக்கமா?"
         if area == "anna_nagar":
             return "டவர் பார்க் பக்கமா, அண்ணா ஆர்ச் பக்கமா?"
+        if analysis.get("has_place") and not analysis["landmark"].get("ward"):
+            return "இடத்தை குறிச்சுக்கிட்டேன். வார்டை சரிபார்க்க அருகிலுள்ள சந்திப்பு பெயரை சொல்லுங்க அல்லது ஜிபிஎஸ் அனுமதிங்க."
         if not analysis.get("has_place"):
             return "பிரச்சனை புரிஞ்சுது. பக்கத்துல இருக்கிற அடையாளம் அல்லது தெருப் பேரை சொல்லுங்க."
         return "இடத்தை குறிச்சுக்கிட்டேன். அங்க என்ன பிரச்சனைன்னு சொல்லுங்க."
@@ -445,10 +539,11 @@ def run_workflow_turn(
     dpdp_consented: bool = True,
     assistant_speaking: bool = False,
     persona_name: str = "Pallavi",
+    session_id: str | None = None,
 ) -> dict[str, Any]:
     """Run full DPDP-guarded workflow turn with optional live tool-calling & deterministic parity."""
     # Emergency guidance stays available before consent, PII checks, and provider calls.
-    safe_input = scrub_pii_and_aadhaar(combined_text + " " + utterance)["clean_text"]
+    safe_input = scrub_pii_and_aadhaar(utterance if session_id else f"{combined_text} {utterance}")["clean_text"]
     if life_safety_helpline(safe_input):
         urgency = classify_sentiment_urgency(safe_input)
         return {
@@ -458,16 +553,10 @@ def run_workflow_turn(
             "tool_trace": [],
             **speech_fields(urgency.action_ta if lang == "ta" else urgency.action_en, urgency.action_ta),
         }
-    if not dpdp_consented:
-        return {
-            "fsm_state": "GREET",
-            "blocked_reason": "dpdp_consent_withdrawn",
-            **speech_fields(
-                "DPDP consent withdrawn. Dial helpline 1913 / 1100 directly for human assistance.",
-                "உங்க ஒப்புதல் திரும்பப் பெறப்பட்டது. உதவிக்கு 1913 அல்லது 1100 எண்ணை அழையுங்க.",
-            ),
-            "tool_trace": [],
-        }
+    if not dpdp_consented and session_id:
+        set_workflow_consent(session_id, False)
+    if not dpdp_consented or not has_dpdp_consent(session_id):
+        return _consent_blocked()
 
     # 1. Pre-LLM Aadhaar & PII Firewall
     t_start = time.time()
@@ -501,11 +590,37 @@ def run_workflow_turn(
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
         return {"fsm_state": "GREET", "vad": vad, "chitchat": chitchat, **speech_fields(reply, re.sub(r"[^\u0B80-\u0BFF0-9 .!?,]", "", chitchat["reply_ta"])), "tool_trace": []}
 
+    latest_analysis = _resolve_pack_turn(clean_latest, state_code)
+    state_code = latest_analysis["state_code"]
+    key = (session_id, state_code) if session_id else None
+    with _SLOT_LOCK:
+        if not has_dpdp_consent(session_id):
+            return _consent_blocked()
+        entry = _SESSIONS.get(key) if key else None
+        slots = entry[1].copy() if entry and time.monotonic() - entry[0] < _SESSION_TTL else {}
+        if not slots and clean_combined != clean_latest:
+            _capture_slots(slots, _resolve_pack_turn(clean_combined, state_code), clean_combined)
+        if (state_code == "tn" and slots.get("issue") and (not slots.get("landmark") or _CORRECTION.search(clean_latest)) and
+                not latest_analysis["has_issue"] and not latest_analysis["has_place"]):
+            place = extract_landmark_text(clean_latest, awaiting_location=True)
+            if place:
+                latest_analysis.update(has_place=True, landmark_text=place,
+                                       landmark={**latest_analysis["landmark"], "name": place})
+        _capture_slots(slots, latest_analysis, clean_latest)
+        if not latest_analysis["has_place"] and gps_lat is not None and gps_lon is not None:
+            gps = _resolve_pack_turn("", state_code, gps_lat, gps_lon)
+            _capture_slots(slots, gps, "")
+        snapshot = slots.copy()
+        if key:
+            _remember(key, snapshot)
+
     ctx: dict[str, Any] = {
         "state_code": state_code,
         "combined_text": clean_combined,
-        "gps_lat": gps_lat,
-        "gps_lon": gps_lon,
+        "latest": clean_latest,
+        "latest_analysis": latest_analysis,
+        "slots": slots,
+        "analysis": _with_slots(latest_analysis, slots),
         "otp_verified": otp_verified,
         "dpdp_consented": dpdp_consented,
     }
@@ -514,25 +629,27 @@ def run_workflow_turn(
     llm_reply: str | None = None
     model_used = "deterministic-tanglish-v1"
 
-    if llm_mode == "unsloth" and classify_sentiment_urgency(clean_combined).tier != "CRITICAL_SAFETY":
-        llm_reply, tool_trace, model_used = _run_llm_tool_loop(
-            clean_latest, clean_combined, state_code, lang, ctx, history or []
-        )
+    if llm_mode != "offline" and ctx["analysis"]["urgency"]["tier"] != "CRITICAL_SAFETY" and (
+        llm_mode == "unsloth" or (key and not (latest_analysis["has_issue"] and latest_analysis["landmark"].get("ward")))
+    ):
+        tool_reply, tool_trace, model_used = _run_llm_tool_loop(clean_latest, state_code, lang, ctx, llm_mode)
+        if not key:
+            llm_reply = tool_reply
+        if key and slots != snapshot:
+            with _SLOT_LOCK:
+                current = _SESSIONS.get(key)
+                if current and current[1] is snapshot and has_dpdp_consent(session_id):
+                    _remember(key, slots.copy())
 
-    # Run deterministic grounding & repair checks cleanly (<1ms)
-    if "analysis" not in ctx:
-        res = execute_tool("lookup_landmark_and_ward", {"query": clean_combined, "state_code": state_code}, ctx)
+    if not any(step["tool"] == "lookup_landmark_and_ward" for step in tool_trace):
+        res = execute_tool("lookup_landmark_and_ward", {}, ctx)
         tool_trace.append({"tool": "lookup_landmark_and_ward", "result": res})
     analysis = ctx["analysis"]
 
-    if re.search(r"\b(illa|change|actually|no\s+not|instead|மாற்று|இல்ல)\b", clean_latest, re.IGNORECASE):
-        matched_repair = REGISTRY.match_landmark(clean_latest, state_code) if REGISTRY.list_summaries() else None
-        if matched_repair:
-            rep = execute_tool("update_complaint_slot", {"field": "landmark", "value": matched_repair.name, "state_code": state_code}, ctx)
-            tool_trace.append({"tool": "update_complaint_slot", "result": rep})
-            analysis = ctx["analysis"]
+    if latest_analysis["has_place"] and _CORRECTION.search(clean_latest):
+        tool_trace.append({"tool": "update_complaint_slot", "result": {"updated": "landmark"}})
 
-    if analysis.get("has_place") and analysis.get("has_issue") and not analysis.get("ambiguous_area") and "cooldown" not in ctx:
+    if analysis["landmark"].get("ward") and analysis["has_issue"] and not analysis["ambiguous_area"]:
         cd = execute_tool(
             "check_ward_cooldown",
             {
@@ -547,6 +664,8 @@ def run_workflow_turn(
     fsm_state = _derive_fsm_state(analysis, ctx.get("seal_result"))
     lm = analysis["landmark"]
 
+    if not has_dpdp_consent(session_id):
+        return _consent_blocked()
     llm_tts: str | None = None
     # Fast (~450ms) conversational Tamil/Tanglish synthesis grounded in tool output!
     if llm_mode != "offline" and not llm_reply and analysis["urgency"]["tier"] != "CRITICAL_SAFETY":
@@ -559,11 +678,20 @@ def run_workflow_turn(
             analysis=analysis,
             cooldown=ctx.get("cooldown"),
             history=history or [],
+            slots=_public_slots(slots),
             persona_name=persona_name,
         )
         if llm_reply:
             model_used = fast_model
 
+    if fsm_state == "DISAMBIGUATE" or (fsm_state == "HITL_SEAL" and llm_reply and (
+        "?" in llm_reply or lm["ward"].lower() not in llm_reply.lower() and
+        lm["ward"].replace("Ward", "வார்டு") not in llm_reply
+    )):
+        # Code owns follow-up prompts, so providers cannot re-ask completed slots.
+        llm_reply = llm_tts = None
+
+    use_generated_speech = bool(llm_reply)
     if not llm_reply:
         if fsm_state == "TRIAGE":
             if lang == "ta":
@@ -584,6 +712,9 @@ def run_workflow_turn(
                     llm_reply = spec.prompt_en if spec else "Which landmark is closest?"
                 if lang == "ta":
                     llm_reply = _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))
+            elif analysis.get("has_place") and not lm.get("ward"):
+                llm_reply = (_tamil_prompt(fsm_state, analysis, ctx.get("cooldown")) if lang == "ta" else
+                             f"I noted {analysis['landmark_text']}. To verify its ward, share a nearby junction or allow GPS.")
             elif not analysis.get("has_place"):
                 llm_reply = "Issue purinjidhu. GPS allow pannunga illa nearest landmark sollunga?" if lang == "tanglish" else "Understood the issue. Allow GPS or share your nearest street landmark?"
             else:
@@ -599,7 +730,7 @@ def run_workflow_turn(
             llm_reply = f"Complaint sealed for {lm['ward']}."
 
     safe_reply = post_guardrail_reply(llm_reply, {lm["ward"]} if analysis.get("has_place") else set())
-    candidate_tts = llm_tts or (safe_reply if model_used != "deterministic-tanglish-v1" else "")
+    candidate_tts = llm_tts or (safe_reply if use_generated_speech else "")
     if candidate_tts and re.search(r"[\u0B80-\u0BFF]", candidate_tts):
         for eng, tam in (
             (r"\bWard\b", "வார்டு"),
@@ -622,6 +753,8 @@ def run_workflow_turn(
         tts_out = post_guardrail_reply(candidate_tts, {lm["ward"]} if analysis.get("has_place") else set())
     else:
         tts_out = _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))
+    if not has_dpdp_consent(session_id):
+        return _consent_blocked()
     latency_ms = round((time.time() - t_start) * 1000, 1)
     log_event(
         "workflow.turn_complete",
@@ -643,6 +776,7 @@ def run_workflow_turn(
         "aadhaar_blocked": False,
         "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
         "analysis": analysis,
+        "slots": _public_slots(slots),
         "cooldown": ctx.get("cooldown"),
         **speech_fields(safe_reply, tts_out),
         "tool_trace": tool_trace,

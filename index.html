@@ -1906,6 +1906,10 @@
       urgencyTier: "STANDARD", // CRITICAL_SAFETY | HIGH_ESCALATION | STANDARD
       urgencyMeta: null,
       turns: [],
+      sessionId: newSessionId(),
+      complaintRevision: 0,
+      slots: null,
+      localComplaint: null,
       clarifyOptions: [],
       needsSlot: null, // null | "issue" | "location" | "disambiguate" | "ticket"
       ticketRef: "#GCC-20491",
@@ -1933,6 +1937,10 @@
         { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
       ]
     };
+
+    function newSessionId() {
+      return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
+    }
 
     async function apiCall(path, opts = {}) {
       if (window.location.protocol === "file:") {
@@ -2293,6 +2301,10 @@
       const svc = SERVICES.find(s => s.id === id) || SERVICES[0];
       voiceInput.value = svc.utterance;
       state.turns = [];
+      state.sessionId = newSessionId();
+      state.slots = state.localComplaint = null;
+      state.gpsCoords = null;
+      state.gpsLandmarkName = "";
       state.appendedNote = "";
       state.customPhotoUrl = null;
       handleAgentTurn(svc.utterance, true);
@@ -2410,14 +2422,12 @@
       const parsed = combined ? detectIssueAndPlace(combined) : { hasIssue: false, hasPlace: false };
       const svc = getService();
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
-      const issueChip = parsed.hasIssue
+      const issueChip = (state.slots ? Boolean(state.slots.issue) : parsed.hasIssue)
         ? `<span class="particular-chip" data-filled="true">Issue: ${state.lang === "ta" ? svc.titleTa : svc.titleEn}</span>`
         : `<span class="particular-chip" data-filled="false">Issue: Listening...</span>`;
-      const placeLabel = parsed.hasPlace && !parsed.ambiguousArea
-        ? `${lm.ward} · ${lm.name.split("·")[0].trim()}`
-        : (state.gpsLandmarkName ? state.gpsLandmarkName.split("·")[0].trim() : "Asking area / GPS");
-      const placeFilled = (parsed.hasPlace && !parsed.ambiguousArea) || Boolean(state.gpsLandmarkName);
-      const locChip = `<span class="particular-chip" data-filled="${placeFilled}">Location: ${placeLabel}</span>`;
+      const placeLabel = state.resolvedLandmark ? `${lm.ward} · ${lm.name.split("·")[0].trim()}`
+        : state.slots?.landmark || parsed.explicitLm?.name || state.gpsLandmarkName || "Asking area / GPS";
+      const locChip = `<span class="particular-chip" data-filled="${Boolean(state.resolvedLandmark)}">Location: ${htmlText(placeLabel)}</span>`;
       const urgText = state.urgencyMeta
         ? (state.lang === "ta" ? state.urgencyMeta.badgeTa : state.urgencyMeta.badgeEn)
         : "Urgency: Auto-Triage";
@@ -2551,40 +2561,42 @@
     /* ==========================================================================
        CONVERSATIONAL NLU + CLARIFICATION ONLY WHEN NEEDED + HITL GATE
        ========================================================================== */
-    function resolveExplicitPlace(txt, svc) {
-      if (/(tower\s*park|5th\s*ave|vth\s*ave|3rd\s*cross)/.test(txt)) return SERVICES[0].landmarks[0];
-      if (/(anna\s*arch|iii(rd)?\s*ave)/.test(txt)) return SERVICES[0].landmarks[1];
-      if (/(vijaya\s*nagar|velachery\s*main)/.test(txt)) return SERVICES[1].landmarks[0];
-      if (txt.includes("phoenix")) return SERVICES[1].landmarks[1];
-      if (/(madurai|kuruvikaran|anna\s*bus\s*stand|மதுரை)/.test(txt)) return SERVICES[2].landmarks[0];
-      if (/(coimbatore|gandhipuram|கோவை)/.test(txt)) return SERVICES[2].landmarks[1];
+    function resolveExplicitPlace(txt) {
+      if (/(tower\s*park|5th\s*ave|vth\s*ave|3rd\s*cross|டவர்\s*பார்க்)/.test(txt)) return SERVICES[0].landmarks[0];
+      if (/(anna\s*arch|iii(rd)?\s*ave|அண்ணா\s*ஆர்ச்)/.test(txt)) return SERVICES[0].landmarks[1];
+      if (/(vijaya\s*nagar|விஜய\s*நகர்)/.test(txt)) return SERVICES[1].landmarks[0];
+      if (/phoenix|பீனிக்ஸ்/.test(txt)) return SERVICES[1].landmarks[1];
+      if (/(kuruvikaran|anna\s*bus\s*stand|குருவிக்காரன்)/.test(txt)) return SERVICES[2].landmarks[0];
+      if (/(gandhi\s*puram|காந்தி\s*புரம்)/.test(txt)) return SERVICES[2].landmarks[1];
       return null;
     }
 
     function detectIssueAndPlace(combinedText) {
-      const txt = combinedText.toLowerCase();
-      const hasPlace = /(anna\s*nagar|tower\s*park|arch|velachery|vijaya\s*nagar|phoenix|madurai|kuruvikaran|coimbatore|gandhipuram|100\s*feet|அண்ணா|வேளச்சேரி|மதுரை|கோவை)/.test(txt);
-      const hasIssue = /(streetlight|light|eriyala|wire|transformer|spark|sewage|saakkadai|pothole|water|kudineer|pipe|ration|arisi|fingerprint|garbage|kuppai|close|20491|1100|தெருவிளக்கு|சாக்கடை|குடிநீர்|ரேஷன்|குப்பை)/.test(txt);
-
-      const hasVelacheryBroad = /\bvelachery\b|வேளச்சேரி/.test(txt) && !/(vijaya\s*nagar|phoenix|bus\s*stand|20491|close|garbage|kuppai)/.test(txt);
-      const hasAnnaBroad = /\banna\s*nagar\b|அண்ணா/.test(txt) && !/(tower\s*park|arch|5th|3rd|iii)/.test(txt);
-
-      let svcId = "streetlight_eb";
-      if (txt.includes("close") || txt.includes("20491") || txt.includes("1100")) svcId = "garbage_1100";
-      else if (txt.includes("ration") || txt.includes("arisi") || txt.includes("fingerprint") || txt.includes("ரேஷன்")) svcId = "ration_tnpds";
-      else if (txt.includes("kudineer") || txt.includes("water") || txt.includes("pipe") || txt.includes("குடிநீர்")) svcId = "water_pipe";
-      else if (txt.includes("saakkadai") || txt.includes("sewage") || txt.includes("pothole") || txt.includes("சாக்கடை")) svcId = "sewage_pothole";
-
+      const txt = combinedText.normalize("NFC").toLowerCase();
+      const routes = [
+        ["garbage_1100", /\b(?:garbage|kuppai|close[ds]?|20491|1100)\b|குப்பை/],
+        ["ration_tnpds", /\b(?:ration|arisi|fingerprint)\b|ரேஷன்/],
+        ["sewage_pothole", /\b(?:saakkadai|sakadai|sewage|pothole|drainage)\b|சாக்கட|போ[த்]*தோல்/],
+        ["water_pipe", /\b(?:kudineer|water|pipes?|thanni)\b|குடிநீர்|தண்ண[ீி]|வாட்டர்|பைப்|குழாய்/],
+        ["streetlight_eb", /\b(?:street\s*lights?|lights?|eriyala|wire|transformer|spark|current|kambam|theruvilakku)\b|தெரு\s*விளக்கு|லைட்|கரண்ட்|மின் கம்பி|எரியல/]
+      ];
+      const match = routes.find(([, pattern]) => pattern.test(txt));
+      const roadDefect = /(?:ரோட|சாலை|\broad\b).{0,20}(?:குழி|உடை|மோசம்|kuzhi|damag)/.test(txt);
+      const serviceId = match?.[0] || (roadDefect ? "sewage_pothole" : null);
       const ticketMatch = combinedText.match(/#?[A-Z]{2,5}-?\d{4,6}/i);
-      const svc = SERVICES.find(s => s.id === svcId) || SERVICES[0];
-      const explicitLm = resolveExplicitPlace(txt, svc);
+      const explicitLm = resolveExplicitPlace(txt);
+      const velachery = /\bvelachery\b|வேளச்சேரி/.test(txt);
+      const annaNagar = /\banna\s*nagar\b|அண்ணா\s*நகர்/.test(txt);
+      const area = txt.match(/\b(?:omr|sholinganallur|navalur|tambaram|adyar|madurai|coimbatore|tirunelveli)\b|ஓ\s*எம்\s*ஆர்|சோழிங்கநல்லூர்|நாவலூர்|தாம்பரம்|அடையாறு|மதுரை|கோவை|நெல்லை/);
+      const landmarkText = combinedText.match(/[^,.;]+\s+(?:பக்கத்துல|பக்கத்தில்|எதிரில்|ஆப்போசிட்\S*|pakkam)(?:\s|$)|\b(?:near|opposite)\s+[^,.;]+/i)?.[0].trim();
       return {
-        hasPlace,
-        hasIssue,
-        ambiguousArea: hasVelacheryBroad ? "velachery" : (hasAnnaBroad ? "anna_nagar" : null),
+        hasPlace: Boolean(explicitLm || area || landmarkText || velachery || annaNagar),
+        hasIssue: Boolean(serviceId),
+        ambiguousArea: explicitLm ? null : velachery ? "velachery" : annaNagar ? "anna_nagar" : null,
         ticketRef: ticketMatch ? ticketMatch[0].toUpperCase() : null,
         explicitLm,
-        svcId,
+        landmarkText: explicitLm?.name || landmarkText || area?.[0] || (velachery ? "Velachery" : annaNagar ? "Anna Nagar" : ""),
+        svcId: serviceId || "streetlight_eb",
         txt
       };
     }
@@ -2608,7 +2620,8 @@
 
     let ttsVoices = [];
     let ttsGeneration = 0;
-    let lastTtsStartAt = 0;
+    let ttsController = null;
+    let workflowController = null;
     let phaseBeforeSpeech = "idle";
     function refreshTtsVoices() {
       if ("speechSynthesis" in window) {
@@ -2633,6 +2646,7 @@
     }
 
     let ttsAudioEl = null;
+    let ttsAudioUrl = null;
     const sharedPlayer = new Audio();
     const SILENT_WAV_URI = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
 
@@ -2654,10 +2668,15 @@
       const wasSynthSpeaking = "speechSynthesis" in window && window.speechSynthesis.speaking;
       const wasSpeaking = state.agentPhase === "speaking" || wasAudioPlaying || wasSynthSpeaking;
       ttsGeneration++;
+      ttsController?.abort();
+      ttsController = null;
       if (ttsAudioEl) {
+        ttsAudioEl.onended = ttsAudioEl.onerror = null;
         try { ttsAudioEl.pause(); ttsAudioEl.currentTime = 0; } catch {}
         ttsAudioEl = null;
       }
+      if (ttsAudioUrl) URL.revokeObjectURL(ttsAudioUrl);
+      ttsAudioUrl = null;
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       if (wasSpeaking) {
         logPipelineEvent("tts.barge_in", "Interrupted agent speech");
@@ -2665,6 +2684,16 @@
       if (state.agentPhase === "speaking") {
         state.agentPhase = phaseBeforeSpeech;
 
+        updateStatusPill();
+      }
+    }
+
+    function cancelAgentTurn() {
+      workflowController?.abort();
+      workflowController = null;
+      interruptAgentSpeech();
+      if (state.agentPhase === "thinking") {
+        state.agentPhase = state.callActive ? "listening" : "idle";
         updateStatusPill();
       }
     }
@@ -2704,7 +2733,7 @@
       speakChunk(0);
     }
 
-    async function speakReply(text) {
+    async function speakReply(text, browserOnly = false) {
       if (!state.autoSpeak || !text) return;
       interruptAgentSpeech();
       const myGen = ++ttsGeneration;
@@ -2714,10 +2743,13 @@
 
 
       // Try real neural Tamil / Indian-English TTS over FastAPI (/api/tts) first!
-      if (window.location.protocol !== "file:" && !state.lite) {
+      if (!browserOnly && window.location.protocol !== "file:" && !state.lite) {
+        const controller = new AbortController();
+        ttsController = controller;
         try {
           const resp = await fetch("/api/tts", {
             method: "POST",
+            signal: controller.signal,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: String(text), voice: state.ttsVoice || "auto", lang: state.lang })
           });
@@ -2731,10 +2763,14 @@
             const audio = sharedPlayer;
             audio.src = url;
             ttsAudioEl = audio;
+            ttsAudioUrl = url;
             logPipelineEvent("tts.speak", String(text).slice(0, 60), { voice: voiceUsed, cached, mode: "neural-mp3" });
             const finish = () => {
               URL.revokeObjectURL(url);
-              if (ttsAudioEl === audio) ttsAudioEl = null;
+              if (ttsAudioUrl === url) {
+                ttsAudioEl = null;
+                ttsAudioUrl = null;
+              }
               if (myGen === ttsGeneration && state.agentPhase === "speaking") {
                 state.agentPhase = phaseBeforeSpeech;
                 updateStatusPill();
@@ -2742,14 +2778,17 @@
             };
             audio.onended = finish;
             audio.onerror = finish;
-            lastTtsStartAt = Date.now();
             await audio.play().catch(() => {
               finish();
               fallbackBrowserSpeak(text, myGen);
             });
             return;
           }
-        } catch {}
+        } catch {
+          if (controller.signal.aborted) return;
+        } finally {
+          if (ttsController === controller) ttsController = null;
+        }
       }
       if (myGen !== ttsGeneration) return;
       fallbackBrowserSpeak(text, myGen);
@@ -2822,19 +2861,25 @@
       if (restoreFocus) document.getElementById("hitlApproveBtn").focus();
     }
 
-    async function handleAgentTurn(raw, fromPreset = false, spoken = false) {
+    function resetComplaintConfirmation() {
+      state.complaintRevision++;
+      state.pendingVoiceSeal = null;
+      closeClarity(false);
+    }
+
+    async function handleAgentTurn(raw, fromPreset = false, spoken = false, fromGps = false) {
       const rawMsg = (raw || "").trim();
       if (!rawMsg) {
         voiceInput.focus();
         showToast("Speak or type your street problem first");
         return;
       }
-      if (spoken) interruptAgentSpeech();
+      cancelAgentTurn();
       const piiCheck = scrubAadhaarAndPii(rawMsg);
       const msg = piiCheck.cleaned;
       const emergency = localEmergency(msg);
       if (emergency) {
-        closeClarity(false);
+        resetComplaintConfirmation();
         state.urgencyTier = "LIFE_SAFETY";
         state.urgencyMeta = null;
         state.resolvedLandmark = null;
@@ -2914,8 +2959,9 @@
         return;
       }
 
-      /* 4. Spoken quick detail appended during HITL */
-      if ((state.agentPhase === "hitl_review" || state.agentPhase === "approved_dispatch") && /(pole|door|pillar|shop|add\s|note\s)/i.test(msg) && msg.length < 48) {
+      resetComplaintConfirmation();
+      /* Local preview retains short notes without a server. */
+      if (window.location.protocol === "file:" && state.agentPhase === "hitl_review" && /^(?:add|note|also)\s/i.test(msg)) {
         state.turns.push({ role: "user", text: msg });
         state.appendedNote = state.appendedNote ? `${state.appendedNote}, ${msg}` : msg;
         state.turns.push({ role: "agent", text: `Added "${msg}". Verify details in the Clarity Popup when ready.`, needsInput: false });
@@ -2932,28 +2978,39 @@
       renderAll(false);
       const combined = state.turns
         .filter(t => t.role === "user" && !classifyConversationalGreeting(t.text))
-        .map(t => t.text).join(" ") + (state.gpsLandmarkName ? ` ${state.gpsLandmarkName}` : "");
+        .map(t => t.text).join(" ");
 
       // Use real 6-state Tool-Calling Workflow FSM on backend when served via http://
+      let controller = null;
       if (!fromPreset && window.location.protocol !== "file:") {
+        controller = new AbortController();
+        workflowController = controller;
+        const ack = spoken && state.callActive ? setTimeout(() => {
+          if (!controller.signal.aborted) speakReply(state.lang === "en" ? "One moment, I’m checking." : "ஒரு நிமிஷம், சரிபார்க்கிறேன்.", true);
+        }, 350) : null;
         const wfRes = await apiCall("/api/workflow/turn", {
           method: "POST",
+          signal: controller.signal,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             utterance: msg,
             combined_text: combined,
+            session_id: state.sessionId,
             state_code: state.stateCode,
             lang: state.lang,
             llm_mode: state.llmMode,
             history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text })),
-            gps_lat: state.gpsCoords?.lat ?? null,
-            gps_lon: state.gpsCoords?.lon ?? null,
+            gps_lat: fromGps ? state.gpsCoords?.lat ?? null : null,
+            gps_lon: fromGps ? state.gpsCoords?.lon ?? null : null,
             otp_verified: state.otpVerified,
             dpdp_consented: state.dpdpConsented,
             persona_name: getAgentPersona().name
           })
         });
+        clearTimeout(ack);
+        if (controller.signal.aborted) return;
         if (wfRes) {
+          workflowController = null;
           const analysis = wfRes.analysis;
           if (analysis) {
             logPipelineEvent("workflow.turn", "Processed civic request", {
@@ -2961,8 +3018,10 @@
               latency_ms: wfRes.latency_ms
             });
             const lm = analysis.landmark;
+            state.slots = wfRes.slots || null;
+            if (wfRes.slots?.note) state.appendedNote = wfRes.slots.note;
             state.serviceId = analysis.service_id || state.serviceId;
-            state.resolvedLandmark = lm && analysis.has_place && !analysis.ambiguous_area ? {
+            state.resolvedLandmark = lm?.ward && !analysis.ambiguous_area ? {
               name: lm.name, district: lm.district, zone: lm.zone,
               ward: lm.ward, street: lm.street, roadId: lm.road_id
             } : null;
@@ -2975,7 +3034,7 @@
             };
             const number = analysis.urgency?.helpline || (state.urgencyTier === "CRITICAL_SAFETY" ? "1912" : "");
             showSafetyAlert(number);
-            state.needsSlot = analysis.ambiguous_area ? "place" : (!analysis.has_place ? "place" : (!analysis.has_issue ? "issue" : null));
+            state.needsSlot = analysis.ambiguous_area || !lm?.ward ? "place" : (!analysis.has_issue ? "issue" : null);
             const choices = {
               velachery: ["Vijayanagar Bus Stand", "Phoenix Marketcity"],
               anna_nagar: ["Tower Park", "Anna Arch"]
@@ -2994,7 +3053,19 @@
           return;
         }
       }
-      const parsed = detectIssueAndPlace(combined);
+      const latest = detectIssueAndPlace(msg);
+      const previous = state.localComplaint || detectIssueAndPlace(combined);
+      const place = latest.hasPlace ? latest : previous;
+      const issue = latest.hasIssue ? latest : previous;
+      const parsed = {
+        ...place, hasIssue: issue.hasIssue, svcId: issue.svcId,
+        issueText: latest.hasIssue ? latest.txt : previous.issueText || previous.txt,
+        ticketRef: latest.ticketRef || previous.ticketRef
+      };
+      state.localComplaint = parsed;
+      state.slots = { issue: parsed.hasIssue ? parsed.svcId : null, landmark: parsed.landmarkText };
+      if (parsed.hasIssue) state.serviceId = parsed.svcId;
+      state.resolvedLandmark = parsed.explicitLm;
 
       if (!parsed.hasIssue && !parsed.hasPlace) {
         state.agentPhase = "clarifying";
@@ -3012,6 +3083,7 @@
         if (!fromPreset && state.llmMode !== "offline" && window.location.protocol !== "file:") {
           const llmRes = await apiCall("/api/turn", {
             method: "POST",
+            signal: controller?.signal,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               combined_text: combined,
@@ -3021,16 +3093,19 @@
               history: state.turns.slice(-5).map(t => ({ role: t.role, text: t.text }))
             })
           });
+          if (controller?.signal.aborted) return;
           if (llmRes?.llm?.used && llmRes.llm.reply) {
             ask = llmRes.llm.reply;
           }
         }
+        if (workflowController === controller) workflowController = null;
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
         speakReply(ask);
         return;
       }
+      if (workflowController === controller) workflowController = null;
 
       if (!parsed.hasIssue) {
         state.agentPhase = "clarifying";
@@ -3065,7 +3140,7 @@
         state.turns.push({ role: "agent", text: ask, needsInput: true });
         voiceInput.value = "";
         renderAll(false);
-        if (!state.gpsAskedOnce) {
+        if (window.location.protocol !== "file:" && !state.gpsAskedOnce) {
           state.gpsAskedOnce = true;
           document.getElementById("gpsModalBackdrop").setAttribute("data-open", "true");
         }
@@ -3107,6 +3182,19 @@
         return;
       }
 
+      if (!parsed.explicitLm) {
+        state.agentPhase = "clarifying";
+        state.needsSlot = "place";
+        state.clarifyOptions = [];
+        const ask = state.lang === "ta"
+          ? "இடத்தை குறிச்சுக்கிட்டேன். வார்டை சரிபார்க்க அருகிலுள்ள சந்திப்பு பெயரை சொல்லுங்க."
+          : `I noted ${parsed.landmarkText}. Share a nearby junction to verify its ward.`;
+        state.turns.push({ role: "agent", text: ask, needsInput: true });
+        renderAll(false);
+        speakReply(ask);
+        return;
+      }
+
       const svc = SERVICES.find(s => s.id === parsed.svcId) || SERVICES[0];
       state.serviceId = svc.id;
       state.landmarkIdx = (parsed.txt.includes("phoenix") || parsed.txt.includes("arch")) ? Math.min(1, svc.landmarks.length - 1) : 0;
@@ -3117,7 +3205,7 @@
       state.clarifyOptions = [];
       state.ticketRef = parsed.ticketRef || "#GCC-20491";
 
-      const urgency = classifySentimentAndUrgency(combined);
+      const urgency = classifySentimentAndUrgency(parsed.issueText);
       state.urgencyTier = urgency.tier;
       state.urgencyMeta = urgency;
       state.agentPhase = "hitl_review";
@@ -3135,6 +3223,8 @@
     }
 
     async function attemptHitlSeal(mode, spokenPhrase, modalOk) {
+      const revision = state.complaintRevision;
+      const sessionId = state.sessionId;
       const svc = getService();
       const lm = state.resolvedLandmark || svc.landmarks[state.landmarkIdx] || svc.landmarks[0];
       const urgency = state.urgencyMeta || classifySentimentAndUrgency(svc.utterance);
@@ -3160,9 +3250,11 @@
           otp_session_id: state.otpSessionId,
           ward: lm.ward,
           service_id: svc.id,
-          urgency_tier: urgency.tier
+          urgency_tier: urgency.tier,
+          complaint_revision: `${sessionId}:${revision}`
         })
       });
+      if (sessionId !== state.sessionId || revision !== state.complaintRevision || !state.dpdpConsented) return;
 
       if (!apiRes && window.location.protocol === "file:") {
         const complaint = [lm.ward, svc.id, urgency.tier].join("|");
@@ -3257,14 +3349,41 @@
     let callTimerInterval = null;
     let callSeconds = 0;
     let pendingTranscript = "";
+    let finalFragment = "";
     let lastCommittedText = "";
     let turnFlushTimer = null;
     let micDenied = false;
     let spokenSegment = 0;
     let lastSealedSegment = -1;
-    let vadStream = null;
-    let vadRafId = null;
-    let vadCtx = null;
+    const backchannels = new Set(["ok", "okay", "mm-hmm", "mhm", "hmm", "seri", "sari", "aama", "aa", "right", "yes", "yep", "yeah", "சரி", "ஆமா"]);
+    const stopCue = /^(?:(?:stop|wait|hold on|pause|niruthunga|nillunga)\b|நிறுத்து|நில்லுங்க)/i;
+    const tamilPhraseHints = [
+      "ஸ்ட்ரீட் லைட்", "கரண்ட்", "வாட்டர் பைப்", "சாக்கடை", "குப்பை", "போதோல்",
+      "சோழிங்கநல்லூர்", "நாவலூர்", "தாம்பரம்", "அடையாறு", "அண்ணா நகர்", "வேளச்சேரி"
+    ];
+
+    function isAgentBusy() {
+      return Boolean(workflowController || state.agentPhase === "speaking" || window.speechSynthesis?.speaking);
+    }
+
+    function clearPendingSpeech() {
+      clearTimeout(turnFlushTimer);
+      turnFlushTimer = null;
+      pendingTranscript = "";
+      finalFragment = "";
+    }
+
+    function queueRecognizedTurn(text, delay) {
+      pendingTranscript = text;
+      voiceInput.value = text;
+      document.getElementById("liveTranscriptText").textContent = `Hearing live: "${text}..."`;
+      clearTimeout(turnFlushTimer);
+      turnFlushTimer = setTimeout(() => {
+        if (state.callActive && !state.isMuted && pendingTranscript && !confirmationWord.test(pendingTranscript)) {
+          commitRecognizedTurn(pendingTranscript);
+        }
+      }, delay);
+    }
 
     function updateCallDockUi() {
       const startBtn = document.getElementById("startCallBtn");
@@ -3287,10 +3406,8 @@
     function commitRecognizedTurn(rawText) {
       const cleaned = (rawText || "").trim();
       if (!cleaned || (cleaned === lastCommittedText && !confirmationWord.test(cleaned))) return false;
-      clearTimeout(turnFlushTimer);
-      turnFlushTimer = null;
+      clearPendingSpeech();
       lastCommittedText = cleaned;
-      pendingTranscript = "";
       voiceInput.value = "";
       document.getElementById("liveTranscriptText").textContent = `Heard: "${cleaned}"`;
       handleAgentTurn(cleaned, false, true);
@@ -3300,68 +3417,8 @@
       return true;
     }
 
-    function startDuplexBargeInMonitor() {
-      // Only attach hardware Web Audio stream over http/https (file:// re-prompts separately per stream!)
-      if (window.location.protocol === "file:" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-      if (vadStream) return;
-      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
-        .then(stream => {
-          vadStream = stream;
-          const Ctx = window.AudioContext || window.webkitAudioContext;
-          if (!Ctx) return;
-          vadCtx = new Ctx();
-          const src = vadCtx.createMediaStreamSource(stream);
-          const analyser = vadCtx.createAnalyser();
-          analyser.fftSize = 512;
-          src.connect(analyser);
-          const buf = new Uint8Array(analyser.fftSize);
-          let hotFrames = 0;
-
-          function sampleEnergy() {
-            if (!state.callActive || !vadStream) return;
-            const speakingNow = state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking);
-            if (!state.isMuted && speakingNow && (Date.now() - lastTtsStartAt > 650)) {
-              analyser.getByteTimeDomainData(buf);
-              let sum = 0;
-              for (let i = 0; i < buf.length; i++) {
-                const v = (buf[i] - 128) / 128;
-                sum += v * v;
-              }
-              const rms = Math.sqrt(sum / buf.length);
-              if (rms > 0.095) hotFrames++;
-              else hotFrames = Math.max(0, hotFrames - 1);
-              if (hotFrames >= 8) {
-                hotFrames = 0;
-                interruptAgentSpeech();
-                document.getElementById("liveTranscriptText").textContent = "Interrupted — listening now...";
-              }
-            } else {
-              hotFrames = 0;
-            }
-            vadRafId = requestAnimationFrame(sampleEnergy);
-          }
-          vadRafId = requestAnimationFrame(sampleEnergy);
-        })
-        .catch(() => {});
-    }
-
-    function stopDuplexBargeInMonitor() {
-      cancelAnimationFrame(vadRafId);
-      vadRafId = null;
-      if (vadStream) {
-        vadStream.getTracks().forEach(t => t.stop());
-        vadStream = null;
-      }
-      if (vadCtx) {
-        try { vadCtx.close(); } catch {}
-        vadCtx = null;
-      }
-    }
-
     function stopSpeechCapture() {
-      clearTimeout(turnFlushTimer);
-      turnFlushTimer = null;
-      stopDuplexBargeInMonitor();
+      clearPendingSpeech();
       if (liveRec) {
         const ref = liveRec;
         liveRec = null;
@@ -3386,62 +3443,68 @@
         liveRec.interimResults = true;
         const recLang = (state.sttMode === "hybrid-ta" || state.sttMode === "browser" || state.lang === "ta") ? "ta-IN" : "en-IN";
         liveRec.lang = recLang;
+        if (recLang === "ta-IN" && window.location.protocol !== "file:" &&
+            typeof window.SpeechRecognitionPhrase === "function" && "phrases" in liveRec) {
+          try { liveRec.phrases = tamilPhraseHints.map(phrase => new SpeechRecognitionPhrase(phrase, 2)); } catch {}
+        }
         liveRec.onstart = () => logPipelineEvent("stt.start", `Listening (${liveRec?.lang || "en-IN"})`);
         liveRec.onspeechstart = () => {
           spokenSegment++;
           logPipelineEvent("stt.speech_start", "Detected user voice onset");
         };
         liveRec.onresult = (ev) => {
-          if (state.isMuted) return;
-          const speakingNow = state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking);
-          let interim = "";
+          if (!state.callActive || state.isMuted) return;
           for (let i = ev.resultIndex; i < ev.results.length; i++) {
             const alt = ev.results[i][0];
-            const piece = alt.transcript;
-            const words = piece.trim().split(/\s+/).filter(Boolean);
+            const piece = alt.transcript.trim();
+            if (!piece) continue;
+            const text = finalFragment && !piece.toLowerCase().startsWith(finalFragment.toLowerCase())
+              ? `${finalFragment} ${piece}` : piece;
+            const normalized = text.toLowerCase().replace(/[^\p{L}\p{M}\p{N}\s-]/gu, "").trim();
+            if (!normalized) continue;
+            const words = normalized.split(/\s+/);
+            const busy = isAgentBusy();
+            const explicitStop = stopCue.test(normalized);
+            const emergency = localEmergency(text);
+            const confirming = confirmationWord.test(text) && (state.agentPhase === "hitl_review" || clarityPanel.dataset.open === "true" ||
+              (state.agentPhase === "speaking" && phaseBeforeSpeech === "hitl_review"));
+            const isBackchannel = normalized === "got it" || words.every(word => backchannels.has(word));
+            if (isBackchannel && (busy || !confirming)) continue;
             const rawConf = Number(alt.confidence || 0);
-            const isStopCue = /\b(stop|wait|hold on|pause|niruthunga|nillunga)\b|நிறுத்து/i.test(piece);
-            if (speakingNow && (Date.now() - lastTtsStartAt > 550) && (isStopCue || (words.length >= 2 && (rawConf >= 0.45 || words.length >= 3)))) {
-              interruptAgentSpeech();
+            const complete = ev.results[i].isFinal;
+            const parsed = words.length <= 2 ? detectIssueAndPlace(text) : null;
+            const shortTurn = Boolean(parsed?.hasPlace || parsed?.hasIssue &&
+              /(?:\bout\b|\boff\b|\bbroken\b|\bleak\b|\bdead\b|overflow|எரியல|வரல|உடை|உடஞ்|ஓடுது)/i.test(normalized));
+            if (busy && (explicitStop || emergency || (complete && (words.length >= 3 || shortTurn || confirming)) ||
+              (words.length >= 3 && (rawConf === 0 || rawConf >= 0.45)))) cancelAgentTurn();
+            if (explicitStop && normalized.replace(stopCue, "").trim() === "") {
+              if (state.agentPhase === "hitl_review" || clarityPanel.dataset.open === "true") resetComplaintConfirmation();
+              clearPendingSpeech();
+              voiceInput.value = "";
+              document.getElementById("liveTranscriptText").textContent = "Interrupted. Listening…";
+              continue;
             }
-            if (ev.results[i].isFinal) {
-              if (!piece.trim()) continue;
-              const conf = rawConf.toFixed(2);
-              if (rawConf > 0 && rawConf < 0.42 && words.length <= 2 && !localEmergency(piece) && !confirmationWord.test(piece)) {
-                logPipelineEvent("stt.noise_filtered", piece.trim(), { confidence: conf }, "WARN");
-                document.getElementById("liveTranscriptText").textContent = "Filtered faint background noise...";
-                continue;
-              }
-              if (rawConf === 0 && words.length <= 1 && speakingNow && !isStopCue && !confirmationWord.test(piece)) {
-                continue;
-              }
-              if (confirmationWord.test(piece)) {
-                if (lastSealedSegment === spokenSegment) continue;
-                lastSealedSegment = spokenSegment;
-              }
-              logPipelineEvent("stt.final", "Received final utterance", { confidence: conf });
-              commitRecognizedTurn(piece);
-            } else {
-              interim += piece;
+            if (!explicitStop && !emergency && !confirming && words.length <= 2 && !shortTurn &&
+                (busy || (rawConf > 0 && rawConf < 0.42))) continue;
+            if (!complete || (words.length <= 2 && !shortTurn && !confirming && !emergency && !explicitStop &&
+                !/^(?:confirm|உறுதி|urudhi)(?:\s+(?:confirm|உறுதி|urudhi))+$/i.test(normalized))) {
+              if (complete) finalFragment = text;
+              queueRecognizedTurn(text, words.length <= 2 ? 2000 : 1500);
+              continue;
             }
-          }
-          if (interim.trim()) {
-            pendingTranscript = interim.trim();
-            voiceInput.value = pendingTranscript;
-            document.getElementById("liveTranscriptText").textContent = `Hearing live: "${pendingTranscript}..."`;
-
-            clearTimeout(turnFlushTimer);
-            turnFlushTimer = setTimeout(() => {
-              if (state.callActive && !state.isMuted && pendingTranscript && !confirmationWord.test(pendingTranscript)) {
-                commitRecognizedTurn(pendingTranscript);
-              }
-            }, 1500);
+            if (confirmationWord.test(text)) {
+              if (lastSealedSegment === spokenSegment) continue;
+              lastSealedSegment = spokenSegment;
+            }
+            logPipelineEvent("stt.final", "Received final utterance", { confidence: rawConf.toFixed(2) });
+            commitRecognizedTurn(text);
           }
         };
         liveRec.onerror = (ev) => {
           const code = ev?.error || "unknown";
-          if (code === "no-speech" && pendingTranscript && state.callActive && !state.isMuted) {
-            commitRecognizedTurn(pendingTranscript);
+          if (code === "phrases-not-supported" && liveRec?.phrases?.length) {
+            liveRec.phrases = [];
+            return;
           }
           logPipelineEvent("stt.error", `SpeechRecognition error: ${code}`, {}, code === "no-speech" ? "WARN" : "ERROR");
           if (code === "not-allowed" || code === "service-not-allowed") {
@@ -3466,7 +3529,6 @@
           }
         };
         liveRec.start();
-        startDuplexBargeInMonitor();
       } catch {
         liveRec = null;
       }
@@ -3539,13 +3601,9 @@
     }
 
     function endCall() {
+      cancelAgentTurn();
       if (!state.callActive && !liveRec) return;
-      const unsubmitted = (pendingTranscript || voiceInput.value || "").trim();
-      if (pendingTranscript && !confirmationWord.test(unsubmitted) && unsubmitted !== lastCommittedText) {
-        commitRecognizedTurn(unsubmitted);
-      }
       stopSpeechCapture();
-      interruptAgentSpeech();
       clearInterval(callTimerInterval);
       state.callActive = false;
       state.isMuted = false;
@@ -3569,10 +3627,20 @@
       apiCall("/api/dpdp/consent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: "browser", consented: state.dpdpConsented })
+        body: JSON.stringify({ session_id: state.sessionId, consented: state.dpdpConsented })
       });
       if (!state.dpdpConsented) {
         endCall();
+        closeClarity(false);
+        state.turns = [];
+        state.slots = state.localComplaint = state.resolvedLandmark = null;
+        state.gpsCoords = null;
+        state.gpsLandmarkName = "";
+        state.appendedNote = "";
+        state.complaintRevision++;
+        state.pendingVoiceSeal = null;
+        state.agentPhase = "idle";
+        renderAll(false);
         showToast("DPDP consent withdrawn — voice routing paused (1913/1100 open)");
       } else {
         showToast("DPDP consent active");
@@ -3636,6 +3704,7 @@
 
     document.getElementById("gpsDenyBtn").addEventListener("click", () => {
       document.getElementById("gpsModalBackdrop").setAttribute("data-open", "false");
+      state.gpsCoords = null;
       state.gpsLandmarkName = "";
       state.agentPhase = "clarifying";
       state.turns.push({
@@ -3651,32 +3720,39 @@
 
     document.getElementById("gpsAllowBtn").addEventListener("click", async () => {
       document.getElementById("gpsModalBackdrop").setAttribute("data-open", "false");
+      const sessionId = state.sessionId;
+      const isCurrent = () => sessionId === state.sessionId && state.dpdpConsented;
+      const reportUnavailable = () => {
+        if (!isCurrent()) return;
+        state.gpsCoords = null;
+        state.gpsLandmarkName = "";
+        showToast("GPS could not verify a ward. Share a nearby junction or landmark.");
+      };
       const applyCoords = async (lat, lon) => {
-        state.gpsCoords = { lat, lon };
-        let res = await apiCall("/api/location/reverse", {
+        if (!isCurrent()) return;
+        const res = await apiCall("/api/location/reverse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lat, lon })
         });
-        const matchedName = res?.landmark?.name || "Anna Nagar Tower Park · Vth Ave";
-        state.gpsLandmarkName = matchedName;
-        state.turns.push({
-          role: "agent",
-          text: `GPS detected near ${matchedName} (${res?.landmark?.ward || "Ward 103"}). Speak your street problem or say 'wrong area' to correct.`,
-          needsInput: false
-        });
-        renderAll(false);
-        showToast(`GPS matched: ${res?.landmark?.ward || "Ward 103"}`);
+        if (!isCurrent()) return;
+        if (!res?.verified) {
+          reportUnavailable();
+          return;
+        }
+        state.gpsCoords = { lat, lon };
+        state.gpsLandmarkName = res.landmark.name;
+        handleAgentTurn(state.lang === "ta" ? "ஜிபிஎஸ் பயன்படுத்துங்க" : "Use my GPS location", false, false, true);
       };
 
-      if ("geolocation" in navigator) {
+      if (window.location.protocol !== "file:" && navigator.geolocation && state.dpdpConsented) {
         navigator.geolocation.getCurrentPosition(
           (pos) => applyCoords(pos.coords.latitude, pos.coords.longitude),
-          () => applyCoords(13.0850, 80.2101),
+          reportUnavailable,
           { timeout: 3000 }
         );
       } else {
-        applyCoords(13.0850, 80.2101);
+        reportUnavailable();
       }
     });
 
@@ -3819,7 +3895,7 @@
     });
 
     document.getElementById("hitlEditBtn").addEventListener("click", () => {
-      closeClarity(false);
+      resetComplaintConfirmation();
       openComposer();
       state.agentPhase = "clarifying";
       state.turns.push({
@@ -3865,11 +3941,15 @@
       state.otpVerified = false;
       state.pendingVoiceSeal = null;
       state.turns = [];
+      state.sessionId = newSessionId();
+      state.complaintRevision = 0;
+      state.slots = state.localComplaint = null;
       state.clarifyOptions = [];
       state.appendedNote = "";
       state.customPhotoUrl = null;
       state.attachmentInfo = null;
       state.gpsLandmarkName = "";
+      state.gpsCoords = null;
       state.resolvedLandmark = null;
       state.gpsAskedOnce = false;
       state.modalOkChecked = false;
@@ -3888,8 +3968,8 @@
 
     document.getElementById("orbMicBtn").addEventListener("click", () => {
       if (state.callActive) {
-        if (state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking)) {
-          interruptAgentSpeech();
+        if (isAgentBusy()) {
+          cancelAgentTurn();
           showToast("Interrupted — listening now");
         } else {
           toggleMute();

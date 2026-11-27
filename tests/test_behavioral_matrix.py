@@ -47,8 +47,9 @@ def test_spoken_turn_is_bound_to_current_complaint_and_verified_otp(monkeypatch)
         client.post("/api/otp/verify", json={"otp_session_id": session, "code": issued["demo_otp_hint"]})
         assert not seal("Confirm, Confirm", distinct_turns=2)["approved"]
         assert seal("Confirm")["pending_confirmation"]
-        assert seal("Confirm", "Ward 102")["pending_confirmation"]
-        assert seal("உறுதி", "Ward 102")["approved"]
+        assert seal("Confirm", "Ward 102", complaint_revision="old-draft")["pending_confirmation"]
+        assert seal("Confirm", "Ward 102", complaint_revision="amended-draft")["pending_confirmation"]
+        assert seal("உறுதி", "Ward 102", complaint_revision="amended-draft")["approved"]
         assert not seal("Confirm", "Ward 102", mode="modal_plus_voice", modal_ok=True)["approved"]
         assert not seal("", mode="modal_plus_voice", modal_ok=True)["approved"]
         assert not seal("உறுதி", mode="modal_plus_voice")["approved"]

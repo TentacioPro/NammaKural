@@ -7,6 +7,7 @@ import re
 import sys
 from pathlib import Path
 from unittest.mock import patch
+from uuid import uuid4
 
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -22,8 +23,8 @@ def load_cases(path: Path) -> list[dict]:
     with path.open(encoding="utf-8") as source:
         cases = [json.loads(line) for line in source if line.strip()]
     ids = [case["id"] for case in cases]
-    if len(cases) < 12 or len(set(ids)) != len(ids):
-        raise ValueError("Expected at least 12 distinctly named cases.")
+    if len(cases) < 25 or len(set(ids)) != len(ids):
+        raise ValueError("Expected at least 25 distinctly named cases.")
     if any(not case["turns"] or any(not turn["expect"] for turn in case["turns"]) for case in cases):
         raise ValueError("Each case needs at least one turn and each turn needs assertions.")
     return cases
@@ -41,10 +42,12 @@ def read_path(result: dict, path: str):
 def replay_case(case: dict) -> list[str]:
     errors = []
     context = []
+    session = uuid4().hex if case.get("use_session") else None
     for turn_index, turn in enumerate(case["turns"], start=1):
         args = turn["input"].copy()
         context.append(args["utterance"])
-        args.setdefault("combined_text", " ".join(context))
+        args.setdefault("combined_text", args["utterance"] if session else " ".join(context))
+        args["session_id"] = session
         args["llm_mode"] = "offline"
         actual = run_workflow_turn(**args)
         for path, expected in turn["expect"].items():

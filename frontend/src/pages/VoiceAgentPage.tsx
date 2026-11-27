@@ -67,14 +67,15 @@ export default function VoiceAgentPage() {
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [consentGranted, setConsentGranted] = useState<boolean>(true);
   const [orbState, setOrbState] = useState<OrbState>("idle");
+  const [callActive, setCallActive] = useState<boolean>(false);
   const [listening, setListening] = useState<boolean>(false);
   const [speaking, setSpeaking] = useState<boolean>(false);
   const [inputText, setInputText] = useState<string>("");
   const [voices, setVoices] = useState<VoiceOption[]>([
+    { id: "auto", label: "Auto · Sarvam Bulbul v3 (ta-IN)" },
     { id: "ta-IN-PallaviNeural", label: "Pallavi (ta-IN Neural)" },
-    { id: "bulbul:v2", label: "Sarvam Bulbul v2 (ta-IN)" },
   ]);
-  const [selectedVoice, setSelectedVoice] = useState<string>("ta-IN-PallaviNeural");
+  const [selectedVoice, setSelectedVoice] = useState<string>("auto");
   const [lastTurn, setLastTurn] = useState<TurnResponse | null>(null);
   const [messages, setMessages] = useState<Array<{ role: "user" | "agent"; text: string; meta?: string }>>([]);
   const [clientTtfaMs, setClientTtfaMs] = useState<number | null>(null);
@@ -93,6 +94,12 @@ export default function VoiceAgentPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const recRef = useRef<any>(null);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const vadTimerRef = useRef<number | null>(null);
+  const callActiveRef = useRef<boolean>(false);
+  const playbackGenRef = useRef<number>(0);
+  const messagesRef = useRef<Array<{ role: "user" | "agent"; text: string; meta?: string }>>([]);
 
   useEffect(() => {
     fetch("/api/health")
@@ -103,16 +110,61 @@ export default function VoiceAgentPage() {
     fetch("/api/tts/voices")
       .then((r) => r.json())
       .then((d) => {
-        const list = Array.isArray(d) ? d : d?.voices;
-        if (Array.isArray(list) && list.length > 0) {
+        const raw = d?.voices ?? d;
+        if (Array.isArray(raw) && raw.length > 0) {
+          setVoices(raw);
+          setSelectedVoice(raw[0].id);
+        } else if (raw && typeof raw === "object") {
+          const list: VoiceOption[] = [
+            { id: "auto", label: "Auto · Sarvam Bulbul v3 (ta-IN)" },
+            ...Object.entries(raw).map(([id, meta]: [string, any]) => ({
+              id,
+              label: String(meta?.label || meta?.name || id),
+              lang: meta?.lang,
+            })),
+          ];
           setVoices(list);
-          setSelectedVoice(list[0].id);
+          setSelectedVoice("auto");
         }
       })
       .catch(() => null);
   }, []);
 
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  function stopMicCapture() {
+    if (vadTimerRef.current !== null) {
+      window.clearInterval(vadTimerRef.current);
+      vadTimerRef.current = null;
+    }
+    if (recRef.current) {
+      try {
+        recRef.current.onend = null;
+        recRef.current.stop();
+      } catch {
+        // ignore
+      }
+      recRef.current = null;
+    }
+    if (mediaRecRef.current && mediaRecRef.current.state !== "inactive") {
+      try {
+        mediaRecRef.current.stop();
+      } catch {
+        // ignore
+      }
+    }
+    mediaRecRef.current = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    setListening(false);
+  }
+
   function stopPlayback() {
+    playbackGenRef.current += 1;
     if (ttsAbortRef.current) {
       ttsAbortRef.current.abort();
       ttsAbortRef.current = null;
@@ -126,55 +178,101 @@ export default function VoiceAgentPage() {
     setOrbState((prev) => (prev === "talking" ? "idle" : prev));
   }
 
-  async function speakText(text: string, turnStartMs?: number) {
-    if (!text.trim()) return;
+  function endCall() {
+    callActiveRef.current = false;
+    setCallActive(false);
+    stopMicCapture();
     stopPlayback();
+    setOrbState("idle");
+  }
+
+  async function speakText(text: string, turnStartMs?: number, cachedAssetUrl?: string) {
+    if (!text.trim() && !cachedAssetUrl) {
+      if (callActiveRef.current) startListeningTurn();
+      return;
+    }
+    stopPlayback();
+    const myGen = playbackGenRef.current;
     const ctrl = new AbortController();
     ttsAbortRef.current = ctrl;
     setSpeaking(true);
     setOrbState("talking");
 
-    try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voice: selectedVoice, lang: "ta-IN" }),
-        signal: ctrl.signal,
-      });
-      if (res.status === 204 || !res.ok) {
-        setSpeaking(false);
-        setOrbState("idle");
-        return;
+    const resumeIfCallActive = () => {
+      if (myGen !== playbackGenRef.current) return;
+      setSpeaking(false);
+      setOrbState("idle");
+      if (callActiveRef.current) {
+        window.setTimeout(() => {
+          if (callActiveRef.current && myGen === playbackGenRef.current) {
+            startListeningTurn();
+          }
+        }, 120);
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
+    };
+
+    try {
+      let url = cachedAssetUrl || "";
+      let revokeAfter = false;
+      if (!url) {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice: selectedVoice, lang: "ta-IN" }),
+          signal: ctrl.signal,
+        });
+        if (myGen !== playbackGenRef.current) return;
+        if (res.status === 204 || !res.ok) {
+          resumeIfCallActive();
+          return;
+        }
+        const blob = await res.blob();
+        if (myGen !== playbackGenRef.current) return;
+        url = URL.createObjectURL(blob);
+        revokeAfter = true;
+      }
+
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onplay = () => {
+        if (myGen !== playbackGenRef.current) {
+          audio.pause();
+          return;
+        }
         if (turnStartMs) {
-          setClientTtfaMs(Math.round(performance.now() - turnStartMs));
+          const ttfa = Math.round(performance.now() - turnStartMs);
+          setClientTtfaMs(ttfa);
+          fetch("/api/client-log", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stage: "client.ttfa",
+              message: "Browser audio playback started",
+              data: { latency_ms: ttfa, cached: Boolean(cachedAssetUrl) },
+            }),
+          }).catch(() => null);
         }
       };
       audio.onended = () => {
-        URL.revokeObjectURL(url);
-        setSpeaking(false);
-        setOrbState("idle");
+        if (revokeAfter) URL.revokeObjectURL(url);
+        resumeIfCallActive();
       };
       audio.onerror = () => {
-        URL.revokeObjectURL(url);
-        setSpeaking(false);
-        setOrbState("idle");
+        if (revokeAfter) URL.revokeObjectURL(url);
+        resumeIfCallActive();
       };
       await audio.play();
     } catch {
-      setSpeaking(false);
-      setOrbState("idle");
+      resumeIfCallActive();
     }
   }
 
   async function submitTurn(rawText: string) {
     const trimmed = rawText.trim();
-    if (!trimmed) return;
+    if (!trimmed) {
+      if (callActiveRef.current) startListeningTurn();
+      return;
+    }
 
     // Backchannel immunity during agent speech
     if (speaking && BACKCHANNEL_RE.test(trimmed)) {
@@ -195,6 +293,7 @@ export default function VoiceAgentPage() {
 
     const t0 = performance.now();
     setOrbState("thinking");
+    const recentHistory = messagesRef.current.slice(-6).map((m) => ({ role: m.role, text: m.text }));
     setMessages((m) => [...m, { role: "user", text: trimmed }]);
     setInputText("");
 
@@ -208,6 +307,7 @@ export default function VoiceAgentPage() {
           state_code: "tn",
           dpdp_consented: consentGranted,
           otp_verified: otpVerified,
+          history: recentHistory,
         }),
       });
       const data: TurnResponse = await res.json();
@@ -225,23 +325,175 @@ export default function VoiceAgentPage() {
         },
       ]);
 
-      const urgency = (data.analysis as any)?.urgency_tier;
-      if (urgency === "P1") {
+      const urgency = (data.analysis as any)?.urgency?.tier || (data.analysis as any)?.urgency_tier;
+      if (urgency === "CRITICAL_SAFETY" || urgency === "LIFE_SAFETY" || urgency === "P1") {
         setOrbState("urgent");
       }
+      const ambig = (data.analysis as any)?.ambiguous_area;
+      const cachedUrl =
+        data.fsm_state === "DISAMBIGUATE" && ambig === "anna_nagar"
+          ? "/assets/voice/anna-nagar.mp3"
+          : data.fsm_state === "DISAMBIGUATE" && ambig === "velachery"
+            ? "/assets/voice/velachery.mp3"
+            : undefined;
       const speechTarget = data.tts_text || replyText;
-      await speakText(speechTarget, t0);
+      await speakText(speechTarget, t0, cachedUrl);
     } catch (err) {
       setOrbState("idle");
       setMessages((m) => [...m, { role: "agent", text: `Error: ${String(err)}` }]);
     }
   }
 
-  function toggleMic() {
-    if (listening && recRef.current) {
-      recRef.current.stop();
+  async function startSarvamMicTurn(): Promise<boolean> {
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      return false;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      if (!callActiveRef.current) {
+        stream.getTracks().forEach((t) => t.stop());
+        return true;
+      }
+      streamRef.current = stream;
+      const chunks: BlobPart[] = [];
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
+      const mr = new MediaRecorder(stream, { mimeType: mime });
+      mediaRecRef.current = mr;
+
+      const audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      src.connect(analyser);
+      const buf = new Float32Array(analyser.fftSize);
+      let heardSpeech = false;
+      let lastSpeechMs = performance.now();
+      const startedMs = lastSpeechMs;
+
+      mr.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+      mr.onstop = async () => {
+        if (vadTimerRef.current !== null) {
+          window.clearInterval(vadTimerRef.current);
+          vadTimerRef.current = null;
+        }
+        stream.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+        audioCtx.close().catch(() => null);
+        setListening(false);
+        if (!heardSpeech || chunks.length === 0) {
+          if (callActiveRef.current) startListeningTurn();
+          else setOrbState("idle");
+          return;
+        }
+        const blob = new Blob(chunks, { type: mime });
+        const form = new FormData();
+        form.append("audio", blob, "speech.webm");
+        try {
+          setOrbState("thinking");
+          const sttRes = await fetch("/api/stt?lang=ta-IN", { method: "POST", body: form });
+          const sttJson = await sttRes.json();
+          const transcript = String(sttJson.transcript || "").trim();
+          if (transcript) {
+            await submitTurn(transcript);
+          } else if (callActiveRef.current) {
+            startListeningTurn();
+          } else {
+            setOrbState("idle");
+          }
+        } catch {
+          if (callActiveRef.current) startListeningTurn();
+          else setOrbState("idle");
+        }
+      };
+
+      mr.start(250);
+      setListening(true);
+      setOrbState("listening");
+
+      vadTimerRef.current = window.setInterval(() => {
+        analyser.getFloatTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i += 1) sum += buf[i] * buf[i];
+        const rms = Math.sqrt(sum / buf.length);
+        const now = performance.now();
+        if (rms > 0.022) {
+          heardSpeech = true;
+          lastSpeechMs = now;
+        } else if (heardSpeech && now - lastSpeechMs > 850) {
+          if (mr.state !== "inactive") mr.stop();
+        } else if (!heardSpeech && now - startedMs > 12000) {
+          if (mr.state !== "inactive") mr.stop();
+        }
+      }, 90);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function startListeningTurn() {
+    if (!callActiveRef.current || !consentGranted) return;
+    stopMicCapture();
+    if (health?.sarvam_stt) {
+      const ok = await startSarvamMicTurn();
+      if (ok) return;
+    }
+
+    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRec) {
+      callActiveRef.current = false;
+      setCallActive(false);
+      setMessages((m) => [
+        ...m,
+        { role: "agent", text: "Browser SpeechRecognition unavailable; use the Tanglish text box or sample chips." },
+      ]);
+      return;
+    }
+    const rec = new SpeechRec();
+    rec.lang = "ta-IN";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    let gotResult = false;
+    rec.onstart = () => {
+      setListening(true);
+      setOrbState("listening");
+    };
+    rec.onresult = (ev: any) => {
+      const transcript = ev?.results?.[0]?.[0]?.transcript || "";
+      gotResult = Boolean(transcript);
       setListening(false);
-      setOrbState("idle");
+      if (transcript) {
+        submitTurn(transcript);
+      } else if (callActiveRef.current) {
+        startListeningTurn();
+      } else {
+        setOrbState("idle");
+      }
+    };
+    rec.onerror = () => {
+      setListening(false);
+      if (callActiveRef.current && !gotResult) {
+        window.setTimeout(() => {
+          if (callActiveRef.current) startListeningTurn();
+        }, 300);
+      } else {
+        setOrbState("idle");
+      }
+    };
+    rec.onend = () => {
+      setListening(false);
+    };
+    recRef.current = rec;
+    rec.start();
+  }
+
+  function toggleMic() {
+    if (callActiveRef.current || listening) {
+      endCall();
       return;
     }
     if (!consentGranted) {
@@ -251,42 +503,10 @@ export default function VoiceAgentPage() {
       ]);
       return;
     }
-    const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRec) {
-      setMessages((m) => [
-        ...m,
-        { role: "agent", text: "Browser SpeechRecognition unavailable; use the Tanglish text box or sample chips." },
-      ]);
-      return;
-    }
     if (speaking) stopPlayback();
-
-    const rec = new SpeechRec();
-    rec.lang = "ta-IN";
-    rec.interimResults = false;
-    rec.maxAlternatives = 1;
-    rec.onstart = () => {
-      setListening(true);
-      setOrbState("listening");
-    };
-    rec.onresult = (ev: any) => {
-      const transcript = ev?.results?.[0]?.[0]?.transcript || "";
-      setListening(false);
-      if (transcript) {
-        submitTurn(transcript);
-      } else {
-        setOrbState("idle");
-      }
-    };
-    rec.onerror = () => {
-      setListening(false);
-      setOrbState("idle");
-    };
-    rec.onend = () => {
-      setListening(false);
-    };
-    recRef.current = rec;
-    rec.start();
+    callActiveRef.current = true;
+    setCallActive(true);
+    startListeningTurn();
   }
 
   async function handleSendOtp() {
@@ -297,7 +517,7 @@ export default function VoiceAgentPage() {
     });
     const data = await res.json();
     setOtpSessionId(data.otp_session_id || "");
-    setOtpDemoHint(data.demo_code || data.code || "Check SMS");
+    setOtpDemoHint(data.demo_otp_hint || data.demo_code || data.code || "Check SMS");
   }
 
   async function handleVerifyOtp() {
@@ -312,6 +532,7 @@ export default function VoiceAgentPage() {
 
   async function handleHitlSeal() {
     const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
+    const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
     const res = await fetch("/api/hitl/seal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -320,20 +541,26 @@ export default function VoiceAgentPage() {
         spoken_phrase: "உறுதி / Confirm",
         modal_ok: modalOk,
         otp_session_id: otpSessionId,
-        ward: String(slots.ward || "Ward 103"),
-        service_id: String(slots.service_id || "streetlight"),
-        urgency_tier: String((lastTurn?.analysis as any)?.urgency?.tier || "STANDARD"),
+        ward: String(analysis.landmark?.ward || slots.ward || "Ward 103"),
+        service_id: String(analysis.service_id || slots.issue || "streetlight_eb"),
+        urgency_tier: String(analysis.urgency?.tier || "STANDARD"),
+        complaint_revision: String(lastTurn?.complaint_version ?? 1),
       }),
     });
     const data = await res.json();
     const ok = Boolean(data.sealed || data.approved || data.status === "sealed");
     setHitlApproved(ok);
-    setHitlStatus(data.message || (ok ? "HITL Dual-Confirm Sealed" : "Confirmation incomplete"));
+    setHitlStatus(
+      data.reason ||
+        data.message ||
+        (ok ? `HITL Sealed (${data.ticket_id || "ready"})` : "Confirmation incomplete")
+    );
   }
 
   async function handleGeneratePreview() {
     const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
-    const landmarkObj = (lastTurn?.analysis as any)?.landmark || {
+    const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
+    const landmarkObj = analysis.landmark || {
       name: String(slots.landmark || "Anna Arch pakkam"),
       ward: String(slots.ward || ""),
     };
@@ -341,10 +568,10 @@ export default function VoiceAgentPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        service_id: String(slots.service_id || "streetlight_eb"),
+        service_id: String(analysis.service_id || slots.issue || "streetlight_eb"),
         landmark: landmarkObj,
         summary_text: lastTurn?.display_text || "Streetlight complaint preview",
-        urgency_tier: String((lastTurn?.analysis as any)?.urgency?.tier || "STANDARD"),
+        urgency_tier: String(analysis.urgency?.tier || "STANDARD"),
         complaint_version: lastTurn?.complaint_version || 1,
         otp_verified: otpVerified,
         hitl_approved: hitlApproved,
@@ -356,6 +583,7 @@ export default function VoiceAgentPage() {
   }
 
   const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
+  const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
 
   return (
     <div className="nk-grid-2">
@@ -386,9 +614,9 @@ export default function VoiceAgentPage() {
         <LiveWaveform active={listening} speaking={speaking} />
 
         <div className="nk-dock">
-          <button type="button" className={`nk-btn ${listening ? "danger" : "primary"}`} onClick={toggleMic}>
-            {listening ? <MicOff size={18} /> : <Mic size={18} />}
-            {listening ? "Stop" : "Speak"}
+          <button type="button" className={`nk-btn ${callActive || listening ? "danger" : "primary"}`} onClick={toggleMic}>
+            {callActive || listening ? <MicOff size={18} /> : <Mic size={18} />}
+            {callActive || listening ? "End Call" : "Start Call"}
           </button>
           <button type="button" className="nk-btn" onClick={stopPlayback} disabled={!speaking}>
             <RotateCcw size={16} />
@@ -497,10 +725,10 @@ export default function VoiceAgentPage() {
               Complaint State (v{lastTurn.complaint_version ?? 1} · {lastTurn.fsm_state})
             </h2>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, fontSize: "0.86rem" }}>
-              <div><strong>Service:</strong> {String(slots.service_id || "—")}</div>
-              <div><strong>Landmark:</strong> {String(slots.landmark || "—")}</div>
-              <div><strong>Ward:</strong> {String(slots.ward || "—")}</div>
-              <div><strong>Agency:</strong> {String(slots.agency || "—")}</div>
+              <div><strong>Service:</strong> {String(analysis.service_id || slots.issue || "—")}</div>
+              <div><strong>Landmark:</strong> {String(analysis.landmark_text || slots.landmark || "—")}</div>
+              <div><strong>Ward:</strong> {String(analysis.landmark?.ward || "Needs verification")}</div>
+              <div><strong>Urgency:</strong> {String(analysis.urgency?.badge_en || "—")}</div>
             </div>
             {lastTurn.text_contract && (
               <div className="mono" style={{ marginTop: 8, fontSize: "0.78rem", color: "var(--ink-2)" }}>

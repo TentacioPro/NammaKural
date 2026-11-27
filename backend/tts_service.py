@@ -113,11 +113,14 @@ async def synthesize_neural_mp3(
     # Venky B §4: Space out reference IDs (e.g. NK-PREVIEW-A1B2 -> N K A 1 B 2) for clear spoken readback
     tts_input = re.sub(r"#?([A-Z]{2,5})-([A-Z0-9]{4,8})", lambda m: f"{' '.join(m.group(1))} {' '.join(m.group(2))}", tts_input)
 
-    # Prefer Sarvam Bulbul (~250-350ms, true code-mix) when SARVAM_API_KEY is configured
-    if os.getenv("SARVAM_API_KEY", "").strip() and (preferred_voice == "auto" or preferred_voice.startswith("sarvam")):
+    # Prefer Sarvam Bulbul v3 (~250-350ms, true code-mix) when SARVAM_API_KEY is configured
+    if os.getenv("SARVAM_API_KEY", "").strip() and (
+        preferred_voice == "auto" or preferred_voice.startswith(("sarvam", "bulbul"))
+    ):
         from backend.sarvam_realtime import synthesize_bulbul_sync
 
-        bulbul = synthesize_bulbul_sync(tts_input)
+        bulbul_speaker = "shubh" if "Valluvar" in voice or "Prabhat" in voice else "kavitha"
+        bulbul = synthesize_bulbul_sync(tts_input, speaker=bulbul_speaker)
         if bulbul.get("ok") and bulbul.get("audio"):
             return {
                 "ok": True,

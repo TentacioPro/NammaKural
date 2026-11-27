@@ -10,8 +10,8 @@ export default function TracesPage() {
       const [lRes, cRes] = await Promise.all([fetch("/api/logs?limit=80"), fetch("/api/conversations?limit=60")]);
       const lJson = await lRes.json();
       const cJson = await cRes.json();
-      setLogs(Array.isArray(lJson) ? lJson : lJson.logs || []);
-      setConvs(Array.isArray(cJson) ? cJson : cJson.conversations || []);
+      setLogs(Array.isArray(lJson) ? lJson : lJson.items || lJson.logs || []);
+      setConvs(Array.isArray(cJson) ? cJson : cJson.items || cJson.conversations || []);
     } catch {
       // ignore offline fetch errors
     }
@@ -59,16 +59,20 @@ export default function TracesPage() {
             </tr>
           </thead>
           <tbody>
-            {logs.slice(0, 40).map((row, i) => (
-              <tr key={i}>
-                <td className="mono">{String(row.ts || row.timestamp || "—")}</td>
-                <td className="mono">{String(row.event || row.stage || row.fsm_state || "turn")}</td>
-                <td className="mono">{row.latency_ms !== undefined ? String(row.latency_ms) : "—"}</td>
-                <td className="mono" style={{ maxWidth: 420, wordBreak: "break-word" }}>
-                  {JSON.stringify(row)}
-                </td>
-              </tr>
-            ))}
+            {logs.slice(0, 40).map((row, i) => {
+              const data = (row.data || {}) as Record<string, unknown>;
+              const latency = data.latency_ms ?? row.latency_ms;
+              return (
+                <tr key={i}>
+                  <td className="mono">{String(row.time || row.ts || row.timestamp || "—")}</td>
+                  <td className="mono">{String(row.stage || row.event || row.fsm_state || "turn")}</td>
+                  <td className="mono">{latency !== undefined ? String(latency) : "—"}</td>
+                  <td className="mono" style={{ maxWidth: 420, wordBreak: "break-word" }}>
+                    {JSON.stringify(row)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </section>
@@ -78,19 +82,22 @@ export default function TracesPage() {
         <table className="nk-table">
           <thead>
             <tr>
-              <th>Session</th>
-              <th>User</th>
-              <th>Reply</th>
-              <th>State</th>
+              <th>Time / Session</th>
+              <th>Role</th>
+              <th>Text</th>
+              <th>State / Ward</th>
             </tr>
           </thead>
           <tbody>
             {convs.slice(0, 30).map((c, i) => (
               <tr key={i}>
-                <td className="mono">{String(c.session_id || "—")}</td>
-                <td>{String(c.user_text || c.raw_asr || "—")}</td>
-                <td>{String(c.reply || c.display_text || "—")}</td>
-                <td className="mono">{String(c.fsm_state || "—")}</td>
+                <td className="mono">{String(c.time || c.session_id || "—")}</td>
+                <td className="mono">{String(c.role || "—")}</td>
+                <td>{String(c.text || c.user_text || c.reply || c.display_text || "—")}</td>
+                <td className="mono">
+                  {String(c.fsm_state || "—")}
+                  {c.ward ? ` · ${String(c.ward)}` : ""}
+                </td>
               </tr>
             ))}
           </tbody>

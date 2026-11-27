@@ -29,8 +29,8 @@ def get_dynamic_keyterms(state_code: str = "tn", locality_hint: str = "") -> lis
     return terms[:25]
 
 
-def synthesize_bulbul_sync(text: str, speaker: str = "anushka", pace: float = 1.06) -> dict[str, Any]:
-    """Synthesize Tamil/Tanglish speech via Sarvam Bulbul streaming-ready REST endpoint."""
+def synthesize_bulbul_sync(text: str, speaker: str = "kavitha", pace: float = 1.04) -> dict[str, Any]:
+    """Synthesize Tamil/Tanglish speech via Sarvam Bulbul v3 REST endpoint."""
     sarvam_key = os.getenv("SARVAM_API_KEY", "").strip()
     if not sarvam_key or not text.strip():
         return {"ok": False, "audio": b"", "provider": "sarvam-bulbul-unavailable"}
@@ -44,7 +44,7 @@ def synthesize_bulbul_sync(text: str, speaker: str = "anushka", pace: float = 1.
             "pace": pace,
             "speech_sample_rate": 16000,
             "enable_preprocessing": True,
-            "model": "bulbul:v2",
+            "model": "bulbul:v3",
         }
     ).encode("utf-8")
     req = urllib.request.Request(

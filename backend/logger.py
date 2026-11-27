@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.state import scrub_pii_and_aadhaar
+from backend.telemetry import emit_otlp_span
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = ROOT_DIR / "logs"
@@ -98,6 +99,9 @@ def log_event(
         _PY_LOGGER.warning(line)
     else:
         _PY_LOGGER.info(line)
+    if stage in {"workflow.turn_complete", "llm.fast_turn", "tts.sarvam_bulbul", "tts.neural_synth", "client.ttfa"}:
+        dur = float(safe_data.get("latency_ms", 0.0)) if isinstance(safe_data.get("latency_ms"), (int, float)) else 0.0
+        emit_otlp_span(stage, {"level": level.upper(), "source": source, **safe_data}, duration_ms=dur, status_ok=level.upper() != "ERROR")
     return entry
 
 

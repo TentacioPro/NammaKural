@@ -3,10 +3,10 @@ import { RefreshCw } from "lucide-react";
 
 interface MetricBucket {
   count?: number;
-  p50?: number;
-  p90?: number;
-  p95?: number;
-  under_500ms_pct?: number;
+  p50?: number | null;
+  p90?: number | null;
+  p95?: number | null;
+  under_500ms_pct?: number | null;
 }
 
 interface TelemetrySummary {
@@ -63,10 +63,10 @@ export default function TelemetryPage() {
             <h2 style={{ margin: "0 0 8px", fontSize: "0.98rem" }}>{b.label}</h2>
             <div className="mono" style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: "0.86rem" }}>
               <div>Count: {b.data?.count ?? 0}</div>
-              <div>P50: {b.data?.p50 !== undefined ? `${b.data.p50.toFixed(1)} ms` : "—"}</div>
-              <div>P90: {b.data?.p90 !== undefined ? `${b.data.p90.toFixed(1)} ms` : "—"}</div>
-              <div>P95: {b.data?.p95 !== undefined ? `${b.data.p95.toFixed(1)} ms` : "—"}</div>
-              {b.data?.under_500ms_pct !== undefined && (
+              <div>P50: {typeof b.data?.p50 === "number" ? `${b.data.p50.toFixed(1)} ms` : "—"}</div>
+              <div>P90: {typeof b.data?.p90 === "number" ? `${b.data.p90.toFixed(1)} ms` : "—"}</div>
+              <div>P95: {typeof b.data?.p95 === "number" ? `${b.data.p95.toFixed(1)} ms` : "—"}</div>
+              {typeof b.data?.under_500ms_pct === "number" && (
                 <div style={{ color: "var(--emerald)", fontWeight: 700 }}>
                   &lt; 500ms: {b.data.under_500ms_pct.toFixed(1)}%
                 </div>

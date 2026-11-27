@@ -9,7 +9,30 @@ import os
 import threading
 import time
 import uuid
+from pathlib import Path
 from typing import Any
+
+
+def _load_local_env() -> None:
+    """Populate os.environ from project .env without overriding already-set platform env vars."""
+    env_path = Path(__file__).resolve().parent.parent / ".env"
+    if not env_path.is_file():
+        return
+    try:
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            s = line.strip()
+            if not s or s.startswith("#") or "=" not in s:
+                continue
+            k, v = s.split("=", 1)
+            key = k.strip()
+            val = v.strip().strip('"').strip("'")
+            if key and val:
+                os.environ.setdefault(key, val)
+    except OSError:
+        pass
+
+
+_load_local_env()
 
 
 class SessionStore:
@@ -19,6 +42,8 @@ class SessionStore:
         self._lock = threading.Lock()
         self._mem: dict[str, tuple[str, float]] = {}
         self._redis = None
+        if os.getenv("PYTEST_CURRENT_TEST") and os.getenv("NK_TEST_REDIS") != "1":
+            return
         redis_url = os.getenv("REDIS_URL", "").strip()
         if redis_url:
             try:

@@ -89,6 +89,7 @@ class HitlSealRequest(BaseModel):
     service_id: str
     urgency_tier: str = "STANDARD"
     complaint_revision: str = Field(default="", max_length=160)
+    turn_id: str = Field(default="", max_length=64)
 
 
 class TelemetryRequest(BaseModel):
@@ -287,6 +288,7 @@ def seal_hitl(req: HitlSealRequest) -> dict[str, Any]:
         service_id=req.service_id,
         urgency_tier=req.urgency_tier,
         complaint_revision=req.complaint_revision,
+        turn_id=req.turn_id,
     )
     record_telemetry_span(
         {

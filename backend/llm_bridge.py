@@ -32,9 +32,8 @@ Never claim a ticket has been submitted before Citizen OTP + Dual-Confirm HITL a
 
 
 def _read_env_value(name: str, default: str = "") -> str:
-    val = os.getenv(name, "").strip()
-    if val:
-        return val
+    if name in os.environ:
+        return os.environ[name].strip()
     env_file = ROOT_DIR / ".env"
     if not env_file.is_file():
         return default

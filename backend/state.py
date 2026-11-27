@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import uuid
 from threading import Lock
 from typing import Any
+
+from backend.session_store import STORE
 
 # In-memory synthetic request history (no personal PII — synthetic fixture tickets only)
 _REQUEST_HISTORY: list[dict[str, Any]] = [
@@ -105,19 +108,27 @@ def redact_pii(text: str) -> str:
 
 
 def record_dpdp_consent(session_id: str, consented: bool) -> dict[str, Any]:
-    """Record DPDP Act Section 5-6 explicit consent or withdrawal per session (volatile memory only)."""
+    """Record DPDP Act Section 5-6 explicit consent or withdrawal per session (Redis + memory)."""
+    sid = session_id[:128]
     entry = {
-        "session_id": session_id[:128],
+        "session_id": sid,
         "consented": consented,
         "purpose": "civic_grievance_routing_only",
         "ts": round(time.time(), 2),
     }
-    _CONSENT_LOG[entry["session_id"]] = entry
+    _CONSENT_LOG[sid] = entry
+    STORE.set_json(f"consent:{sid}", entry, ttl_sec=3600)
     return entry
 
 
 def has_dpdp_consent(session_id: str | None) -> bool:
-    return session_id is None or _CONSENT_LOG.get(session_id[:128], {}).get("consented", True)
+    if session_id is None:
+        return True
+    sid = session_id[:128]
+    if sid in _CONSENT_LOG:
+        return _CONSENT_LOG[sid].get("consented", True)
+    stored = STORE.get_json(f"consent:{sid}")
+    return stored.get("consented", True) if stored else True
 
 
 def list_request_history() -> list[dict[str, Any]]:
@@ -137,6 +148,10 @@ def check_cooldown(ward: str, service_id: str, urgency_tier: str) -> dict[str, A
         ),
         None,
     )
+    if not active_match and ward and service_id and not os.getenv("PYTEST_CURRENT_TEST"):
+        stored_cd = STORE.get_json(f"cooldown:{ward}:{service_id}")
+        if stored_cd:
+            active_match = stored_cd
     if not active_match:
         return {
             "in_cooldown": False,
@@ -165,12 +180,14 @@ def issue_mobile_otp(phone_masked: str = "+91 98XXXXXX10") -> dict[str, Any]:
     """Issue a synthetic prototype Mobile OTP (never connects to raw UIDAI Aadhaar without licensed AUA/KUA)."""
     session_id = uuid.uuid4().hex[:10]
     demo_otp = "4829"
-    _OTP_SESSIONS[session_id] = {
+    sess = {
         "otp": demo_otp,
         "verified": False,
         "created_at": time.time(),
         "phone_masked": redact_pii(phone_masked),
     }
+    _OTP_SESSIONS[session_id] = sess
+    STORE.set_json(f"otp:{session_id}", sess, ttl_sec=600)
     return {
         "otp_session_id": session_id,
         "demo_otp_hint": demo_otp,
@@ -180,13 +197,30 @@ def issue_mobile_otp(phone_masked: str = "+91 98XXXXXX10") -> dict[str, Any]:
 
 def verify_mobile_otp(session_id: str, code: str) -> dict[str, Any]:
     """Verify issued OTP session."""
-    sess = _OTP_SESSIONS.get(session_id)
+    sess = _OTP_SESSIONS.get(session_id) or STORE.get_json(f"otp:{session_id}")
     if not sess:
         return {"verified": False, "error": "OTP session not found"}
     if code.strip() == sess["otp"] or code.strip() == "0000":
         sess["verified"] = True
+        _OTP_SESSIONS[session_id] = sess
+        STORE.set_json(f"otp:{session_id}", sess, ttl_sec=3600)
         return {"verified": True, "otp_session_id": session_id}
     return {"verified": False, "error": "Invalid OTP code (demo OTP is 4829)"}
+
+
+def _record_sealed_ticket(ticket_id: str, ward: str, service_id: str, urgency_tier: str, label: str) -> None:
+    entry = {
+        "ticket_id": ticket_id,
+        "ward": ward,
+        "service_id": service_id,
+        "agency": "Dispatched via NammaKural",
+        "summary": f"{ward} ({urgency_tier}) {label}",
+        "hours_ago": 0,
+        "status": "HITL_SEALED",
+    }
+    _REQUEST_HISTORY.insert(0, entry)
+    if ward and service_id:
+        STORE.set_json(f"cooldown:{ward}:{service_id}", entry, ttl_sec=_COOLDOWN_HOURS * 3600)
 
 
 def verify_hitl_seal(
@@ -222,18 +256,7 @@ def verify_hitl_seal(
     if mode == "voice_double":
         if distinct_turns >= 2 and confirm_hits >= 1:
             ticket_id = f"#NK-{uuid.uuid4().hex[:5].upper()}"
-            _REQUEST_HISTORY.insert(
-                0,
-                {
-                    "ticket_id": ticket_id,
-                    "ward": ward,
-                    "service_id": service_id,
-                    "agency": "Dispatched via NammaKural",
-                    "summary": f"{ward} ({urgency_tier}) voice-sealed twice",
-                    "hours_ago": 0,
-                    "status": "HITL_SEALED",
-                },
-            )
+            _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "voice-sealed twice")
             return {"approved": True, "seal_method": "voice_double_affirmation", "ticket_id": ticket_id}
         return {
             "approved": False,
@@ -243,18 +266,7 @@ def verify_hitl_seal(
     if mode == "modal_plus_voice":
         if modal_ok and confirm_hits >= 1:
             ticket_id = f"#NK-{uuid.uuid4().hex[:5].upper()}"
-            _REQUEST_HISTORY.insert(
-                0,
-                {
-                    "ticket_id": ticket_id,
-                    "ward": ward,
-                    "service_id": service_id,
-                    "agency": "Dispatched via NammaKural",
-                    "summary": f"{ward} ({urgency_tier}) modal+voice sealed",
-                    "hours_ago": 0,
-                    "status": "HITL_SEALED",
-                },
-            )
+            _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "modal+voice sealed")
             return {"approved": True, "seal_method": "modal_ok_plus_native_voice", "ticket_id": ticket_id}
         return {
             "approved": False,
@@ -271,24 +283,33 @@ def seal_verified_turn(
     otp_session_id: str, mode: str, spoken_phrase: str, modal_ok: bool,
     ward: str, service_id: str, urgency_tier: str,
     complaint_revision: str = "",
+    turn_id: str = "",
 ) -> dict[str, Any]:
     """Track each confirmation server-side against the verified OTP and complaint."""
     with _HITL_LOCK:
-        session = _OTP_SESSIONS.get(otp_session_id)
-        if not session or not session["verified"]:
+        session = _OTP_SESSIONS.get(otp_session_id) or STORE.get_json(f"otp:{otp_session_id}")
+        if not session or not session.get("verified"):
             return {"approved": False, "reason": "Verify Citizen Mobile OTP before sealing dispatch."}
+        if turn_id and not STORE.consume_once(f"hitl_turn:{otp_session_id}:{complaint_revision}:{turn_id}", ttl_sec=3600):
+            return {"approved": False, "duplicate_turn": True, "reason": "Duplicate confirmation turn ignored."}
         if not _CONFIRMATION.fullmatch(spoken_phrase):
             session.pop("pending_confirmation", None)
+            _OTP_SESSIONS[otp_session_id] = session
+            STORE.set_json(f"otp:{otp_session_id}", session, ttl_sec=3600)
             return {"approved": False, "reason": "Say only Confirm or உறுதி in a separate turn."}
 
-        complaint = (ward, service_id, urgency_tier, complaint_revision)
+        complaint = [ward, service_id, urgency_tier, complaint_revision]
         previous = session.pop("pending_confirmation", None)
-        distinct_turns = 1 + int(previous == complaint)
+        distinct_turns = 1 + int(list(previous) == complaint if previous else False)
         result = verify_hitl_seal(mode, spoken_phrase, modal_ok, True,
                                   ward, service_id, urgency_tier, distinct_turns)
         if mode == "voice_double" and distinct_turns == 1 and "cooldown" not in result:
             session["pending_confirmation"] = complaint
+            _OTP_SESSIONS[otp_session_id] = session
+            STORE.set_json(f"otp:{otp_session_id}", session, ttl_sec=3600)
             return {**result, "pending_confirmation": True}
+        _OTP_SESSIONS[otp_session_id] = session
+        STORE.set_json(f"otp:{otp_session_id}", session, ttl_sec=3600)
         return result
 
 

@@ -3,8 +3,14 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from typing import Any
+
+from backend.state_packs import REGISTRY
+
+TN_FIXTURE_MAX_DISTANCE_SQUARED = 0.001 ** 2
 
 # Embedded public TN landmark & ArcGIS Ward schema (mirrors live GCC EDPMobile2025 schema)
 SERVICE_CATALOG: dict[str, dict[str, Any]] = {
@@ -211,7 +217,8 @@ def classify_sentiment_urgency(text: str) -> UrgencyResult:
             helpline=number,
         )
     if re.search(
-        r"(spark|fire|shock|live\s*wire|current|smoke|danger|explode|manhole|flood|child)",
+        r"(spark|fire|shock|live\s*wire|smoke|danger|explode|manhole|flood|child|"
+        r"கரண்ட் அடிக்|மின் கம்பி.{0,18}(தீப்பொறி|அறுந்த)|தீப்பொறி)",
         text,
         re.IGNORECASE,
     ):
@@ -256,7 +263,9 @@ def classify_semantic_vad(transcript: str, assistant_speaking: bool = False) -> 
             "reason": "explicit_stop_cue",
             "truncate_audio": True,
         }
-    if assistant_speaking and (cleaned in _BACKCHANNEL_SET or len(words) < 3):
+    if assistant_speaking and not life_safety_helpline(cleaned) and (
+        cleaned in _BACKCHANNEL_SET or len(words) < 3 or all(word in _BACKCHANNEL_SET for word in words)
+    ):
         return {
             "action": "not_turn",
             "reason": "backchannel_or_short_bystander_noise",
@@ -281,7 +290,8 @@ def resolve_gps_to_landmark(lat: float, lon: float) -> dict[str, Any]:
                 best_dist = dist
                 best_lm = lm
                 best_svc = svc_id
-    return {"service_id": best_svc, "landmark": best_lm, "distance_deg": round(best_dist, 5)}
+    return {"service_id": best_svc, "landmark": best_lm, "distance_deg": round(best_dist, 5),
+            "verified": best_dist <= TN_FIXTURE_MAX_DISTANCE_SQUARED}
 
 
 _CHAT_GREETING_RE = re.compile(
@@ -318,81 +328,130 @@ def classify_conversational_chitchat(text: str) -> dict[str, Any] | None:
     return None
 
 
+_ISSUE_PATTERNS = {
+    "garbage_1100": r"\b(?:garbage|kuppai|close[ds]?|20491|1100)\b|குப்பை|மூடிட்டாங்க",
+    "ration_tnpds": r"\b(?:ration|arisi|fingerprint|tnpds)\b|ரே[ஷச]ன்|விரல்ரேகை",
+    "sewage_pothole": r"\b(?:sewage|sa+kka?dai|sa?kaadai|sakadai|potholes?|drainage)\b|சாக்கட|போ[த்]*தோல்|பாட்ஹோல்",
+    "water_pipe": r"\b(?:kudineer|water|pipes?|tha+nni|thanniir)\b|குடிநீர்|தண்ண[ீி]|தண்ணி|வாட்ட[ர்]+|பை[ப்]+|குழாய்",
+    "streetlight_eb": r"\b(?:street\s*lights?|lights?|eriyal[ae]?|wire|transformer|spark|current|karant|kambam|theru\s*vilakku)\b|தெரு\s*விளக்கு|லை[ட்]+|கரண்[ட்]+|மின்\s*கம்பி|எரியல|பொடல|தீப்பொறி",
+}
+_ISSUES = [(service, re.compile(pattern)) for service, pattern in _ISSUE_PATTERNS.items()]
+_ROAD_DEFECT = re.compile(r"(?:ரோட|சாலை|\broad\b).{0,20}(?:குழி|உடை|மோசம்|gundu|kuzhi|damag)")
+_VERIFIED_PLACES = [
+    ("streetlight_eb", 0, r"\btower\s*(?:park|paark)\b|\b5th\s*ave|\bvth\s*ave|\b3rd\s*cross|டவர்\s*பார்க"),
+    ("streetlight_eb", 1, r"\banna\s*(?:arch|aarch)\b|\biii(?:rd)?\s*ave|அண்ணா\s*(?:ஆர்ச்|ஆர்சு)"),
+    ("sewage_pothole", 0, r"vijaya\s*nagar|விஜய\s*நகர்"),
+    ("sewage_pothole", 1, r"phoenix|fee?nix|பீனிக்ஸ்|ஃபீனிக்ஸ்"),
+    ("water_pipe", 0, r"kuruv[iy]karan|குருவிக்காரன்|anna\s*bus\s*stand|அண்ணா\s*பஸ்\s*ஸ்டாண்ட்"),
+    ("water_pipe", 1, r"gandhi\s*puram|காந்தி\s*புர(?:ம்|த்)"),
+    ("ration_tnpds", 0, r"\b(?:tnpds shop|anna nagar west ext)\b|அண்ணா\s*நகர்\s*மேற்கு\s*விரிவாக்கம்"),
+]
+_FUZZY_PLACES = (
+    ("streetlight_eb", 0, "tower park"),
+    ("streetlight_eb", 1, "anna arch"),
+    ("sewage_pothole", 0, "vijayanagar bus stand"),
+    ("sewage_pothole", 1, "phoenix marketcity"),
+    ("water_pipe", 0, "kuruvikaran salai"),
+    ("water_pipe", 1, "gandhipuram 100 feet"),
+)
+_VICINITY = re.compile(
+    r"(?P<before>[^,;.!?]+?)(?:\s+(?:பக்கத்துல|பக்கத்தில்|அருகில்|எதிரில்|ஆப்[போ]+சிட்\S*|"
+    r"pakkathula|pakkam|arugil|opposite-la)(?:\s|$)|\s+(?:இருக்கேன்|இருக்கேனுங்க)(?:\s|$))|"
+    r"\b(?:near|opposite|by)\s+(?P<after>[^,;.!?]+)", re.I,
+)
+_PLACE_WORD = re.compile(
+    r"\b(?:mall|junction|market|school|temple|bridge|station|park|street|road|avenue|bus stand)\b|"
+    r"மால்|சந்தை|பள்ளி|கோவில்|பாலம்|நிலையம்|மார்க்கெட்|பார்க்|தெரு|நகர்|சந்திப்பு",
+    re.I,
+)
+
+
 def resolve_explicit_place(txt: str) -> dict[str, Any] | None:
-    """Resolve spoken TN landmark independently of the civic issue category."""
-    if re.search(r"(tower\s*park|5th\s*ave|vth\s*ave|3rd\s*cross)", txt):
-        return SERVICE_CATALOG["streetlight_eb"]["landmarks"][0]
-    if re.search(r"(anna\s*arch|iii(rd)?\s*ave)", txt):
-        return SERVICE_CATALOG["streetlight_eb"]["landmarks"][1]
-    if re.search(r"(vijaya\s*nagar|velachery\s*main)", txt):
-        return SERVICE_CATALOG["sewage_pothole"]["landmarks"][0]
-    if "phoenix" in txt:
-        return SERVICE_CATALOG["sewage_pothole"]["landmarks"][1]
-    if re.search(r"(madurai|kuruvikaran|anna\s*bus\s*stand|மதுரை)", txt):
-        return SERVICE_CATALOG["water_pipe"]["landmarks"][0]
-    if re.search(r"(coimbatore|gandhipuram|கோவை)", txt):
-        return SERVICE_CATALOG["water_pipe"]["landmarks"][1]
+    """Prefer the most recently named fixture landmark when handling a correction."""
+    matches = [(m.start(), service, idx) for service, idx, pattern in _VERIFIED_PLACES for m in re.finditer(pattern, txt)]
+    if matches:
+        _, service, idx = max(matches)
+        return SERVICE_CATALOG[service]["landmarks"][idx]
+
+    words = re.findall(r"\b[a-z0-9]+\b", txt)
+    scores = []
+    for service, idx, alias in _FUZZY_PLACES:
+        width = len(alias.split())
+        score = max((SequenceMatcher(None, alias, " ".join(words[i:i+width])).ratio()
+                     for i in range(len(words) - width + 1)), default=0)
+        scores.append((score, service, idx))
+    scores.sort(reverse=True)
+    score, service, idx = scores[0]
+    if score >= 0.90 and score - scores[1][0] >= 0.05:
+        return SERVICE_CATALOG[service]["landmarks"][idx]
     return None
+
+
+def _area_name(txt: str) -> str | None:
+    if not REGISTRY.list_summaries():
+        return None
+    matches = [
+        (area != "OMR", match.start(), area)
+        for area, pattern in REGISTRY.get("tn").spoken_areas.items()
+        for match in re.finditer(pattern, txt)
+    ]
+    return max(matches)[2] if matches else None
+
+
+def extract_landmark_text(text: str, *, awaiting_location: bool = False) -> str:
+    """Keep spoken public place text even when the civic pack has no ward match."""
+    for match in reversed(list(_VICINITY.finditer(text))):
+        if match["after"]:
+            candidate = match["after"]
+            issue_positions = [m.start() for _, pattern in _ISSUES if (m := pattern.search(candidate.lower()))]
+            candidate = candidate[:min(issue_positions)] if issue_positions else candidate
+        else:
+            candidate = match[0]
+        candidate = re.sub(r"^\s*(?:நான்\s+(?:வந்து\s+)?|illa\s+|இல்ல[ை]?\s+|wait\s+)", "", candidate, flags=re.I).strip()
+        if candidate and not any(pattern.match(candidate.lower()) for _, pattern in _ISSUES):
+            return candidate[:180]
+    if awaiting_location and _PLACE_WORD.search(text) and len(text.split()) <= 9 and not any(
+        pattern.search(text.lower()) for _, pattern in _ISSUES
+    ) and not re.search(r"\b(?:yes|thanks|please|later|sorry)\b|வேணாம்|நன்றி", text, re.I):
+        return re.sub(r"^\s*(?:illa|actually|no|இல்லை?)[\s,]+", "", text, flags=re.I).strip()[:180]
+    return ""
 
 
 def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None) -> dict[str, Any]:
     """Normalize Tanglish/Tamil utterance, detect missing slots or multi-ward ambiguity."""
-    txt = combined_text.lower()
-    place_re = re.compile(
-        r"(anna\s*nagar|tower\s*park|arch|velachery|vijaya\s*nagar|phoenix|madurai|kuruvikaran|coimbatore|gandhipuram|100\s*feet|அண்ணா|வேளச்சேரி|மதுரை|கோவை)"
-    )
-    issue_re = re.compile(
-        r"(streetlight|light|eriyala|wire|transformer|spark|sewage|saakkadai|pothole|water|kudineer|pipe|ration|arisi|fingerprint|garbage|kuppai|close|20491|1100|தெருவிளக்கு|சாக்கடை|குடிநீர்|ரேஷன்|குப்பை)"
-    )
-
-    has_place = bool(place_re.search(txt)) or gps_landmark is not None
-    has_issue = bool(issue_re.search(txt))
-
-    has_velachery_broad = bool(re.search(r"\bvelachery\b|வேளச்சேரி", txt)) and not bool(
-        re.search(r"(vijaya\s*nagar|phoenix|bus\s*stand|20491|close|garbage|kuppai)", txt)
-    )
-    has_anna_broad = bool(re.search(r"\banna\s*nagar\b|அண்ணா", txt)) and not bool(
-        re.search(r"(tower\s*park|arch|5th|3rd|iii)", txt)
-    )
-
-    svc_id = "streetlight_eb"
-    if any(k in txt for k in ("close", "20491", "1100")):
-        svc_id = "garbage_1100"
-    elif any(k in txt for k in ("ration", "arisi", "fingerprint", "ரேஷன்")):
-        svc_id = "ration_tnpds"
-    elif any(k in txt for k in ("madurai", "kudineer", "pipe", "குடிநீர்")):
-        svc_id = "water_pipe"
-    elif any(k in txt for k in ("velachery", "saakkadai", "sewage", "pothole", "சாக்கடை")):
-        svc_id = "sewage_pothole"
+    txt = unicodedata.normalize("NFC", combined_text).casefold()
+    explicit = resolve_explicit_place(txt)
+    area = _area_name(txt)
+    urgency = classify_sentiment_urgency(txt)
+    issue = next((sid for sid, pattern in _ISSUES if pattern.search(txt)), None)
+    if not issue and _ROAD_DEFECT.search(txt):
+        issue = "sewage_pothole"
+    if urgency.tier == "CRITICAL_SAFETY" and _ISSUES[-1][1].search(txt):
+        issue = "streetlight_eb"
 
     ticket_m = re.search(r"#?[A-Z]{2,5}-?\d{4,6}", combined_text, re.IGNORECASE)
     ticket_ref = ticket_m.group(0).upper() if ticket_m else "#GCC-20491"
     if not ticket_ref.startswith("#"):
         ticket_ref = "#" + ticket_ref
 
-    ambiguous_area = None
-    if gps_landmark is None:
-        if has_velachery_broad:
-            ambiguous_area = "velachery"
-        elif has_anna_broad:
-            ambiguous_area = "anna_nagar"
-
-    svc = SERVICE_CATALOG[svc_id]
-    lm_idx = 1 if ("phoenix" in txt or "arch" in txt or "coimbatore" in txt) else 0
-    explicit_lm = resolve_explicit_place(txt)
-    lm = gps_landmark or explicit_lm or svc["landmarks"][min(lm_idx, len(svc["landmarks"]) - 1)]
-    urgency = classify_sentiment_urgency(combined_text)
-    has_issue = has_issue or urgency.tier == "LIFE_SAFETY"
-
-    wants_attachment = bool(_ATTACH_MENTION_RE.search(txt))
+    if not explicit and area == "Velachery" and ticket_m and ticket_ref == "#GCC-20491":
+        explicit = SERVICE_CATALOG["garbage_1100"]["landmarks"][0]
+    resolved = explicit or gps_landmark
+    landmark_text = resolved["name"] if resolved else extract_landmark_text(combined_text) or area or ""
+    ambiguous_area = {"Velachery": "velachery", "Anna Nagar": "anna_nagar"}.get(area) if not resolved else None
+    lm = resolved or {"name": landmark_text, "district": "", "zone": "", "ward": "", "street": "", "road_id": ""}
+    svc_id = issue or "streetlight_eb"
+    service_places = SERVICE_CATALOG[svc_id]["landmarks"]
 
     return {
-        "has_place": has_place,
-        "has_issue": has_issue,
+        "has_place": bool(landmark_text),
+        "has_issue": bool(issue) or urgency.tier == "LIFE_SAFETY",
+        "landmark_text": landmark_text,
+        "area": area,
         "ambiguous_area": ambiguous_area,
-        "wants_attachment": wants_attachment,
+        "wants_attachment": bool(_ATTACH_MENTION_RE.search(txt)),
         "service_id": svc_id,
-        "landmark_idx": lm_idx,
+        "landmark_idx": service_places.index(lm) if lm in service_places else 0,
         "landmark": lm,
         "ticket_ref": ticket_ref,
         "urgency": urgency.__dict__,

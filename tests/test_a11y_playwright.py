@@ -1,6 +1,7 @@
 """Responsive, keyboard and spoken-review checks in headless Chromium."""
 from __future__ import annotations
 
+import json
 import re
 import socket
 import threading
@@ -36,7 +37,7 @@ def app_url(tmp_path_factory):
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
-            server = uvicorn.Server(uvicorn.Config(main.app, log_level="error"))
+            server = uvicorn.Server(uvicorn.Config(main.app, log_level="error", timeout_graceful_shutdown=3))
             thread = threading.Thread(target=server.run, kwargs={"sockets": [listener]}, daemon=True)
             thread.start()
             try:
@@ -241,3 +242,139 @@ def test_workflow_renders_display_text_and_sends_tamil_to_speech(app_url, open_p
     page.locator("#runAgentBtn").click()
     expect(page.locator("#safetyAlert a")).to_have_attribute("href", "tel:1906")
     expect(page.locator("#dispatchSection")).to_be_hidden()
+
+
+def install_test_recognizer(page):
+    page.add_init_script("""(() => {
+        Object.defineProperty(navigator, 'mediaDevices', {value: undefined});
+        window.SpeechRecognition = class {
+            constructor() { window.testRecognizer = this; }
+            start() {}
+            stop() {}
+            hear(text, final = true) {
+                const result = [{transcript: text, confidence: 1}];
+                result.isFinal = final;
+                this.onresult({resultIndex: 0, results: [result]});
+            }
+        };
+    })();""")
+
+
+@pytest.mark.parametrize("pending", ["workflow/turn", "tts"])
+def test_recognized_interruption_aborts_pending_fetch(app_url, open_page, pending):
+    def init(page):
+        install_test_recognizer(page)
+        page.add_init_script("""(() => {
+            const pending = __PENDING__;
+            window.voiceRequests = [];
+            const realFetch = window.fetch.bind(window);
+            window.fetch = (url, options = {}) => {
+                if (url === '/api/tts' && (pending !== 'tts' || !window.holdTts || voiceRequests.length)) {
+                    return Promise.resolve(new Response(null, {status: 204}));
+                }
+                if (url !== '/api/' + pending || voiceRequests.length) return realFetch(url, options);
+                const record = {aborted: false};
+                voiceRequests.push(record);
+                return new Promise((resolve, reject) => {
+                    options.signal?.addEventListener('abort', () => {
+                        record.aborted = true;
+                        reject(options.signal.reason);
+                    }, {once: true});
+                });
+            };
+            speechSynthesis.speak = utterance => setTimeout(() => utterance.onend?.(), 0);
+        })();""".replace("__PENDING__", json.dumps(pending)))
+
+    page = open_page(app_url, setup=init)
+    page.locator("#startCallBtn").click()
+    page.evaluate("""() => {
+        window.holdTts = true;
+        testRecognizer.hear('Tower Park streetlight eriyala');
+    }""")
+    page.wait_for_function("voiceRequests.length === 1")
+    page.evaluate("testRecognizer.hear('seri ok')")
+    assert not page.evaluate("voiceRequests[0].aborted")
+    assert page.evaluate("""() => {
+        const start = performance.now();
+        testRecognizer.hear('wait Anna Arch', false);
+        return voiceRequests[0].aborted && performance.now() - start < 150;
+    }""")
+    page.evaluate("testRecognizer.hear('wait Anna Arch streetlight eriyala')")
+    expect(page.locator("#agentThread")).to_contain_text("Ward 102")
+
+
+def test_short_webspeech_fragment_waits_for_complete_utterance(app_url, open_page):
+    page = open_page(app_url, setup=install_test_recognizer)
+    page.locator("#secondaryToggle").click()
+    page.locator("#autoSpeakToggleBtn").click()
+    page.locator("#startCallBtn").click()
+    page.clock.install()
+    page.evaluate("testRecognizer.hear('ஸ்ட்ர', false)")
+    page.clock.run_for(1750)
+    expect(page.locator("#agentThread")).not_to_contain_text("ஸ்ட்ர")
+    with page.expect_request("**/api/workflow/turn") as request:
+        page.evaluate("testRecognizer.hear('ஸ்ட்ரீட் லைட் எரியல')")
+    assert request.value.post_data_json["utterance"] == "ஸ்ட்ரீட் லைட் எரியல"
+
+
+@pytest.mark.parametrize("preview", [False, True], ids=["http", "file"])
+def test_transliterated_complaint_keeps_issue_until_ward_is_verified(app_url, open_page, preview):
+    url = (ROOT / "index.html").as_uri() if preview else app_url
+    page = open_page(url)
+    page.locator("#secondaryToggle").click()
+    page.locator("#autoSpeakToggleBtn").click()
+
+    def submit(text):
+        page.locator("#voiceInput").fill(text)
+        page.locator("#runAgentBtn").click()
+
+    submit("இல்ல இல்ல ஸ்ட்ரீட் லைட் வந்து தெளிவா எரியல")
+    expect(page.locator("#particularsStrip")).to_contain_text("Streetlight")
+    expect(page.locator("#hitlApproveBtn")).to_be_hidden()
+    submit("நான் வந்து சோழிங்கநல்லூர் தாண்டி நாவலூர்ல இருக்கேன், மெரினா மாலை ஆப்போசிட்ல")
+    expect(page.locator("#particularsStrip")).to_contain_text("மெரினா மாலை")
+    expect(page.locator("#agentThread")).to_contain_text("verify its ward")
+    expect(page.locator("#hitlApproveBtn")).to_be_hidden()
+    submit("இல்ல, அண்ணா ஆர்ச் பக்கத்துல")
+    expect(page.locator("#particularsStrip")).to_contain_text("Ward 102")
+    expect(page.locator("#hitlApproveBtn")).to_be_visible()
+
+
+@pytest.mark.parametrize("preview", [False, True], ids=["http", "file"])
+@pytest.mark.parametrize("native_tamil", [False, True], ids=["missing-voice", "unusable-voice"])
+def test_tamil_speech_without_a_working_tamil_voice(app_url, open_page, preview, native_tamil):
+    def setup(page):
+        install_test_recognizer(page)
+        page.add_init_script("""(() => {
+            const voices = [{lang: 'en-US', name: 'Desktop English'}];
+            if (HAS_TAMIL) voices.push({lang: 'ta-IN', name: 'Unavailable Tamil'});
+            speechSynthesis.getVoices = () => voices;
+            window.SpeechSynthesisUtterance = class {
+                constructor(text) { this.text = text; }
+            };
+            speechSynthesis.speak = utterance => setTimeout(() => {
+                if (utterance.lang.startsWith('ta')) utterance.onerror?.({error: 'language-unavailable'});
+                else utterance.onend?.();
+            }, 0);
+            window.playedVoiceClips = [];
+            const play = HTMLMediaElement.prototype.play;
+            HTMLMediaElement.prototype.play = function () {
+                const asset = this.src.includes('/assets/voice/') ? new URL(this.src).pathname.split('/').pop() : null;
+                return play.call(this).then(() => {
+                    if (asset) playedVoiceClips.push(asset);
+                });
+            };
+        })();""".replace("HAS_TAMIL", json.dumps(native_tamil)))
+        if not preview:
+            page.route("**/api/tts", lambda route: route.fulfill(status=204))
+
+    page = open_page((ROOT / "index.html").as_uri() if preview else app_url, setup=setup)
+    page.locator("#startCallBtn").click()
+    page.wait_for_function("playedVoiceClips.includes('greeting.mp3')", timeout=2000)
+    page.evaluate("testRecognizer.hear('சாரி நீங்க பேசுறது கேக்கல')")
+    page.wait_for_function("playedVoiceClips.includes('triage.mp3')", timeout=2000)
+    page.locator("#secondaryToggle").click()
+    page.get_by_role("button", name="EN", exact=True).click()
+    page.evaluate("playedVoiceClips.length = 0")
+    page.locator("#quickVoiceTestBtn").click()
+    page.wait_for_function("playedVoiceClips.includes('greeting.mp3')", timeout=2000)

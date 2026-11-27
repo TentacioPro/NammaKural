@@ -55,6 +55,7 @@ class StatePack(BaseModel):
     fallback_helpline: str
     fallback_email: str | None = None
     issue_lexicon: dict[str, list[str]]
+    spoken_areas: dict[str, str] = Field(default_factory=dict)
     ambiguous_areas: dict[str, AmbiguousAreaSpec] = Field(default_factory=dict)
     portals: list[PortalTarget]
     landmarks: list[LandmarkEntry]

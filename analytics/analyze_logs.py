@@ -67,26 +67,66 @@ def percentile(samples: list[float], fraction: float) -> str:
     return f"{ordered[math.ceil(len(ordered) * fraction) - 1]:.2f} ms"
 
 
+def _valid_ms(value: object) -> float | None:
+    if type(value) in (int, float) and math.isfinite(value) and value >= 0:
+        return float(value)
+    return None
+
+
+def _fmt_dist(label: str, samples: list[float]) -> str:
+    return (
+        f"{label} ({len(samples)} samples) | "
+        f"P50 {percentile(samples, .50)} | P90 {percentile(samples, .90)} | P95 {percentile(samples, .95)}"
+    )
+
+
 def summarize(logs: Path, convs: Path) -> int:
-    latencies = []
-    pipeline_states = Counter()
-    conversation_states = Counter()
+    latencies: list[float] = []
+    by_model: dict[str, list[float]] = {}
+    llm_ttft: list[float] = []
+    tts_synth: list[float] = []
+    tts_all: list[float] = []
+    ttfa_samples: list[float] = []
+    stage_counts: Counter[str] = Counter()
+    pipeline_states: Counter[str] = Counter()
+    conversation_states: Counter[str] = Counter()
     leaks = []
     count = 0
+    pending_wf: tuple[float, float] | None = None
 
     for index, event in read_records(logs):
         count += 1
         if has_pii(event):
             leaks.append((logs.name, index))
-        if event.get("stage") != "workflow.turn_complete":
-            continue
-        data = event.get("data")
-        latency = data.get("latency_ms") if isinstance(data, dict) else None
-        if type(latency) in (int, float) and math.isfinite(latency) and latency >= 0:
-            latencies.append(latency)
-        match = WORKFLOW_STATE.match(str(event.get("message", "")))
-        if match and match[1] in FSM_STATES:
-            pipeline_states[match[1]] += 1
+        stage = str(event.get("stage", ""))
+        stage_counts[stage] += 1
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        ts = _valid_ms(event.get("ts"))
+        ms = _valid_ms(data.get("latency_ms"))
+
+        if stage == "workflow.turn_complete":
+            if ms is not None:
+                latencies.append(ms)
+                model = str(data.get("model") or "unknown")
+                by_model.setdefault(model, []).append(ms)
+                if ts is not None:
+                    pending_wf = (ts, ms)
+            match = WORKFLOW_STATE.match(str(event.get("message", "")))
+            if match and match[1] in FSM_STATES:
+                pipeline_states[match[1]] += 1
+        elif stage == "llm.fast_turn" and ms is not None:
+            llm_ttft.append(ms)
+        elif stage == "tts.neural_synth" and ms is not None:
+            tts_synth.append(ms)
+            tts_all.append(ms)
+            if pending_wf and ts is not None and 0 <= ts - pending_wf[0] <= 10.0:
+                ttfa_samples.append(pending_wf[1] + ms)
+                pending_wf = None
+        elif stage == "tts.cache_hit":
+            tts_all.append(0.0)
+            if pending_wf and ts is not None and 0 <= ts - pending_wf[0] <= 10.0:
+                ttfa_samples.append(pending_wf[1])
+                pending_wf = None
 
     for index, turn in read_records(convs):
         count += 1
@@ -96,7 +136,21 @@ def summarize(logs: Path, convs: Path) -> int:
         if turn.get("role") == "user" and fsm_state in FSM_STATES:
             conversation_states[fsm_state] += 1
 
-    print(f"Workflow latency ({len(latencies)} samples) | P50 {percentile(latencies, .50)} | P95 {percentile(latencies, .95)}")
+    print(_fmt_dist("Workflow latency", latencies))
+    for model, vals in sorted(by_model.items()):
+        print(f"  - {model}: {_fmt_dist('Workflow', vals)}")
+    print(_fmt_dist("LLM / TTFT (llm.fast_turn)", llm_ttft))
+    print(_fmt_dist("TTS synth (tts.neural_synth)", tts_synth))
+    cache_hits = stage_counts["tts.cache_hit"]
+    cache_rate = (cache_hits / len(tts_all) * 100) if tts_all else 0.0
+    print(f"{_fmt_dist('TTS all incl. cache', tts_all)} | cache_hit={cache_hits}/{len(tts_all)} ({cache_rate:.1f}%)")
+    print(_fmt_dist("End-to-End TTFA (Workflow + TTS)", ttfa_samples))
+    print(
+        "Voice & Guardrail counters: "
+        f"stt_final={stage_counts['stt.final']}, sarvam_stt={stage_counts['stt.sarvam_saaras']}, "
+        f"noise_filtered={stage_counts['stt.noise_filtered']}, stt_error={stage_counts['stt.error']}, "
+        f"barge_in={stage_counts['tts.barge_in']}, aadhaar_blocked={stage_counts['guardrail.aadhaar_blocked']}"
+    )
     for label, funnel in (("Pipeline", pipeline_states), ("Conversation", conversation_states)):
         formatted = ", ".join(f"{state}={amount}" for state, amount in sorted(funnel.items()))
         print(f"{label} FSM state funnel: {formatted or 'no state records'}")

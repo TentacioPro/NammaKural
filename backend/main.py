@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend.agent_workflow import run_workflow_turn, split_tts_clauses
+from backend.agent_workflow import run_workflow_turn, set_workflow_consent, split_tts_clauses
 from backend.llm_bridge import _read_env_value, cloud_llm, generate_civic_turn, probe_local_llm
 from backend.logger import LOG_FILE, clear_logs, get_conversations, get_logs, log_event, observability_status, save_conversation_turn
 from backend.tts_service import VOICE_CATALOG, synthesize_neural_mp3
@@ -30,7 +30,6 @@ from backend.state import (
     issue_mobile_otp,
     list_request_history,
     list_telemetry_spans,
-    record_dpdp_consent,
     record_telemetry_span,
     scrub_pii_and_aadhaar,
     seal_verified_turn,
@@ -82,6 +81,7 @@ class HitlSealRequest(BaseModel):
     ward: str
     service_id: str
     urgency_tier: str = "STANDARD"
+    complaint_revision: str = Field(default="", max_length=160)
 
 
 class TelemetryRequest(BaseModel):
@@ -152,7 +152,9 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
 
     gps_lm = None
     if req.gps_lat is not None and req.gps_lon is not None:
-        gps_lm = resolve_gps_to_landmark(req.gps_lat, req.gps_lon)["landmark"]
+        gps = resolve_gps_to_landmark(req.gps_lat, req.gps_lon)
+        if gps["verified"]:
+            gps_lm = gps["landmark"]
 
     analysis = analyze_turn(combined, gps_lm)
     if (not analysis["has_place"] or not analysis["has_issue"]) and llm_res and llm_res.get("landmark_text"):
@@ -167,7 +169,7 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
     )
     record_telemetry_span(
         {
-            "phase": "clarifying" if (not analysis["has_issue"] or not analysis["has_place"] or analysis["ambiguous_area"]) else "hitl_review",
+            "phase": "clarifying" if (not analysis["has_issue"] or not analysis["landmark"]["ward"] or analysis["ambiguous_area"]) else "hitl_review",
             "urgency_tier": analysis["urgency"]["tier"],
             "ward": analysis["landmark"]["ward"],
         }
@@ -265,6 +267,7 @@ def seal_hitl(req: HitlSealRequest) -> dict[str, Any]:
         ward=req.ward,
         service_id=req.service_id,
         urgency_tier=req.urgency_tier,
+        complaint_revision=req.complaint_revision,
     )
     record_telemetry_span(
         {
@@ -291,7 +294,8 @@ def read_telemetry() -> dict[str, Any]:
 
 class WorkflowTurnRequest(BaseModel):
     utterance: str
-    combined_text: str
+    combined_text: str = ""
+    session_id: str | None = Field(default=None, min_length=1, max_length=128)
     state_code: str = "tn"
     lang: str = "tanglish"
     llm_mode: str = "auto"
@@ -305,7 +309,7 @@ class WorkflowTurnRequest(BaseModel):
 
 
 class DpdpConsentRequest(BaseModel):
-    session_id: str = "local"
+    session_id: str = Field(default="local", min_length=1, max_length=128)
     consented: bool
 
 
@@ -337,6 +341,7 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         dpdp_consented=req.dpdp_consented,
         assistant_speaking=req.assistant_speaking,
         persona_name=req.persona_name,
+        session_id=req.session_id,
     )
     record_telemetry_span(
         {
@@ -347,7 +352,7 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         }
     )
     ward_lbl = res.get("analysis", {}).get("landmark", {}).get("ward", "")
-    if req.dpdp_consented and res.get("fsm_state") != "LIFE_SAFETY":
+    if req.dpdp_consented and not res.get("blocked_reason") and res.get("fsm_state") != "LIFE_SAFETY":
         save_conversation_turn("browser", "user", scrub_pii_and_aadhaar(req.utterance)["clean_text"],
                                fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=scrub_pii_and_aadhaar(req.persona_name)["clean_text"])
         save_conversation_turn("browser", "agent", res.get("reply", ""),
@@ -358,7 +363,7 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
 @app.post("/api/dpdp/consent")
 def update_dpdp_consent(req: DpdpConsentRequest) -> dict[str, Any]:
     """Record DPDP Act 2023 explicit notice consent or withdrawal."""
-    return record_dpdp_consent(req.session_id, req.consented)
+    return set_workflow_consent(req.session_id, req.consented)
 
 
 @app.get("/api/rtc/config")

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NammaKural (நம்ம குரல்) — Dual-Track Engineering Rulebook (v4.1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --r-outer: 18px;
+      --r-inner: 10px;
+      --btn-radius: 999px;
+      --font-head: "DM Sans", "Noto Sans Tamil", "Segoe UI", system-ui, sans-serif;
+      --font-body: "DM Sans", "Noto Sans Tamil", "Segoe UI", system-ui, sans-serif;
+      --font-mono: "IBM Plex Mono", "Cascadia Code", monospace;
+
+      /* Light Theme: Gen 13 Studio Solarized Parchment (#32) */
+      --bg: #FDF6E3;
+      --card: #F4EBD4;
+      --trk: #E8DFC5;
+      --bd: #D3C8AA;
+      --fg: #073642;
+      --mut: #586E75;
+      --acc: #268BD2;
+      --warn: #B58900;
+      --ok: #6C8E00;
+      --err: #DC322F;
+
+      --text-1: var(--fg);
+      --text-2: color-mix(in srgb, var(--fg) 78%, var(--bg));
+      --text-3: color-mix(in srgb, var(--fg) 56%, var(--bg));
+      --text-4: color-mix(in srgb, var(--fg) 42%, var(--bg));
+      --card-bg: var(--card);
+      --card-lead-bg: color-mix(in srgb, #ffffff 58%, var(--card));
+      --card-border: color-mix(in srgb, var(--bd) 75%, transparent);
+      --card-shadow: 0 10px 26px -12px rgba(24, 22, 18, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      --inner-bg: color-mix(in srgb, var(--bg) 52%, #ffffff 48%);
+      --inner-elevated: color-mix(in srgb, #ffffff 82%, var(--card));
+      --inner-border: color-mix(in srgb, var(--bd) 52%, transparent);
+      --inner-sep: color-mix(in srgb, var(--bd) 42%, transparent);
+      --input-bg: color-mix(in srgb, #ffffff 85%, var(--bg));
+      --pill-neutral-bg: color-mix(in srgb, var(--trk) 65%, var(--card));
+      --pill-acc-bg: color-mix(in srgb, var(--acc) 14%, var(--card));
+      --pill-acc-fg: color-mix(in srgb, var(--acc) 88%, #000000);
+      --pill-warn-bg: color-mix(in srgb, var(--warn) 16%, var(--card));
+      --pill-warn-fg: color-mix(in srgb, var(--warn) 88%, #000000);
+      --pill-ok-bg: color-mix(in srgb, var(--ok) 15%, var(--card));
+      --pill-ok-fg: color-mix(in srgb, var(--ok) 88%, #000000);
+      --pill-err-bg: color-mix(in srgb, var(--err) 14%, var(--card));
+      --pill-err-fg: color-mix(in srgb, var(--err) 88%, #000000);
+      --code-bg: #072033;
+      --code-fg: #D6DEEB;
+
+      /* Compatibility aliases */
+      --surface: var(--card-bg);
+      --surface-2: var(--inner-bg);
+      --border: var(--card-border);
+      --text: var(--text-1);
+      --muted: var(--text-3);
+      --indigo: var(--acc);
+      --emerald: var(--ok);
+      --amber: var(--warn);
+      --crimson: var(--err);
+    }
+
+    [data-theme="dark"] {
+      /* Dark Theme: Gen 13 Studio Night Owl Deep Ocean (#45) */
+      --bg: #0B253A;
+      --card: #13314A;
+      --trk: #1D3F5C;
+      --bd: #2C5478;
+      --fg: #D6DEEB;
+      --mut: #97B0C8;
+      --acc: #82AAFF;
+      --warn: #ECC48D;
+      --ok: #ADDB67;
+      --err: #EF5350;
+
+      --text-1: var(--fg);
+      --text-2: color-mix(in srgb, var(--fg) 76%, var(--card));
+      --text-3: color-mix(in srgb, var(--fg) 52%, var(--card));
+      --text-4: color-mix(in srgb, var(--fg) 38%, var(--card));
+      --card-bg: var(--card);
+      --card-lead-bg: color-mix(in srgb, var(--acc) 5%, color-mix(in srgb, var(--trk) 32%, var(--card)));
+      --card-border: color-mix(in srgb, var(--bd) 46%, transparent);
+      --card-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      --inner-bg: color-mix(in srgb, var(--trk) 42%, var(--card));
+      --inner-elevated: color-mix(in srgb, var(--trk) 70%, var(--card));
+      --inner-border: color-mix(in srgb, rgba(255,255,255,0.06) 55%, var(--bd) 45%);
+      --inner-sep: color-mix(in srgb, var(--bd) 36%, transparent);
+      --input-bg: color-mix(in srgb, var(--bg) 42%, var(--card));
+      --pill-neutral-bg: color-mix(in srgb, var(--trk) 64%, var(--card));
+      --pill-acc-bg: color-mix(in srgb, var(--acc) 17%, var(--card));
+      --pill-acc-fg: color-mix(in srgb, var(--acc) 80%, #ffffff);
+      --pill-warn-bg: color-mix(in srgb, var(--warn) 17%, var(--card));
+      --pill-warn-fg: color-mix(in srgb, var(--warn) 82%, #ffffff);
+      --pill-ok-bg: color-mix(in srgb, var(--ok) 17%, var(--card));
+      --pill-ok-fg: color-mix(in srgb, var(--ok) 82%, #ffffff);
+      --pill-err-bg: color-mix(in srgb, var(--err) 17%, var(--card));
+      --pill-err-fg: color-mix(in srgb, var(--err) 82%, #ffffff);
+      --code-bg: #071928;
+      --code-fg: #D6DEEB;
+    }
+
+    * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--text-4) 48%, transparent) transparent; }
+    ::selection { background: var(--acc); color: var(--bg); }
+
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      font-variant-numeric: tabular-nums;
+      background: var(--bg);
+      color: var(--text-1);
+      line-height: 1.58;
+      font-size: 14px;
+      transition: background 180ms var(--ease-out), color 180ms var(--ease-out);
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 60;
+      background: color-mix(in srgb, var(--card-lead-bg) 92%, transparent);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 20px;
+    }
+
+    .topbar {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+    }
+
+    .brand small {
+      display: block;
+      font-weight: 500;
+      font-size: 0.78rem;
+      color: var(--text-3);
+    }
+
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    input[type="search"],
+    select {
+      padding: 6px 12px;
+      border-radius: var(--r-inner);
+      border: 1px solid var(--inner-border);
+      background: var(--input-bg);
+      color: var(--text-1);
+      font-family: inherit;
+      min-height: 36px;
+      outline: none;
+    }
+    input[type="search"]:focus,
+    select:focus {
+      border-color: var(--acc);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 26%, transparent);
+    }
+
+    button {
+      padding: 6px 14px;
+      border-radius: var(--btn-radius);
+      border: 1px solid var(--inner-border);
+      background: var(--inner-elevated);
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 36px;
+      transition: all 140ms var(--ease-out);
+    }
+    button:hover { border-color: var(--acc); }
+    button.primary {
+      background: var(--acc);
+      color: var(--bg);
+      border-color: var(--acc);
+    }
+
+    .tabs {
+      max-width: 1280px;
+      margin: 10px auto 0;
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      padding: 6px 14px;
+      border-radius: var(--btn-radius);
+      border: 1px solid var(--inner-border);
+      background: transparent;
+      color: var(--text-3);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn:hover { color: var(--text-1); background: var(--inner-bg); }
+    .tab-btn.active {
+      background: var(--acc);
+      color: var(--bg);
+      border-color: var(--acc);
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 20px 80px;
+    }
+
+    .track { display: none; }
+    .track.active { display: block; }
+
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--r-outer);
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: var(--card-shadow);
+    }
+
+    h2, h3 {
+      font-family: var(--font-head);
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+    }
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid var(--inner-sep);
+      padding-bottom: 9px;
+      font-size: 1.22rem;
+    }
+    h3 { margin-top: 14px; margin-bottom: 6px; font-size: 1rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--inner-bg);
+      border: 1px solid var(--inner-border);
+      border-radius: var(--r-inner);
+      padding: 14px;
+    }
+
+    .kpi { font-family: var(--font-mono); font-size: 1.65rem; font-weight: 700; color: var(--acc); }
+    .kpi.ok { color: var(--ok); }
+    .kpi.warn { color: var(--warn); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 9px;
+      border-radius: var(--btn-radius);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 600;
+    }
+    .b-p0 { background: var(--pill-err-bg); color: var(--pill-err-fg); }
+    .b-p1 { background: var(--pill-warn-bg); color: var(--pill-warn-fg); }
+    .b-ok { background: var(--pill-ok-bg); color: var(--pill-ok-fg); }
+    .b-info { background: var(--pill-acc-bg); color: var(--pill-acc-fg); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.88rem;
+    }
+    th, td {
+      border-bottom: 1px solid var(--inner-sep);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+      color: var(--text-2);
+    }
+    th {
+      background: var(--inner-elevated);
+      color: var(--text-1);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    code, pre { font-family: var(--font-mono); }
+    pre {
+      background: var(--code-bg);
+      color: var(--code-fg);
+      padding: 14px;
+      border-radius: var(--r-inner);
+      border: 1px solid var(--inner-border);
+      overflow-x: auto;
+      font-size: 0.83rem;
+    }
+
+    .swatch {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-right: 5px;
+      border: 1px solid var(--inner-border);
+    }
+
+    .pill-bar { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+
+    .sim-box {
+      background: var(--inner-bg);
+      border: 1px solid var(--inner-border);
+      border-radius: var(--r-inner);
+      padding: 16px;
+    }
+
+    .bar-wrap {
+      background: var(--input-bg);
+      border-radius: var(--btn-radius);
+      height: 16px;
+      overflow: hidden;
+      margin: 6px 0 12px;
+      border: 1px solid var(--inner-border);
+    }
+    .bar-fill { height: 100%; background: var(--ok); transition: width 0.2s var(--ease-out); }
+    .bar-fill.warn { background: var(--warn); }
+    .bar-fill.danger { background: var(--err); }
+
+    details {
+      background: var(--inner-bg);
+      border: 1px solid var(--inner-border);
+      border-radius: var(--r-inner);
+      padding: 10px 14px;
+      margin-bottom: 8px;
+    }
+    summary { font-weight: 600; cursor: pointer; color: var(--text-1); }
+
+    @media print {
+      header { position: static; }
+      .controls, .tabs { display: none; }
+      .track { display: block !important; page-break-before: always; }
+      .track:first-child { page-break-before: auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        NammaKural (நம்ம குரல்) — Dual-Track Engineering Rulebook (v4.1)
+        <small>Commit 775ad5a · 3-Tier Auto-Detect Engine · Universal A11y · Build + Review Skills</small>
+      </div>
+      <div class="controls">
+        <input id="globalSearch" type="search" placeholder="Search rulebook..." aria-label="Search rulebook" />
+        <button onclick="toggleTheme()">High-Contrast Mode</button>
+        <button class="primary" onclick="window.print()">Print / PDF</button>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" onclick="switchTab('track1', this)">1. Current Round Hackathon (Nov 30)</button>
+      <button class="tab-btn" onclick="switchTab('track2', this)">2. Finale Product Rulebook (Full Stack)</button>
+      <button class="tab-btn" onclick="switchTab('track3', this)">3. TDD Tests &amp; Tasks Matrix (32 Cases)</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ==================== TRACK 1: CURRENT ROUND HACKATHON ==================== -->
+    <div id="track1" class="track active">
+      <section>
+        <h2>1.1 Readiness Snapshot &amp; Hardware-Agnostic Strategy</h2>
+        <div class="grid">
+          <div class="card">
+            <div class="kpi ok">77.4%</div>
+            <div><strong>Round 2 Engineering Readiness</strong><br /><small>Backend 92% · A11y UI 65% · Tests
+                60%</small></div>
+          </div>
+          <div class="card">
+            <div class="kpi warn">54.2%</div>
+            <div><strong>Round 2 Overall Readiness</strong><br /><small>Demo Video (0%) + PDF Pitch Deck (0%)
+                remain</small></div>
+          </div>
+          <div class="card">
+            <div class="kpi">47.5%</div>
+            <div><strong>Finale Full-Product Readiness</strong><br /><small>52.5% deferred cleanly to Finale</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>1.2 3-Tier Auto-Detect Pluggable Engine (Judge CPU Safety + Zero Bottleneck)</h2>
+        <p><strong>Critical Rule:</strong> Judges run <code>docker compose up</code> on CPU-only laptops with zero API
+          keys. Never lock <code>docker-compose.yml</code> to an NVIDIA GPU or crash if local Ollama/Unsloth is
+          unreachable.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Mode</th>
+              <th>Stack Executed</th>
+              <th>Hardware / Keys</th>
+              <th>Target User</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge b-ok">Tier 1 (Default)</span></td>
+              <td><strong>Zero-Key Offline Mode</strong></td>
+              <td><code>deterministic-tanglish-v1</code> (warm colloquial Tamil Unicode) + Browser WebSpeech
+                (<code>ta-IN</code>) + <code>edge-tts</code> / Browser TTS</td>
+              <td>Any CPU laptop, 2GB RAM, <strong>0 keys</strong></td>
+              <td>Hackathon judges running <code>docker compose up</code></td>
+            </tr>
+            <tr>
+              <td><span class="badge b-info">Tier 2 (Optional)</span></td>
+              <td><strong>Cloud API Mode</strong></td>
+              <td>OpenAI-compatible LLM (<code>LLM_BASE_URL</code>, <code>LLM_API_KEY</code>, <code>LLM_MODEL</code>) +
+                optional <code>SARVAM_API_KEY</code> (<code>saaras:v4</code> <code>codemix</code>)</td>
+              <td>Any CPU host + <code>.env</code> keys</td>
+              <td>Optional Live Link (keys in server env only, never GitHub)</td>
+            </tr>
+            <tr>
+              <td><span class="badge b-p1">Tier 3 (Local GPU)</span></td>
+              <td><strong>Sovereign Edge Mode</strong></td>
+              <td>Local <strong>Gemma 4 E2B Q4_K_M</strong> (<code>reasoning_effort: "none"</code>, ~450ms/turn) via
+                Unsloth (<code>:8888</code>) or Ollama (<code>:11434</code>)</td>
+              <td>Dell G15 5520 (RTX 3050 4GB/6GB + 32GB DDR5 RAM)</td>
+              <td>YouTube Demo &amp; Finale On-Stage Offline Demo</td>
+            </tr>
+          </tbody>
+        </table>
+        <h3>Mandatory Judge Alerts (2 Places)</h3>
+        <ul>
+          <li><strong><code>README.md</code> Top Section:</strong> State explicitly that default
+            <code>docker compose up</code> requires <strong>zero GPU and zero API keys</strong>, document your Dell G15
+            local demo specs transparently, and include a 3-line <code>.env.example</code> for optional Cloud APIs.</li>
+          <li><strong>UI Header Engine Pill:</strong> Read <code>engine_mode</code> from <code>GET /api/health</code>
+            and display <code>Mode: Offline FSM (No Key Set)</code>, <code>Mode: Local Gemma-4</code>, or
+            <code>Mode: Cloud API</code>. If a user clicks a key-gated feature, show a polite inline banner: <em>"Sarvam
+              key not set — using Browser Voice (ta-IN)."</em></li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>1.3 3-Hour Voice, Tanglish &amp; Conversational Fix Sprint</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>1. Fix "Hindi Accent Reading Romanized Tamil"</h3>
+            <p>Split <code>display_text</code> (Tanglish/bilingual) from <code>tts_text</code> (strictly colloquial
+              Tamil Unicode). Pass <code>rate="+6%"</code> to <code>ta-IN-PallaviNeural</code> so it never falls back to
+              English phonemes.</p>
+            <pre><code>tts_text = "உங்க ஏரியாவுல கரண்ட் கட் ஆயிடுச்சா? லேண்ட்மார்க் சொல்றீங்களா?"
+comm = edge_tts.Communicate(tts_text, voice="ta-IN-PallaviNeural", rate="+6%")</code></pre>
+          </div>
+          <div class="card">
+            <h3>2. Fix Tanglish Ingestion</h3>
+            <p>Switch Sarvam STT from <code>translate</code> to <code>/speech-to-text</code> with
+              <code>model="saaras:v4"</code>, <code>mode="codemix"</code> + TN landmark keyterms. In zero-key browser
+              mode, lock WebSpeech to <code>ta-IN</code> and match both scripts in <code>backend/nlu.py</code>.</p>
+          </div>
+          <div class="card">
+            <h3>3. Fix Rule-Based Tone</h3>
+            <p>Keep <code>Code &gt; LLM</code> for FSM/safety, but prompt Gemma-4 (and upgrade offline fallback
+              templates) in warm spoken <em>Kodunthamizh</em> (1–2 short sentences max, zero formal
+              <em>Senthamizh</em>).</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>1.4 Universal A11y UI Overhaul (Strip Wispr Flow DNA)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Element</th>
+              <th>Accessible Civic Spec</th>
+              <th>Who It Protects</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Canvas</strong></td>
+              <td><span class="swatch" style="background:#fff"></span>Paper White <code>#FFFFFF</code> + <span
+                  class="swatch" style="background:#0b1220"></span>Dark <code>#0B1220</code> toggle. Zero cream/purple
+                gradients or <code>"Wispr"</code> placeholders.</td>
+              <td>Outdoor sunlight legibility on budget Android screens.</td>
+            </tr>
+            <tr>
+              <td><strong>Tactile Orb</strong></td>
+              <td><code>140x140px</code> tappable button. Color + Icon + Bilingual Label + Earcon chime: <span
+                  class="swatch" style="background:#1e3a8a"></span>Idle · <span class="swatch"
+                  style="background:#047857"></span>Listening · <span class="swatch"
+                  style="background:#d97706"></span>Thinking · <span class="swatch"
+                  style="background:#b91c1c"></span>Paused/Urgent.</td>
+              <td>Blind, color-blind, elderly, and illiterate users.</td>
+            </tr>
+            <tr>
+              <td><strong>3-Button Dock</strong></td>
+              <td><code>&gt;= 56px</code> height, <code>&gt;= 4.5:1</code> contrast even inactive:
+                <code>பேசு / Call</code>, <code>நிறுத்து / Pause</code>, <code>முடி / End</code>.</td>
+              <td>Motor-impaired &amp; elderly thumb ergonomics.</td>
+            </tr>
+            <tr>
+              <td><strong>Mobile Clutter Rule</strong></td>
+              <td>Collapse 7 bottom buttons into 1 optional drawer on <code>&lt;640px</code>
+                (<code>⌨️ Type / 📷 Photo</code>). Tablet/Web uses 2-column split.</td>
+              <td>Zero overwhelm for non-literate users.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>1.5 Review &amp; Validation Skills Stack (Audit Everything Built by Agents)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Domain</th>
+              <th>Best Community Review Skill</th>
+              <th>Custom NammaKural Review Skill (in ZIP)</th>
+              <th>What It Catches</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>UI / UX &amp; A11y</strong></td>
+              <td><code>impeccable</code> (<code>/impeccable audit</code> scored /20 + <code>/impeccable critique</code>
+                heuristics) + <code>webapp-testing</code> / <code>Playwright MCP</code></td>
+              <td><code>voice-agent-a11y-ui</code> + <code>test_a11y_playwright.py</code></td>
+              <td>Low contrast, cramped mobile targets, leftover Wispr text, missing <code>aria-live</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Voice Agent Code</strong></td>
+              <td><code>obra/superpowers</code> (<code>requesting-code-review</code> +
+                <code>verification-before-completion</code>) + <code>pr-review-toolkit</code></td>
+              <td><code>review-voice-agent-code</code></td>
+              <td>GPU lock-in in Docker, PII logged pre-scrub, Romanized Tamil hitting TTS, blocking async I/O.</td>
+            </tr>
+            <tr>
+              <td><strong>Pitch Deck (PDF)</strong></td>
+              <td><code>pitch-deck</code> (AI UX Playground — investor/send-ahead text lens)</td>
+              <td><code>review-pitch-deck</code></td>
+              <td>Info trapped in images, missing 4 judge prompts, weak cost/outage fallback explanation.</td>
+            </tr>
+            <tr>
+              <td><strong>Demo Video (&lt;=3m)</strong></td>
+              <td><code>heygen-com/hyperframes</code> (<code>npx hyperframes lint</code> / <code>check</code> /
+                <code>motion-doctrine</code>) + <code>remotion-dev/skills</code></td>
+              <td><code>review-demo-video</code></td>
+              <td>Over 3:00 cap, un-normalized audio (&ne; -14 LUFS), missing burned Tamil/EN captions,
+                non-deterministic frames.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </div>
+
+    <!-- ==================== TRACK 2: FINALE PRODUCT RULEBOOK ==================== -->
+    <div id="track2" class="track">
+      <section>
+        <h2>2.1 RTX 3050 (4GB/6GB) + 32GB DDR5 RAM Partitioning Simulator</h2>
+        <div class="sim-box">
+          <div class="pill-bar">
+            <label>GPU Variant:
+              <select id="gpuSel" onchange="updateHardware()">
+                <option value="4">RTX 3050 4GB (3.2 GB usable after Win11 DWM)</option>
+                <option value="6" selected>RTX 3050 6GB (5.2 GB usable after Win11 DWM)</option>
+              </select>
+            </label>
+            <label>LLM:
+              <select id="llmSel" onchange="updateHardware()">
+                <option value="2.4" selected>Gemma 4 E2B Q4_K_M (~2.4 GB VRAM)</option>
+                <option value="4.2">Gemma 4 E4B Q4_K_M (~4.2 GB VRAM)</option>
+              </select>
+            </label>
+            <label><input type="checkbox" id="eg2Cpu" checked onchange="updateHardware()" /> Run EmbeddingGemma 2
+              (Text+Audio, NO Vision) on CPU RAM</label>
+          </div>
+          <div><strong>GPU VRAM Usage:</strong> <span id="vramLabel"></span></div>
+          <div class="bar-wrap">
+            <div id="vramBar" class="bar-fill"></div>
+          </div>
+          <div><strong>32GB DDR5 CPU RAM Usage (VAD + STT + TTS + EG2 + Orchestrator):</strong> <span
+              id="ramLabel"></span></div>
+          <div class="bar-wrap">
+            <div id="ramBar" class="bar-fill"></div>
+          </div>
+          <div id="hwNote" style="font-size:0.9rem;color:var(--muted);"></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>2.2 Sub-800ms Gemini-Like Rhythm Calculator</h2>
+        <div class="sim-box">
+          <div class="grid">
+            <label>WebRTC + VAD + Smart Turn (ms): <input id="lat1" type="number" value="200"
+                oninput="updateLatency()" /></label>
+            <label>Streaming STT Finalize (ms): <input id="lat2" type="number" value="130"
+                oninput="updateLatency()" /></label>
+            <label>Gemma 4 E2B TTFT (ms): <input id="lat3" type="number" value="220"
+                oninput="updateLatency()" /></label>
+            <label>IndicXlit + First-Chunk TTS (ms): <input id="lat4" type="number" value="150"
+                oninput="updateLatency()" /></label>
+          </div>
+          <p style="margin-top:12px;"><strong>Total Perceived Turn Latency:</strong> <span id="latTotal"
+              class="kpi ok">700 ms</span> <span id="latBadge" class="badge b-ok">Gemini-Like (&lt;= 800ms)</span></p>
+        </div>
+      </section>
+
+      <section>
+        <h2>2.3 Finale Architecture Pillars (Deferred Until After Nov 30)</h2>
+        <details open>
+          <summary>1. Full Local Neural Audio Stack (Zero Cloud Cost)</summary>
+          <p>Pipecat + SmallWebRTC + Silero VAD + Smart Turn v3.2 (CPU) + IndicConformer/SraVaani with KenLM Tanglish
+            slang fusion + Gemma 4 E2B (GPU, <code>reasoning_effort: none</code>) + IndicXlit + Piper/DhVaani TTS (CPU)
+            + RAM-cached Tamil micro-fillers.</p>
+        </details>
+        <details>
+          <summary>2. EmbeddingGemma 2 (CPU RAM) &amp; 3-Tier Call Memory</summary>
+          <p>Load EG2 text + audio encoders only (skip 170M vision encoder) on 32GB CPU RAM with DuckDB. Powers
+            zero-transcription audio RAG, cross-call episodic memory, and neighbor outage semantic deduplication at 0 MB
+            GPU VRAM.</p>
+        </details>
+        <details>
+          <summary>3. 4-Tier TN Grievance Fallback &amp; P0–P3 Priority Queue</summary>
+          <p>Tier 1 Official API -&gt; Tier 2 Background Playwright with live SMS OTP handoff &amp; HITL CAPTCHA
+            screenshots -&gt; Tier 3 Formal Email / WhatsApp card -&gt; Tier 4 SQLite exponential-backoff Outbox Queue.
+            Backed by P0 life-safety interrupt (112/108), P1 hazard fast-track (1912), P2 batch, and P3 HITL quarantine
+            + 5 deterministic abuse blockers.</p>
+        </details>
+        <details>
+          <summary>4. HITL Operator Console &amp; Self-Improvising Eval Flywheel</summary>
+          <p>Deterministic HITL states (<code>ACTIVE_AI</code>, <code>AWAITING_HUMAN_APPROVAL</code>,
+            <code>HUMAN_TAKEOVER</code>, <code>PAUSED</code>, <code>AWAITING_OTP</code>), Whisper Coach shadow steering,
+            Arize Phoenix OTel waterfall traces, headless WAV replay, and nightly 14B teacher-student adversarial
+            mutation tests.</p>
+        </details>
+      </section>
+    </div>
+
+    <!-- ==================== TRACK 3: TDD TESTS & TASKS MATRIX ==================== -->
+    <div id="track3" class="track">
+      <section>
+        <h2>3.1 Master TDD Tests &amp; Tasks Matrix (32 Cases)</h2>
+        <div class="pill-bar">
+          <select id="fPhase" onchange="renderMatrix()">
+            <option value="ALL">All Phases</option>
+            <option value="Phase 1 (Nov 30)">Phase 1 (Nov 30)</option>
+            <option value="Phase 2 (Finale)">Phase 2 (Finale)</option>
+          </select>
+          <select id="fOwner" onchange="renderMatrix()">
+            <option value="ALL">All Owners</option>
+            <option value="Antigravity">Antigravity</option>
+            <option value="Human">Human QA</option>
+          </select>
+          <button class="primary" onclick="exportCSV()">Export CSV</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Pass</th>
+                <th>ID</th>
+                <th>Phase</th>
+                <th>Layer</th>
+                <th>Test / Task</th>
+                <th>Owner</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody id="matrixBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const CASES = [
+      ["NK-01", "Phase 1 (Nov 30)", "Zero-Key Boot", "Cold start docker compose up --build on CPU-only machine with ZERO API keys", "Antigravity + Friend", "P0"],
+      ["NK-02", "Phase 1 (Nov 30)", "3-Tier Engine", "Auto-detect Cloud API -> Local Gemma-4 -> Offline FSM; display honest UI Engine Pill", "Antigravity", "P0"],
+      ["NK-03", "Phase 1 (Nov 30)", "Judge Alerts", "README documents CPU zero-key boot + Dell G15 demo specs + .env.example", "Antigravity + Human", "P0"],
+      ["NK-04", "Phase 1 (Nov 30)", "TTS Prosody", "Split display_text vs tts_text (Tamil Unicode only, rate=+6%); zero Hindi-accent reading", "Antigravity + Human", "P0"],
+      ["NK-05", "Phase 1 (Nov 30)", "Tanglish STT", "Sarvam saaras:v4 mode=codemix + browser ta-IN fallback + dual-script NLU match", "Antigravity", "P0"],
+      ["NK-06", "Phase 1 (Nov 30)", "Conversational", "Colloquial Kodunthamizh prompt + warm offline templates (<=2 spoken sentences)", "Human + Antigravity", "P0"],
+      ["NK-07", "Phase 1 (Nov 30)", "UI A11y", "Strip all Wispr Flow colors, purple orb, and hotkey placeholders from index.html", "Antigravity", "P0"],
+      ["NK-08", "Phase 1 (Nov 30)", "UI A11y", "140x140px Tactile Orb (Color+Icon+Label+Earcon) + 56px high-contrast 3-button dock", "Antigravity + Human", "P0"],
+      ["NK-09", "Phase 1 (Nov 30)", "UI A11y", "Collapse 7 mobile buttons into 1 optional drawer (<640px); 2-col desktop split", "Antigravity", "P0"],
+      ["NK-10", "Phase 1 (Nov 30)", "UI A11y", "Clarity Popup focus-trapped aria-live=assertive; inline edit OR spoken Confirm without muting mic", "Antigravity + Human", "P0"],
+      ["NK-11", "Phase 1 (Nov 30)", "UI Audit", "Run /impeccable audit + test_a11y_playwright.py (390/768/1440px, 0 overflow, 0 errors)", "Antigravity", "P0"],
+      ["NK-12", "Phase 1 (Nov 30)", "Privacy", "Pre-LLM firewall scrubs synthetic 12-digit ID, +91 phone, email before LLM & logs", "Antigravity", "P0"],
+      ["NK-13", "Phase 1 (Nov 30)", "DPDP Gate", "Consent withdrawal locks automated routing and outputs 1100/1912 helplines", "Antigravity", "P0"],
+      ["NK-14", "Phase 1 (Nov 30)", "Semantic VAD", "Ignore backchannels (seri/aama/சரி/ஆமா); honor barge-in (stop/niruthunga/நிறுத்து)", "Antigravity + Human", "P0"],
+      ["NK-15", "Phase 1 (Nov 30)", "NLU & GIS", "Multi-ward disambiguation (Velachery/Anna Nagar) + mid-call repair (illa Anna Arch)", "Antigravity", "P0"],
+      ["NK-16", "Phase 1 (Nov 30)", "Urgency", "P0 life-safety (112/108) & P1 live-wire (1912) override 24h cooldown deterministically", "Antigravity", "P0"],
+      ["NK-17", "Phase 1 (Nov 30)", "HITL Seal", "Dual-Confirm rejects single-breath confirm; unlocks only after OTP + 2 distinct turns", "Antigravity", "P0"],
+      ["NK-18", "Phase 1 (Nov 30)", "LLM Policy", "Bharat-Safe model selector prefers Gemma-4/Phi-4/Llama; blocks Qwen/DeepSeek", "Antigravity", "P0"],
+      ["NK-19", "Phase 1 (Nov 30)", "State Packs", "Dynamic load of tn.json, ka.json, in_central.json with zero core code changes", "Antigravity", "P1"],
+      ["NK-20", "Phase 1 (Nov 30)", "Eval Gate", "pytest -v + analytics/eval_gate.py (12/12 golden cases) + review-voice-agent-code audit", "Antigravity", "P0"],
+      ["NK-21", "Phase 1 (Nov 30)", "Analytics", "analytics/analyze_logs.py reports P50/P95 latency, FSM funnel, and 0 PII leaks", "Antigravity", "P1"],
+      ["NK-22", "Phase 1 (Nov 30)", "Pitch Deck", "Text-first PDF passes review-pitch-deck (all 4 judge prompts readable as text)", "Human + Antigravity", "P0"],
+      ["NK-23", "Phase 1 (Nov 30)", "Demo Video", "<=3:00 YouTube demo passes review-demo-video (-14 LUFS, burned Tamil/EN captions)", "Human", "P0"],
+      ["NK-24", "Phase 1 (Nov 30)", "Friend Test", "Fresh machine git clone + docker compose up verified before Nov 30, 6 PM IST", "Human (Friend)", "P0"],
+      ["NK-25", "Phase 2 (Finale)", "Local STT", "Self-hosted IndicConformer/SraVaani + KenLM Tanglish slang fusion (<5% Entity Error)", "Antigravity + Human", "P1"],
+      ["NK-26", "Phase 2 (Finale)", "Local TTS", "Offline Piper/DhVaani + IndicXlit override dictionary + RAM-cached micro-fillers", "Antigravity", "P1"],
+      ["NK-27", "Phase 2 (Finale)", "EG2 Memory", "EmbeddingGemma 2 (text+audio only, NO vision) on CPU RAM + DuckDB (<80ms, 0MB VRAM)", "Antigravity", "P1"],
+      ["NK-28", "Phase 2 (Finale)", "Portal Worker", "4-Tier worker: API -> Playwright (Live OTP/CAPTCHA HITL) -> Email/WA -> Outbox retry", "Antigravity", "P1"],
+      ["NK-29", "Phase 2 (Finale)", "HITL Console", "Whisper Coach shadow steering + Live Human Takeover + Seamless Handback", "Hybrid", "P1"],
+      ["NK-30", "Phase 2 (Finale)", "Abuse Gates", "EG2 semantic dedup across neighbors + caller trust-score priority-inflation dampener", "Antigravity", "P1"],
+      ["NK-31", "Phase 2 (Finale)", "Eval Flywheel", "Arize Phoenix OTel traces + nightly 14B teacher-student adversarial mutation tests", "Antigravity", "P2"],
+      ["NK-32", "Phase 2 (Finale)", "Telephony/Soak", "VPS/Tailscale coturn 4G/5G test + 30-min Dell G15 thermal/VRAM soak test", "Human", "P1"]
+    ];
+
+    function switchTab(id, btn) {
+      document.querySelectorAll(".track").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      btn.classList.add("active");
+    }
+    function toggleTheme() {
+      const cur = document.documentElement.getAttribute("data-theme");
+      document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+    }
+    function updateHardware() {
+      const gpu = parseFloat(document.getElementById("gpuSel").value);
+      const usable = gpu === 4 ? 3.2 : 5.2;
+      const llm = parseFloat(document.getElementById("llmSel").value);
+      const eg2Cpu = document.getElementById("eg2Cpu").checked;
+      const vramUsed = llm + (eg2Cpu ? 0 : 1.3);
+      const ramUsed = 3.2 + (eg2Cpu ? 1.8 : 0.4);
+      const vPct = Math.min(100, Math.round((vramUsed / usable) * 100));
+      const rPct = Math.min(100, Math.round((ramUsed / 32) * 100));
+      document.getElementById("vramLabel").textContent = `${vramUsed.toFixed(1)} GB / ${usable.toFixed(1)} GB usable (${vPct}%)`;
+      document.getElementById("ramLabel").textContent = `${ramUsed.toFixed(1)} GB / 32.0 GB (${rPct}%)`;
+      const vb = document.getElementById("vramBar");
+      vb.style.width = vPct + "%";
+      vb.className = "bar-fill " + (vramUsed > usable ? "danger" : vPct > 85 ? "warn" : "");
+      document.getElementById("ramBar").style.width = rPct + "%";
+      document.getElementById("hwNote").textContent = vramUsed > usable
+        ? "WARNING: Exceeds usable VRAM! Move EmbeddingGemma 2 to CPU RAM or drop to Gemma 4 E2B."
+        : "SAFE: Clean headroom for KV-cache and sub-250ms TTFT.";
+    }
+    function updateLatency() {
+      const sum = ["lat1", "lat2", "lat3", "lat4"].reduce((a, id) => a + (parseInt(document.getElementById(id).value) || 0), 0);
+      document.getElementById("latTotal").textContent = sum + " ms";
+      const b = document.getElementById("latBadge");
+      if (sum <= 800) { b.textContent = "Gemini-Like (<= 800ms)"; b.className = "badge b-ok"; }
+      else if (sum <= 1100) { b.textContent = "Acceptable (Use RAM Micro-Fillers)"; b.className = "badge b-p1"; }
+      else { b.textContent = "Sluggish (> 1100ms — Optimize TTFT)"; b.className = "badge b-p0"; }
+    }
+    function renderMatrix() {
+      const fp = document.getElementById("fPhase").value;
+      const fo = document.getElementById("fOwner").value;
+      const saved = JSON.parse(localStorage.getItem("nk_tdd_v41") || "{}");
+      const tb = document.getElementById("matrixBody");
+      tb.innerHTML = "";
+      CASES.forEach(c => {
+        if (fp !== "ALL" && c[1] !== fp) return;
+        if (fo !== "ALL" && !c[4].includes(fo)) return;
+        const tr = document.createElement("tr");
+        const chk = saved[c[0]] ? "checked" : "";
+        const pCls = c[5] === "P0" ? "b-p0" : c[5] === "P1" ? "b-p1" : "b-info";
+        tr.innerHTML = `<td><input type="checkbox" ${chk} onchange="toggleCase('${c[0]}', this.checked)" /></td>
+      <td><strong>${c[0]}</strong></td><td>${c[1]}</td><td>${c[2]}</td><td>${c[3]}</td><td>${c[4]}</td>
+      <td><span class="badge ${pCls}">${c[5]}</span></td>`;
+        tb.appendChild(tr);
+      });
+    }
+    function toggleCase(id, val) {
+      const saved = JSON.parse(localStorage.getItem("nk_tdd_v41") || "{}");
+      saved[id] = val;
+      localStorage.setItem("nk_tdd_v41", JSON.stringify(saved));
+    }
+    function exportCSV() {
+      const saved = JSON.parse(localStorage.getItem("nk_tdd_v41") || "{}");
+      const lines = ["ID,Phase,Layer,Test_Task,Owner,Priority,Passed"];
+      CASES.forEach(c => {
+        const row = [...c, saved[c[0]] ? "PASS" : "TODO"].map(x => '"' + String(x).replace(/"/g, '""') + '"');
+        lines.push(row.join(","));
+      });
+      const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "nammakural_tdd_matrix_v41.csv";
+      a.click();
+    }
+    document.getElementById("globalSearch").addEventListener("input", e => {
+      const q = e.target.value.trim().toLowerCase();
+      document.querySelectorAll("main section").forEach(s => {
+        s.style.display = (!q || s.innerText.toLowerCase().includes(q)) ? "" : "none";
+      });
+    });
+    updateHardware();
+    updateLatency();
+    renderMatrix();
+  </script>
+</body>
+
+</html>

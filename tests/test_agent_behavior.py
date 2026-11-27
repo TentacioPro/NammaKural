@@ -134,8 +134,8 @@ def test_llm_tool_calling_loop_and_webrtc_coturn_endpoints(monkeypatch) -> None:
             }]
         }).encode("utf-8"))
 
-    monkeypatch.setattr("backend.agent_workflow.probe_local_llm", lambda: {"available": True, "provider": "unsloth-studio", "active_model": "gemma-4-E2B-it-Q4_K_M", "models": ["gemma-4-E2B-it-Q4_K_M"]})
-    monkeypatch.setattr("backend.agent_workflow._read_env_value", lambda name, default="": "demo-key" if name == "UNSLOTH_API_KEY" else "http://127.0.0.1:8888")
+    monkeypatch.setattr("backend.llm_bridge.probe_local_llm", lambda: {"available": True, "provider": "unsloth-studio", "active_model": "gemma-4-E2B-it-Q4_K_M", "models": ["gemma-4-E2B-it-Q4_K_M"]})
+    monkeypatch.setattr("backend.llm_bridge._read_env_value", lambda name, default="": "demo-key" if name == "UNSLOTH_API_KEY" else "http://127.0.0.1:8888")
     import urllib.request
     monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
 
@@ -224,3 +224,21 @@ def test_e2e_websocket_tts_stt_and_past_conversations(monkeypatch) -> None:
     conv = client.get("/api/conversations?limit=10").json()
     assert conv["count"] >= 2
     assert any("Anna Nagar" in item["text"] for item in conv["items"])
+
+def test_life_safety_preempts_provider_and_has_tamil_speech(monkeypatch):
+    import re
+
+    def no_provider(*args, **kwargs):
+        raise AssertionError("Emergency guidance should be deterministic")
+
+    monkeypatch.setattr("backend.agent_workflow.chat_backends", no_provider)
+    for phrase, number in [("gas leak and spark", "1906"), ("fire", "101"),
+                           ("ambulance", "108"), ("electrocution", "112")]:
+        response = client.post("/api/workflow/turn", json={
+            "utterance": phrase, "combined_text": phrase, "llm_mode": "auto",
+        }).json()
+        assert response["fsm_state"] == "LIFE_SAFETY"
+        assert response["analysis"]["urgency"]["helpline"] == number
+        assert response["display_text"] == response["reply"]
+        assert number in response["tts_text"]
+        assert re.fullmatch(r"[\u0B80-\u0BFF0-9 .!?]+", response["tts_text"])

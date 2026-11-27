@@ -1,34 +1,34 @@
-# Design System — NammaKural (*நம்ம குரல்*)
+# NammaKural voice interface
 
 <!-- impeccable:design-schema 1 -->
 
-## Visual World & Thesis
-**Sunlit Voice-First Civic Companion (Azure Foundry Voice Live Minimalism × Tamil Wayfinding Clarity).**
-Inspired directly by `microsoft/voice-agent` (`samples/foundry_voice_webrtc` + Foundry Agent Preview runtime canvas) and `TentacioPro/azure-voice-live-agent` (`AcousticOrb.tsx`), NammaKural replaces static government form walls with one calm light canvas dominated by a reactive acoustic orb, short conversational clarification only when required, urgency-aware triage, and a clean Human-in-the-Loop (HITL) approval gate.
+NammaKural opens with a voice control and a conversation column. Citizens can report a problem in Tamil, Tanglish, or English and supply a location, correction, or attachment when the agent needs it. Review and dispatch actions appear as the conversation progresses.
 
-## Color Tokens (`index.html`)
-- `--bg-page`: `#F7FAFC` (Sunlit Cool Surface — daylight high-visibility background)
-- `--bg-surface`: `#FFFFFF` (Orb Stage, HITL Clarity Card, Outcome Card)
-- `--bg-subtle`: `#F0F4F8` / `--bg-mint`: `#E9F7F2` / `--bg-warm`: `#FFF8EC`
-- `--ink`: `#0F172A` · `--ink-2`: `#334155` · `--ink-3`: `#5B687A` (Contrast `>= 5.5:1`)
-- `--accent`: `#C23B1A` (Chola Vermilion — P1 hazard highlight & focus rings)
-- `--teal`: `#0B6B5C` / `--teal-dark`: `#074A40` (HITL approval, verified Ward badges, speaking state)
-- `--whatsapp`: `#15803D` (1-Tap Official WhatsApp / Email / Dial actions)
-- `--amber`: `#9A5B00` (Clarification / P2 chronic escalation state)
+## Color and type
 
-## Typography
-- **Latin UI:** `DM Sans` (`400`, `500`, `600`, `700`) with `A+ Text` root scaling (`112.5%`).
-- **Tamil Script (*தமிழ்*):** `Anek Tamil` (`500`, `600`, `700`) for balanced legibility alongside Latin Tanglish.
-- **Road IDs, Helplines & Timers:** `JetBrains Mono` (`font-variant-numeric: tabular-nums`).
+| Role | Value |
+|---|---|
+| Daylight canvas | #FFFFFF |
+| Dark canvas | #0B1220 |
+| Primary action and idle orb | #1E3A8A |
+| Listening | #047857 |
+| Checking | #D97706 with dark text |
+| Paused and urgent | #B91C1C with white text |
 
-## Voice Agent State Visuals (`AcousticOrb`)
-- `idle`: Soft slate harmonic rings (`amp 2.5`)
-- `listening`: Active emerald rings (`amp 8.5`, speed `0.036`)
-- `thinking`: Amber orbital sweep (`amp 6.5`, speed `0.055`)
-- `clarifying`: Warm amber ring + inline disambiguation pills (visible ONLY when a slot/ward is ambiguous)
-- `hitl_review` (`critical` override if P1 hazard): Shows `#hitlCard` summary + Urgent/Sentiment pill; keeps `#dispatchSection` locked
-- `approved_dispatch`: Green/teal calm glow; unlocks 1-tap WhatsApp / Emergency Dial `1912` / `<1 MB` Tap-to-Mark JPEG stamper / collapsible portal fields
+Tamil and English labels have equal weight. Use Noto Sans Tamil when installed and native sans-serif fallbacks for offline rendering. Keep line height at 1.6 and use tabular digits for timers and official identifiers. Focus rings are 3 px and have theme-specific colors.
 
-## Round 2 Visual Polish Target (Microsoft Foundry Orb Reference)
-- Keep initial `idle` canvas ultra-clean: centered undulating orb + concise state text (`Speaking...` / `Listening...` / `Talk to interrupt` hint) + compact bottom call strip (`Mic | Language/Captions | Waveform/Timer | End/Clear`) + top `+ New` action.
-- Preserve strict `2G Lite Mode` (`data-lite="true"` disables ambient radial gradients and canvas animation frames) and `0` horizontal overflow down to `320px–390px`.
+## Layout and controls
+
+- Below 640 px, a single Type / Photo toggle reveals typing, attachment, location, and voice options. From 640 px, these controls are visible.
+- At 768 px and above, the orb and call dock sit left of the transcript and inline complaint review.
+- The native 176 px orb uses color, an icon, Tamil and English text, and short audio cues. Listening animation respects the browser’s reduced-motion setting and 2G mode.
+- Call, Pause or Resume, and End are 56 px tall. Secondary interactive targets are at least 44 px tall.
+- The engine pill reflects API health. The polite voice notice describes browser speech fallback when the optional transcription key is absent.
+
+## Conversation and approval
+
+The transcript updates in a polite live region. Emergency dial guidance and complaint review announcements use assertive live regions. Opening inline review moves focus to its heading and leaves the microphone running. Escape and Close return focus to the review trigger.
+
+After OTP verification, citizens can say the confirmation in two separate spoken turns, or approve the reviewed details and speak it once. Emergency numbers are directly dialable. After filing approval, the citizen chooses the official dispatch action.
+
+Use the workflow’s display text in the transcript and its Tamil speech text for playback. The shell and basic demo flow also run from a local file.

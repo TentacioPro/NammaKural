@@ -182,10 +182,34 @@ class UrgencyResult:
     action_en: str
     action_ta: str
     prefix: str
+    helpline: str | None = None
+
+
+_EMERGENCY_ROUTES = (
+    (r"\b(?:1906|(?:lpg |cooking )?gas leak(?:ing)?|gas kasivu)\b|எரிவாயு கசிவு|கேஸ் கசிவு", "1906"),
+    (r"\b(?:101|fire|on fire|thee pidich\w*)\b|தீப்பிடி|தீ பிடி|தீ விபத்து", "101"),
+    (r"\b(?:108|ambulance|heart attack|unconscious)\b|ஆம்புலன்ஸ்|மயங்கி|மாரடைப்பு", "108"),
+    (r"\b(?:112|electrocut(?:ed|ion|ing)|life.threatening)\b|மின்சாரம் தாக்கி|உயிருக்கு ஆபத்து", "112"),
+)
+
+
+def life_safety_helpline(text: str) -> str | None:
+    numbers = [number for pattern, number in _EMERGENCY_ROUTES if re.search(pattern, text, re.IGNORECASE)]
+    return "112" if len(numbers) > 1 else next(iter(numbers), None)
 
 
 def classify_sentiment_urgency(text: str) -> UrgencyResult:
     """Classify urgency and emotional register from code-mixed Tanglish/Tamil text."""
+    if number := life_safety_helpline(text):
+        return UrgencyResult(
+            tier="LIFE_SAFETY",
+            badge_en="P0 Life Safety",
+            badge_ta="உயிருக்கு ஆபத்து",
+            action_en=f"Call {number} now for emergency help.",
+            action_ta=f"அவசர உதவிக்கு உடனே {number} எண்ணை அழையுங்க.",
+            prefix="[P0 LIFE SAFETY] ",
+            helpline=number,
+        )
     if re.search(
         r"(spark|fire|shock|live\s*wire|current|smoke|danger|explode|manhole|flood|child)",
         text,
@@ -358,6 +382,7 @@ def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None)
     explicit_lm = resolve_explicit_place(txt)
     lm = gps_landmark or explicit_lm or svc["landmarks"][min(lm_idx, len(svc["landmarks"]) - 1)]
     urgency = classify_sentiment_urgency(combined_text)
+    has_issue = has_issue or urgency.tier == "LIFE_SAFETY"
 
     wants_attachment = bool(_ATTACH_MENTION_RE.search(txt))
 

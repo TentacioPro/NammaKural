@@ -1,0 +1,17 @@
+{"id":"tanglish-streetlight","turns":[{"input":{"utterance":"Anna Nagar Tower Park streetlight eriyala"},"expect":{"fsm_state":"HITL_SEAL","analysis.service_id":"streetlight_eb","analysis.landmark.ward":"Ward 103"}}]}
+{"id":"tamil-streetlight","turns":[{"input":{"utterance":"அண்ணா நகர் Tower Park தெருவிளக்கு எரியல","lang":"ta"},"expect":{"fsm_state":"HITL_SEAL","analysis.urgency.tier":"STANDARD"}}]}
+{"id":"velachery-multi-turn-sewage","turns":[{"input":{"utterance":"Velachery saakkadai overflow"},"expect":{"fsm_state":"DISAMBIGUATE","analysis.ambiguous_area":"velachery"}},{"input":{"utterance":"Vijayanagar Bus Stand"},"expect":{"fsm_state":"HITL_SEAL","analysis.landmark.ward":"Ward 178","cooldown.override_allowed":false}}]}
+{"id":"anna-nagar-landmark-repair","turns":[{"input":{"utterance":"Anna Nagar Tower Park streetlight eriyala"},"expect":{"analysis.landmark.ward":"Ward 103"}},{"input":{"utterance":"illa Anna Arch IIIrd Ave"},"expect":{"fsm_state":"HITL_SEAL","analysis.landmark.ward":"Ward 102"}}]}
+{"id":"issue-missing","turns":[{"input":{"utterance":"Anna Nagar Tower Park pakkam"},"expect":{"fsm_state":"DISAMBIGUATE","analysis.has_place":true,"analysis.has_issue":false}}]}
+{"id":"place-missing","turns":[{"input":{"utterance":"Streetlight eriyala"},"expect":{"fsm_state":"DISAMBIGUATE","analysis.has_place":false,"analysis.has_issue":true}}]}
+{"id":"p1-electrical","turns":[{"input":{"utterance":"Anna Nagar Tower Park transformer wire spark aaguthu"},"expect":{"fsm_state":"HITL_SEAL","analysis.urgency.tier":"CRITICAL_SAFETY"}}]}
+{"id":"p2-false-closure","turns":[{"input":{"utterance":"Velachery Vijayanagar Bus Stand garbage fix pannama close pannitanga"},"expect":{"fsm_state":"HITL_SEAL","analysis.urgency.tier":"HIGH_ESCALATION","cooldown.override_allowed":false}}]}
+{"id":"p0-fire","turns":[{"input":{"utterance":"Velachery fire and transformer spark"},"expect":{"fsm_state":"LIFE_SAFETY","analysis.urgency.helpline":"101","cooldown":null,"tool_trace":[]}}]}
+{"id":"p0-medical-tamil","turns":[{"input":{"utterance":"ஆம்புலன்ஸ் வேணும்","lang":"ta"},"expect":{"fsm_state":"LIFE_SAFETY","analysis.urgency.helpline":"108"}}]}
+{"id":"p0-gas-leak","turns":[{"input":{"utterance":"கேஸ் கசிவு","lang":"ta"},"expect":{"fsm_state":"LIFE_SAFETY","analysis.urgency.helpline":"1906"}}]}
+{"id":"p0-electric-shock","turns":[{"input":{"utterance":"someone was electrocuted","dpdp_consented":false},"expect":{"fsm_state":"LIFE_SAFETY","analysis.urgency.helpline":"112"}}]}
+{"id":"consent-withdrawn","turns":[{"input":{"utterance":"Anna Nagar Tower Park streetlight eriyala","dpdp_consented":false},"expect":{"blocked_reason":"dpdp_consent_withdrawn","tool_trace":[]}}]}
+{"id":"greeting-and-mic-check","turns":[{"input":{"utterance":"நான் பேசுறது கேக்குதா","lang":"ta"},"expect":{"fsm_state":"GREET","chitchat.kind":"greeting_or_mic_check"}}]}
+{"id":"ignore-backchannel","turns":[{"input":{"utterance":"seri ok","assistant_speaking":true},"expect":{"ignored_backchannel":true,"vad.action":"not_turn","reply":""}}]}
+{"id":"barge-in-repair","turns":[{"input":{"utterance":"wait niruthunga change to Anna Arch","assistant_speaking":true},"expect":{"vad.action":"interrupt"}}]}
+{"id":"karnataka-pack","turns":[{"input":{"utterance":"Indiranagar 100 feet BESCOM streetlight current illa","state_code":"ka"},"expect":{"state_code":"ka","analysis.landmark.ward":"Ward 80"}}]}

@@ -12,10 +12,10 @@ from __future__ import annotations
 import json
 import re
 import time
-import urllib.request
 from typing import Any
 
-from backend.llm_bridge import _read_env_value, probe_local_llm
+from backend.llm_bridge import chat_backends, chat_message
+from backend.nlu import life_safety_helpline, resolve_gps_to_landmark
 from backend.logger import log_event
 from backend.nlu import analyze_turn, classify_conversational_chitchat, classify_semantic_vad, classify_sentiment_urgency
 from backend.state import check_cooldown, scrub_pii_and_aadhaar, verify_hitl_seal
@@ -103,6 +103,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 
 def _resolve_pack_turn(query: str, state_code: str = "tn", gps_lat: float | None = None, gps_lon: float | None = None) -> dict[str, Any]:
     """Unified multi-state resolver supporting pluggable JSON State Packs while keeping TN deep fidelity."""
+    if not REGISTRY.list_summaries():
+        gps = resolve_gps_to_landmark(gps_lat, gps_lon)["landmark"] if gps_lat is not None and gps_lon is not None else None
+        return {**analyze_turn(query, gps), "state_code": "tn"}
     pack = REGISTRY.get(state_code)
     gps_lm = None
     if gps_lat is not None and gps_lon is not None:
@@ -196,7 +199,7 @@ def execute_tool(name: str, args: dict[str, Any], ctx: dict[str, Any]) -> dict[s
             mode=str(args.get("mode", "voice_double")),
             spoken_phrase=str(args.get("spoken_phrase", "")),
             modal_ok=bool(args.get("modal_ok", False)),
-            otp_verified=bool(args.get("otp_verified", ctx.get("otp_verified", False))),
+            otp_verified=bool(ctx.get("otp_verified", False)),
             ward=str(args.get("ward", "")),
             service_id=str(args.get("service_id", "")),
             urgency_tier=str(args.get("urgency_tier", "STANDARD")),
@@ -238,9 +241,9 @@ def _derive_fsm_state(analysis: dict[str, Any], seal_res: dict[str, Any] | None)
 
 def _generate_natural_reply(
     utterance: str,
-    combined_clean: str,
     state_code: str,
     lang: str,
+    preferred_mode: str,
     fsm_state: str,
     analysis: dict[str, Any],
     cooldown: dict[str, Any] | None,
@@ -252,22 +255,7 @@ def _generate_natural_reply(
     Skips Gemma-4's slow hidden thinking loop (`reasoning_effort='none'`) so natural Tamil/Tanglish
     conversation replies stream fast without falling back to rigid templates.
     """
-    status = probe_local_llm()
-    if not status["available"] or not status["active_model"]:
-        return None, "offline-tanglish-v1"
-
-    url = (
-        f"{_read_env_value('UNSLOTH_STUDIO_URL', 'http://127.0.0.1:8888').rstrip('/')}/v1/chat/completions"
-        if status["provider"] == "unsloth-studio"
-        else f"{_read_env_value('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')}/v1/chat/completions"
-    )
-    headers = {"Content-Type": "application/json"}
-    if status["provider"] == "unsloth-studio":
-        key = _read_env_value("UNSLOTH_API_KEY", "")
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
-
-    pack = REGISTRY.get(state_code)
+    state_name = REGISTRY.get(state_code).state_name if REGISTRY.list_summaries() else "Tamil Nadu"
     lm = analysis.get("landmark", {})
     grounded_ctx = {
         "fsm_state": fsm_state,
@@ -292,11 +280,11 @@ def _generate_natural_reply(
         )
 
     sys_msg = (
-        f"You are {persona_name}, a warm human-like civic voice assistant for NammaKural ({pack.state_name}). "
+        f"You are {persona_name}, a warm human-like civic voice assistant for NammaKural ({state_name}). "
         f"{lang_rule} Ground your answer ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
         f"If fsm_state is TRIAGE, chat warmly, acknowledge what they said, and gently ask what street problem and area they need help with. "
         f"If fsm_state is DISAMBIGUATE, ask for the one missing detail cleanly. "
-        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி, உறுதி' (or open the Clarity Popup)."
+        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி' in two separate turns (or approve the Clarity Popup and say it once)."
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
     for h in history[-3:]:
@@ -306,25 +294,20 @@ def _generate_natural_reply(
         })
     messages.append({"role": "user", "content": utterance})
 
-    payload = json.dumps({
-        "model": status["active_model"],
-        "messages": messages,
-        "max_tokens": 130,
-        "temperature": 0.45,
-        "reasoning_effort": "none",
-    }).encode("utf-8")
-
-    try:
-        t_llm = time.time()
-        req = urllib.request.Request(url, data=payload, headers=headers)
-        with urllib.request.urlopen(req, timeout=5.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            content = str(data["choices"][0]["message"].get("content", "")).strip()
-            log_event("llm.fast_turn", content[:70], {"model": status["active_model"], "latency_ms": round((time.time() - t_llm) * 1000, 1)})
-            return (content or None), status["active_model"]
-    except Exception as exc:
-        log_event("llm.fast_fallback", type(exc).__name__, level="WARN")
-        return None, "offline-tanglish-v1"
+    for backend in chat_backends(preferred_mode):
+        try:
+            t_llm = time.monotonic()
+            message = chat_message(backend, messages, max_tokens=130, temperature=0.45)
+            content = str(message.get("content") or "").strip()
+            if content:
+                log_event("llm.fast_turn", "Generated grounded reply", {
+                    "model": backend["active_model"],
+                    "latency_ms": round((time.monotonic() - t_llm) * 1000, 1),
+                })
+                return content, backend["active_model"]
+        except (OSError, KeyError, IndexError, ValueError, TypeError, AttributeError) as exc:
+            log_event("llm.fast_fallback", type(exc).__name__, level="WARN")
+    return None, "deterministic-tanglish-v1"
 
 
 def _run_llm_tool_loop(
@@ -336,25 +319,18 @@ def _run_llm_tool_loop(
     history: list[dict[str, str]],
 ) -> tuple[str | None, list[dict[str, Any]], str]:
     """Execute bounded OpenAI tool_calls loop against Bharat-safe Unsloth/Ollama server."""
-    status = probe_local_llm()
-    if not status["available"] or not status["active_model"]:
-        return None, [], "offline-tanglish-engine"
+    backend = next(chat_backends("unsloth"), None)
+    if not backend:
+        return None, [], "deterministic-tanglish-v1"
 
-    url = (
-        f"{_read_env_value('UNSLOTH_STUDIO_URL', 'http://127.0.0.1:8888').rstrip('/')}/v1/chat/completions"
-        if status["provider"] == "unsloth-studio"
-        else f"{_read_env_value('OLLAMA_URL', 'http://127.0.0.1:11434').rstrip('/')}/v1/chat/completions"
-    )
-    headers = {"Content-Type": "application/json"}
-    if status["provider"] == "unsloth-studio":
-        key = _read_env_value("UNSLOTH_API_KEY", "")
-        if key:
-            headers["Authorization"] = f"Bearer {key}"
-
-    pack = REGISTRY.get(state_code)
+    # Tools can inspect the grounded complaint without changing it or sealing it.
+    allowed_tools = {"lookup_landmark_and_ward", "check_ward_cooldown"}
+    tool_schemas = [tool for tool in TOOL_SCHEMAS if tool["function"]["name"] in allowed_tools]
+    pack = REGISTRY.get(state_code) if REGISTRY.list_summaries() else None
+    state_name = pack.state_name if pack else "Tamil Nadu"
     compacted_slot = {
-        "state_pack": pack.state_name,
-        "languages": pack.languages,
+        "state_pack": state_name,
+        "languages": pack.languages if pack else ["ta", "en"],
         "otp_verified": bool(ctx.get("otp_verified", False)),
     }
     lang_instruction = (
@@ -363,7 +339,7 @@ def _run_llm_tool_loop(
         else ("natural Romanized Tanglish (Tamil spoken in English letters + simple English civic terms)" if lang == "tanglish" else "natural Indian English / Tanglish")
     )
     sys_msg = (
-        f"You are NammaKural ({pack.state_name} Civic Voice Agent). "
+        f"You are NammaKural ({state_name} Civic Voice Agent). "
         f"Call tools first before citing any Ward or cooldown. Keep final speech <= 2 short sentences in "
         f"{lang_instruction}. Compacted state: {json.dumps(compacted_slot)}"
     )
@@ -374,27 +350,16 @@ def _run_llm_tool_loop(
 
     tool_trace: list[dict[str, Any]] = []
     for _ in range(3):
-        payload = json.dumps({
-            "model": status["active_model"],
-            "messages": messages,
-            "tools": TOOL_SCHEMAS,
-            "tool_choice": "auto",
-            "max_tokens": 180,
-            "temperature": 0.25,
-            "reasoning_effort": "none",
-        }).encode("utf-8")
         try:
-            req = urllib.request.Request(url, data=payload, headers=headers)
-            with urllib.request.urlopen(req, timeout=8.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                msg = data["choices"][0]["message"]
-        except Exception:
-            return None, tool_trace, status["active_model"]
+            msg = chat_message(backend, messages, tools=tool_schemas, tool_choice="auto",
+                               max_tokens=180, temperature=0.25)
+        except (OSError, KeyError, IndexError, ValueError, TypeError, AttributeError):
+            return None, tool_trace, backend["active_model"]
 
         tool_calls = msg.get("tool_calls") or []
         if not tool_calls:
             content = str(msg.get("content", "")).strip()
-            return (content or None), tool_trace, status["active_model"]
+            return (content or None), tool_trace, backend["active_model"]
 
         messages.append(msg)
         for tc in tool_calls:
@@ -404,15 +369,46 @@ def _run_llm_tool_loop(
                 fn_args = json.loads(fn.get("arguments") or "{}")
             except json.JSONDecodeError:
                 fn_args = {}
-            out = execute_tool(fn_name, fn_args, ctx)
-            tool_trace.append({"tool": fn_name, "args": fn_args, "result": out})
+            out = (execute_tool(fn_name, fn_args, ctx.copy()) if fn_name in allowed_tools and isinstance(fn_args, dict)
+                   else {"error": "Tool unavailable to the language model"})
+            tool_trace.append({"tool": fn_name, "result": out})
             messages.append({
                 "role": "tool",
                 "tool_call_id": tc.get("id", fn_name),
                 "content": json.dumps(out),
             })
 
-    return None, tool_trace, status["active_model"]
+    return None, tool_trace, backend["active_model"]
+
+
+def speech_fields(display: str, spoken: str) -> dict[str, Any]:
+    """Keep display compatibility and synthesize only Tamil-script speech and numbers."""
+    return {
+        "reply": display,
+        "display_text": display,
+        "tts_text": spoken,
+        "clauses": split_tts_clauses(spoken),
+    }
+
+
+def _tamil_prompt(state: str, analysis: dict[str, Any], cooldown: dict[str, Any] | None) -> str:
+    if cooldown and not cooldown["override_allowed"]:
+        return "இந்தப் புகார் ஏற்கனவே இருக்கு. மேல் உதவிக்கு 1100 எண்ணை அழையுங்க."
+    if state == "DISAMBIGUATE":
+        area = analysis.get("ambiguous_area")
+        if area == "velachery":
+            return "விஜயநகர் பேருந்து நிலையம் பக்கமா, பீனிக்ஸ் மால் பக்கமா?"
+        if area == "anna_nagar":
+            return "டவர் பார்க் பக்கமா, அண்ணா ஆர்ச் பக்கமா?"
+        if not analysis.get("has_place"):
+            return "பிரச்சனை புரிஞ்சுது. பக்கத்துல இருக்கிற அடையாளம் அல்லது தெருப் பேரை சொல்லுங்க."
+        return "இடத்தை குறிச்சுக்கிட்டேன். அங்க என்ன பிரச்சனைன்னு சொல்லுங்க."
+    if state == "HITL_SEAL":
+        ward = re.sub(r"[^0-9]", "", analysis["landmark"]["ward"])
+        prefix = f"வார்டு {ward} கிடைச்சிருக்கு. " if ward else ""
+        warning = "மின் ஆபத்துக்கு 1912 எண்ணை அழையுங்க. " if analysis["urgency"]["tier"] == "CRITICAL_SAFETY" else ""
+        return warning + prefix + "ஒருமுறை கடவுச்சொல்லை சரிபார்த்துட்டு, தனித்தனி முறையா உறுதின்னு சொல்லுங்க."
+    return "உங்க தெருவுல என்ன பிரச்சனை? எந்த இடத்துக்குப் பக்கம்னு சொல்லுங்க."
 
 
 def run_workflow_turn(
@@ -430,12 +426,25 @@ def run_workflow_turn(
     persona_name: str = "Pallavi",
 ) -> dict[str, Any]:
     """Run full DPDP-guarded workflow turn with optional live tool-calling & deterministic parity."""
+    # Emergency guidance stays available before consent, PII checks, and provider calls.
+    safe_input = scrub_pii_and_aadhaar(combined_text + " " + utterance)["clean_text"]
+    if life_safety_helpline(safe_input):
+        urgency = classify_sentiment_urgency(safe_input)
+        return {
+            "fsm_state": "LIFE_SAFETY",
+            "analysis": {"has_issue": True, "has_place": False, "urgency": urgency.__dict__},
+            "cooldown": None,
+            "tool_trace": [],
+            **speech_fields(urgency.action_ta if lang == "ta" else urgency.action_en, urgency.action_ta),
+        }
     if not dpdp_consented:
         return {
             "fsm_state": "GREET",
             "blocked_reason": "dpdp_consent_withdrawn",
-            "reply": "DPDP consent withdrawn. Dial helpline 1913 / 1100 directly for human assistance.",
-            "clauses": ["DPDP consent withdrawn.", "Dial helpline 1913 / 1100 directly for human assistance."],
+            **speech_fields(
+                "DPDP consent withdrawn. Dial helpline 1913 / 1100 directly for human assistance.",
+                "உங்க ஒப்புதல் திரும்பப் பெறப்பட்டது. உதவிக்கு 1913 அல்லது 1100 எண்ணை அழையுங்க.",
+            ),
             "tool_trace": [],
         }
 
@@ -443,7 +452,7 @@ def run_workflow_turn(
     t_start = time.time()
     scrub_latest = scrub_pii_and_aadhaar(utterance)
     scrub_combined = scrub_pii_and_aadhaar(combined_text)
-    if scrub_latest["aadhaar_blocked"]:
+    if scrub_latest["aadhaar_blocked"] or scrub_combined["aadhaar_blocked"]:
         log_event("guardrail.aadhaar_blocked", "Blocked 12-digit Aadhaar sequence pre-LLM", {"state_code": state_code}, level="WARN")
         warn = (
             "ஆதார் எண் சொல்ல வேண்டாம் — உங்கள் மொபைல் OTP மட்டுமே போதும். தெருப் பிரச்சனையைச் சொல்லுங்கள்."
@@ -454,8 +463,7 @@ def run_workflow_turn(
             "fsm_state": "TRIAGE",
             "aadhaar_blocked": True,
             "pii_masked": True,
-            "reply": warn,
-            "clauses": split_tts_clauses(warn),
+            **speech_fields(warn, "ஆதார் எண் சொல்ல வேண்டாம். ஒருமுறை கடவுச்சொல் போதும். தெருப் பிரச்சனையை சொல்லுங்க."),
             "tool_trace": [{"tool": "pre_llm_aadhaar_firewall", "blocked": True}],
         }
 
@@ -464,13 +472,13 @@ def run_workflow_turn(
     vad = classify_semantic_vad(clean_latest, assistant_speaking)
     if vad["action"] == "not_turn":
         log_event("vad.ignored", "Ignored backchannel or brief bystander noise", {"text": clean_latest})
-        return {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, "reply": "", "clauses": [], "tool_trace": []}
+        return {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, **speech_fields("", ""), "tool_trace": []}
 
     chitchat = classify_conversational_chitchat(clean_latest)
     if chitchat is not None:
         reply = chitchat["reply_ta"] if lang == "ta" else (chitchat.get("reply_tanglish", chitchat["reply_en"]) if lang == "tanglish" else chitchat["reply_en"])
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
-        return {"fsm_state": "GREET", "vad": vad, "chitchat": chitchat, "reply": reply, "clauses": split_tts_clauses(reply), "tool_trace": []}
+        return {"fsm_state": "GREET", "vad": vad, "chitchat": chitchat, **speech_fields(reply, re.sub(r"[^\u0B80-\u0BFF0-9 .!?,]", "", chitchat["reply_ta"])), "tool_trace": []}
 
     ctx: dict[str, Any] = {
         "state_code": state_code,
@@ -485,7 +493,7 @@ def run_workflow_turn(
     llm_reply: str | None = None
     model_used = "deterministic-tanglish-v1"
 
-    if llm_mode == "unsloth":
+    if llm_mode == "unsloth" and classify_sentiment_urgency(clean_combined).tier != "CRITICAL_SAFETY":
         llm_reply, tool_trace, model_used = _run_llm_tool_loop(
             clean_latest, clean_combined, state_code, lang, ctx, history or []
         )
@@ -497,7 +505,7 @@ def run_workflow_turn(
     analysis = ctx["analysis"]
 
     if re.search(r"\b(illa|change|actually|no\s+not|instead|மாற்று|இல்ல)\b", clean_latest, re.IGNORECASE):
-        matched_repair = REGISTRY.match_landmark(clean_latest, state_code)
+        matched_repair = REGISTRY.match_landmark(clean_latest, state_code) if REGISTRY.list_summaries() else None
         if matched_repair:
             rep = execute_tool("update_complaint_slot", {"field": "landmark", "value": matched_repair.name, "state_code": state_code}, ctx)
             tool_trace.append({"tool": "update_complaint_slot", "result": rep})
@@ -519,10 +527,10 @@ def run_workflow_turn(
     lm = analysis["landmark"]
 
     # Fast (~450ms) conversational Tamil/Tanglish synthesis grounded in tool output!
-    if llm_mode != "offline" and not llm_reply:
+    if llm_mode != "offline" and not llm_reply and analysis["urgency"]["tier"] != "CRITICAL_SAFETY":
         llm_reply, fast_model = _generate_natural_reply(
             utterance=clean_latest,
-            combined_clean=clean_combined,
+            preferred_mode=llm_mode,
             state_code=state_code,
             lang=lang,
             fsm_state=fsm_state,
@@ -544,19 +552,27 @@ def run_workflow_turn(
                 llm_reply = f'I heard "{clean_latest}". Tell me what civic problem needs fixing and where.'
         elif fsm_state == "DISAMBIGUATE":
             if analysis.get("ambiguous_area"):
-                _, spec = REGISTRY.check_ambiguous_area(clean_combined, state_code)
-                llm_reply = (spec.prompt_ta or spec.prompt_en) if (spec and lang == "ta") else (spec.prompt_en if spec else "Which landmark is closest?")
+                area = analysis["ambiguous_area"]
+                if area == "velachery":
+                    llm_reply = "Are you near Vijayanagar Bus Stand or Phoenix Marketcity?"
+                elif area == "anna_nagar":
+                    llm_reply = "Are you near Tower Park or Anna Arch?"
+                else:
+                    _, spec = REGISTRY.check_ambiguous_area(clean_combined, state_code)
+                    llm_reply = spec.prompt_en if spec else "Which landmark is closest?"
+                if lang == "ta":
+                    llm_reply = _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))
             elif not analysis.get("has_place"):
                 llm_reply = "Issue purinjidhu. GPS allow pannunga illa nearest landmark sollunga?" if lang == "tanglish" else "Understood the issue. Allow GPS or share your nearest street landmark?"
             else:
                 llm_reply = "Location note pannitten. Anga enna civic issue-nu sollunga?" if lang == "tanglish" else "Got the location. What civic problem needs fixing there?"
         elif fsm_state == "HITL_SEAL":
             if lang == "ta":
-                llm_reply = f"{lm['ward']} கண்டறியப்பட்டது ({analysis['urgency']['badge_ta']}). OTP சரிபார்த்து 'உறுதி, உறுதி' சொல்லவும்."
+                llm_reply = f"{lm['ward']} கண்டறியப்பட்டது ({analysis['urgency']['badge_ta']}). OTP சரிபார்த்து தனித்தனி முறையா 'உறுதி' சொல்லவும்."
             elif lang == "tanglish":
-                llm_reply = f"Seri! {lm['ward']} ({analysis['urgency']['badge_en']}) ready-aa irukku. OTP check panni 'Confirm, Confirm' sollunga illa Clarity Popup open pannunga."
+                llm_reply = f"Seri! {lm['ward']} ({analysis['urgency']['badge_en']}) ready-aa irukku. OTP check panni rendu thani turns-la 'Confirm' sollunga illa Clarity Popup open pannunga."
             else:
-                llm_reply = f"Resolved {lm['ward']} ({analysis['urgency']['badge_en']}). Verify OTP and say 'Confirm, Confirm' or review the Clarity Popup."
+                llm_reply = f"Resolved {lm['ward']} ({analysis['urgency']['badge_en']}). Verify OTP and say 'Confirm' in two separate turns or review the Clarity Popup."
         else:
             llm_reply = f"Complaint sealed for {lm['ward']}."
 
@@ -583,7 +599,6 @@ def run_workflow_turn(
         "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
         "analysis": analysis,
         "cooldown": ctx.get("cooldown"),
-        "reply": safe_reply,
-        "clauses": split_tts_clauses(safe_reply),
+        **speech_fields(safe_reply, _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))),
         "tool_trace": tool_trace,
     }

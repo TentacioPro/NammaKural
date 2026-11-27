@@ -36,6 +36,55 @@ def _has_tamil_script(text: str) -> bool:
     return bool(re.search(r"[\u0B80-\u0BFF]", text))
 
 
+_TA_TTS_REPLACEMENTS: tuple[tuple[str, str], ...] = (
+    (r"\bstreet-ல\b|\bstreet-la\b|\bstreet\b", "தெரு"),
+    (r"\barea-னு\b|\barea-nu\b", "ஏரியானு"),
+    (r"\barea-ல\b|\barea-la\b|\barea\b", "ஏரியா"),
+    (r"\bproblem\b|\bissue\b|\btrouble\b", "பிரச்சனை"),
+    (r"\bstreetlight\b", "ஸ்ட்ரீட் லைட்"),
+    (r"\blight\b", "லைட்"),
+    (r"\bwater\b", "தண்ணி"),
+    (r"\bpipe\b", "பைப்"),
+    (r"\bWard\b", "வார்டு"),
+    (r"\bOTP\b", "ஓடிபி"),
+    (r"\bGPS\b", "ஜிபிஎஸ்"),
+    (r"\bneighborhood\b", "பகுதி"),
+    (r"\bhelpful\b", "உதவியா"),
+    (r"\bhelp\b", "ஹெல்ப்"),
+    (r"\bperson\b", "நபர்"),
+    (r"\bConfirm\b", "உறுதி"),
+    (r"\bClarity Popup\b", "சரிபார்ப்புப் பெட்டி"),
+    (r"\bbus\s+stand\b", "பஸ் ஸ்டாண்ட்"),
+    (r"\broad\b", "ரோடு"),
+    (r"\bbill\b", "பில்"),
+    (r"\bphoto\b", "போட்டோ"),
+    (r"\bphone\b", "போன்"),
+    (r"\bcall\b", "கால்"),
+    (r"\bcheck\b", "செக்"),
+    (r"\bnumber\b", "நம்பர்"),
+    (r"\bcivic\b", "சிவிக்"),
+    (r"\bvoice\b", "வாய்ஸ்"),
+    (r"\bassistant\b", "அசிஸ்டென்ட்"),
+    (r"\brelated\b", "ரிலேட்டட்"),
+    (r"\bdrainage\b", "சாக்கடை"),
+    (r"\bgarbage\b", "குப்பை"),
+    (r"\bcurrent\b", "கரண்ட்"),
+    (r"\bpower\b", "பவர்"),
+    (r"\bAI\b", "ஏ ஐ"),
+    (r"\bNammaKural\b", "நம்ம குரல்"),
+)
+
+
+def _normalize_tamil_tts(text: str, voice: str) -> str:
+    """Convert common English/Tanglish nouns to Tamil phonetics for Tamil neural voices."""
+    if not voice.startswith("ta-"):
+        return text
+    out = text
+    for pattern, tamil in _TA_TTS_REPLACEMENTS:
+        out = re.sub(pattern, tamil, out, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", out).strip()
+
+
 def select_neural_voice(text: str, preferred_voice: str = "auto", lang: str = "tanglish") -> str:
     has_ta = _has_tamil_script(text)
     if preferred_voice in VOICE_CATALOG:
@@ -59,17 +108,18 @@ async def synthesize_neural_mp3(
         return {"ok": False, "voice": "", "audio": b""}
 
     voice = select_neural_voice(clean_text, preferred_voice, lang)
-    cache_key = (voice, clean_text)
+    tts_input = _normalize_tamil_tts(clean_text, voice)
+    cache_key = (voice, tts_input)
     if cache_key in _TTS_CACHE:
         _TTS_CACHE.move_to_end(cache_key)
-        log_event("tts.cache_hit", clean_text[:60], {"voice": voice, "bytes": len(_TTS_CACHE[cache_key])})
+        log_event("tts.cache_hit", tts_input[:60], {"voice": voice, "bytes": len(_TTS_CACHE[cache_key])})
         return {"ok": True, "voice": voice, "audio": _TTS_CACHE[cache_key], "cached": True}
 
     t0 = time.time()
     try:
         import edge_tts
 
-        communicate = edge_tts.Communicate(clean_text, voice, rate="+6%")
+        communicate = edge_tts.Communicate(tts_input, voice, rate="+6%")
         chunks: list[bytes] = []
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":

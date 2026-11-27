@@ -225,30 +225,55 @@
       position: relative;
     }
 
+    .orb-canvas-wrap {
+      position: relative;
+      width: 248px;
+      height: 248px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .orb-canvas {
+      position: absolute;
+      inset: 0;
+      width: 248px;
+      height: 248px;
+      pointer-events: none;
+    }
+
     .orb-core-btn {
-      width: 176px;
-      min-height: 176px;
-      max-width: 100%;
+      position: relative;
+      z-index: 2;
+      width: 144px;
+      min-height: 144px;
+      max-width: 144px;
       border-radius: 50%;
       border: 0;
       background: #1E3A8A;
+      background-color: rgb(30 58 138 / 12%);
       color: #FFFFFF;
+      text-shadow: 0 1px 3px rgb(0 0 0 / 45%);
       cursor: pointer;
-      display: grid;
-      place-items: center;
-      align-content: center;
-      gap: 7px;
-      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 12px;
+      overflow: hidden;
+      text-align: center;
       font: inherit;
+      font-size: 0.74rem;
       font-weight: 700;
-      box-shadow: inset 0 -5px 0 rgb(0 0 0 / 18%);
     }
 
-    .orb-core-btn .icon { width: 34px; height: 34px; }
-    .orb-core-btn span { display: block; }
-    .orb-core-btn[data-state="listening"] { background: #047857; }
-    .orb-core-btn[data-state="thinking"] { background: #D97706; color: #160E05; }
-    .orb-core-btn[data-state="paused"], .orb-core-btn[data-state="urgent"] { background: #B91C1C; }
+    .orb-core-btn .icon { width: 26px; height: 26px; flex-shrink: 0; }
+    .orb-core-btn span { display: block; max-width: 118px; line-height: 1.15; word-break: break-word; }
+    .orb-core-btn[data-state="thinking"] { color: #160E05; text-shadow: none; background-color: rgb(217 119 6 / 12%); }
+    .orb-core-btn[data-state="listening"] { background-color: rgb(4 120 87 / 12%); }
+    .orb-core-btn[data-state="paused"], .orb-core-btn[data-state="urgent"] { background-color: rgb(185 28 28 / 12%); }
     .orb-core-btn[data-state="listening"] .icon { animation: listen-ring 1.5s ease-out infinite; }
     @keyframes listen-ring {
       50% { transform: scale(1.12); }
@@ -1229,10 +1254,13 @@
     <section class="agent-shell" aria-label="Voice Civic Agent">
       <div class="orb-stage" id="orbStage" data-agent-state="idle">
         <!-- River-Ripple Acoustic Orb Floating Directly on Light Background -->
-        <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle">
-          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path id="orbIcon" d="M9 5a3 3 0 1 1 6 0v6a3 3 0 1 1-6 0V5z M5 11a7 7 0 0 0 14 0 M12 18v4 M8 22h8"/></svg>
-          <span id="orbTa" lang="ta">பேசுங்க</span><span id="orbEn">Speak</span>
-        </button>
+        <div class="orb-canvas-wrap" id="orbTrigger">
+          <canvas id="neuralOrbCanvas" class="orb-canvas" width="248" height="248" aria-hidden="true"></canvas>
+          <button type="button" class="orb-core-btn" id="orbMicBtn" data-state="idle">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path id="orbIcon" d="M9 5a3 3 0 1 1 6 0v6a3 3 0 1 1-6 0V5z M5 11a7 7 0 0 0 14 0 M12 18v4 M8 22h8"/></svg>
+            <span id="orbTa" lang="ta">பேசுங்க</span><span id="orbEn">Speak</span>
+          </button>
+        </div>
 
         <span class="agent-state-pill" role="status">
           <span class="pulse-dot"></span>
@@ -2064,6 +2092,130 @@
       }
     }
 
+    const orbCanvas = document.getElementById("neuralOrbCanvas");
+    const orbCtx = orbCanvas ? orbCanvas.getContext("2d") : null;
+    const ripples = [];
+    let orbPhase = 0;
+    let lastRippleTick = 0;
+
+    function spawnRipple(strong = false) {
+      ripples.push({ r: 74, alpha: strong ? 0.48 : 0.28, speed: strong ? 1.05 : 0.68 });
+      if (ripples.length > 7) ripples.shift();
+    }
+
+    function drawOrb(ts = 0) {
+      if (!orbCanvas || !orbCtx) return;
+      const w = orbCanvas.width;
+      const h = orbCanvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      orbCtx.clearRect(0, 0, w, h);
+
+      const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const isActiveVoice = state.agentPhase === "listening" || state.agentPhase === "speaking";
+      const intervalMs = state.agentPhase === "speaking" ? 420 : state.agentPhase === "listening" ? 560 : 1850;
+      if (!state.lite && !reduced && ts - lastRippleTick > intervalMs) {
+        spawnRipple(isActiveVoice);
+        lastRippleTick = ts;
+      }
+
+      const orbState = document.getElementById("orbMicBtn")?.dataset.state || "idle";
+      const rgb = orbState === "urgent" || orbState === "paused"
+        ? "185, 28, 28"
+        : orbState === "listening"
+          ? "4, 120, 87"
+          : orbState === "thinking"
+            ? "217, 119, 6"
+            : "30, 58, 138";
+
+      orbPhase += isActiveVoice ? 0.045 : 0.015;
+      for (let i = ripples.length - 1; i >= 0; i--) {
+        const rp = ripples[i];
+        if (!state.lite && !reduced) {
+          rp.r += rp.speed;
+          rp.alpha *= 0.974;
+        }
+        if (rp.alpha < 0.015 || rp.r > 122) {
+          ripples.splice(i, 1);
+          continue;
+        }
+        orbCtx.beginPath();
+        for (let a = 0; a <= Math.PI * 2 + 0.08; a += 0.12) {
+          const osc = Math.sin(a * 4 + orbPhase * 1.1) * (isActiveVoice ? 2.5 : 0.8);
+          const rad = rp.r + osc;
+          const x = cx + Math.cos(a) * rad;
+          const y = cy + Math.sin(a) * rad;
+          if (a === 0) orbCtx.moveTo(x, y);
+          else orbCtx.lineTo(x, y);
+        }
+        orbCtx.closePath();
+        orbCtx.strokeStyle = `rgba(${rgb}, ${rp.alpha.toFixed(3)})`;
+        orbCtx.lineWidth = 1.75;
+        orbCtx.stroke();
+      }
+
+      /* Soft Outer Atmospheric Reflection Halo */
+      const speed = state.agentPhase === "speaking" ? 0.055 : state.agentPhase === "listening" ? 0.042 : 0.018;
+      const amp = state.agentPhase === "speaking" ? 11 : state.agentPhase === "listening" ? 8 : 3;
+      if (!state.lite && !reduced) orbPhase += speed;
+
+      const halo = orbCtx.createRadialGradient(cx, cy, 46, cx, cy, 108);
+      halo.addColorStop(0, `rgba(${rgb}, 0.22)`);
+      halo.addColorStop(1, "rgba(255,255,255,0)");
+      orbCtx.fillStyle = halo;
+      orbCtx.beginPath();
+      orbCtx.arc(cx, cy, 108, 0, Math.PI * 2);
+      orbCtx.fill();
+
+      /* Core Translucent River-Glass Fluid Sphere (Clipped Inner Liquid Reflection) */
+      const coreR = 72;
+      orbCtx.save();
+      orbCtx.beginPath();
+      orbCtx.arc(cx, cy, coreR, 0, Math.PI * 2);
+      orbCtx.clip();
+
+      const sphereGrad = orbCtx.createLinearGradient(cx - 60, cy - 64, cx + 62, cy + 66);
+      if (orbState === "urgent" || orbState === "paused") {
+        sphereGrad.addColorStop(0, "#EF4444");
+        sphereGrad.addColorStop(1, "#B91C1C");
+      } else if (orbState === "listening") {
+        sphereGrad.addColorStop(0, "#10B981");
+        sphereGrad.addColorStop(1, "#047857");
+      } else if (orbState === "thinking") {
+        sphereGrad.addColorStop(0, "#FBBF24");
+        sphereGrad.addColorStop(1, "#D97706");
+      } else {
+        sphereGrad.addColorStop(0, "#3B82F6");
+        sphereGrad.addColorStop(0.55, "#1E3A8A");
+        sphereGrad.addColorStop(1, "#0EA5E9");
+      }
+      orbCtx.fillStyle = sphereGrad;
+      orbCtx.fillRect(cx - 76, cy - 76, 152, 152);
+
+      /* Oscillatory Liquid Wave Reflection Inside Sphere */
+      orbCtx.beginPath();
+      orbCtx.moveTo(cx - 76, cy + 76);
+      for (let x = -76; x <= 76; x += 4) {
+        const y = Math.sin(x * 0.07 + orbPhase * 1.4) * (amp * 0.65) + Math.cos(x * 0.04 - orbPhase) * (amp * 0.45);
+        orbCtx.lineTo(cx + x, cy + 6 + y);
+      }
+      orbCtx.lineTo(cx + 76, cy + 76);
+      orbCtx.closePath();
+      orbCtx.fillStyle = "rgba(255, 255, 255, 0.24)";
+      orbCtx.fill();
+
+      /* Top Glass Highlight Arc */
+      const gloss = orbCtx.createRadialGradient(cx - 22, cy - 26, 5, cx - 16, cy - 22, 54);
+      gloss.addColorStop(0, "rgba(255, 255, 255, 0.55)");
+      gloss.addColorStop(1, "rgba(255, 255, 255, 0)");
+      orbCtx.fillStyle = gloss;
+      orbCtx.fillRect(cx - 74, cy - 74, 148, 148);
+      orbCtx.restore();
+
+      if (!state.lite && !reduced) requestAnimationFrame(drawOrb);
+    }
+    requestAnimationFrame(drawOrb);
+
     /* ==========================================================================
        STREAMING AGENT REASONING TRACE
        ========================================================================== */
@@ -2456,6 +2608,7 @@
 
     let ttsVoices = [];
     let ttsGeneration = 0;
+    let lastTtsStartAt = 0;
     let phaseBeforeSpeech = "idle";
     function refreshTtsVoices() {
       if ("speechSynthesis" in window) {
@@ -2589,6 +2742,7 @@
             };
             audio.onended = finish;
             audio.onerror = finish;
+            lastTtsStartAt = Date.now();
             await audio.play().catch(() => {
               finish();
               fallbackBrowserSpeak(text, myGen);
@@ -3131,10 +3285,10 @@
     }
 
     function commitRecognizedTurn(rawText) {
-      clearTimeout(turnFlushTimer);
-      turnFlushTimer = null;
       const cleaned = (rawText || "").trim();
       if (!cleaned || (cleaned === lastCommittedText && !confirmationWord.test(cleaned))) return false;
+      clearTimeout(turnFlushTimer);
+      turnFlushTimer = null;
       lastCommittedText = cleaned;
       pendingTranscript = "";
       voiceInput.value = "";
@@ -3166,7 +3320,7 @@
           function sampleEnergy() {
             if (!state.callActive || !vadStream) return;
             const speakingNow = state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking);
-            if (!state.isMuted && speakingNow) {
+            if (!state.isMuted && speakingNow && (Date.now() - lastTtsStartAt > 650)) {
               analyser.getByteTimeDomainData(buf);
               let sum = 0;
               for (let i = 0; i < buf.length; i++) {
@@ -3174,9 +3328,9 @@
                 sum += v * v;
               }
               const rms = Math.sqrt(sum / buf.length);
-              if (rms > 0.055) hotFrames++;
+              if (rms > 0.095) hotFrames++;
               else hotFrames = Math.max(0, hotFrames - 1);
-              if (hotFrames >= 4) {
+              if (hotFrames >= 8) {
                 hotFrames = 0;
                 interruptAgentSpeech();
                 document.getElementById("liveTranscriptText").textContent = "Interrupted — listening now...";
@@ -3236,21 +3390,29 @@
         liveRec.onspeechstart = () => {
           spokenSegment++;
           logPipelineEvent("stt.speech_start", "Detected user voice onset");
-          if (!state.isMuted) interruptAgentSpeech();
         };
         liveRec.onresult = (ev) => {
           if (state.isMuted) return;
-          interruptAgentSpeech();
+          const speakingNow = state.agentPhase === "speaking" || (window.speechSynthesis && window.speechSynthesis.speaking);
           let interim = "";
           for (let i = ev.resultIndex; i < ev.results.length; i++) {
             const alt = ev.results[i][0];
             const piece = alt.transcript;
+            const words = piece.trim().split(/\s+/).filter(Boolean);
+            const rawConf = Number(alt.confidence || 0);
+            const isStopCue = /\b(stop|wait|hold on|pause|niruthunga|nillunga)\b|நிறுத்து/i.test(piece);
+            if (speakingNow && (Date.now() - lastTtsStartAt > 550) && (isStopCue || (words.length >= 2 && (rawConf >= 0.45 || words.length >= 3)))) {
+              interruptAgentSpeech();
+            }
             if (ev.results[i].isFinal) {
-              const words = piece.trim().split(/\s+/).filter(Boolean);
-              const conf = Number(alt.confidence || 0).toFixed(2);
-              if (alt.confidence > 0 && alt.confidence < 0.42 && words.length <= 2 && !localEmergency(piece) && !confirmationWord.test(piece)) {
+              if (!piece.trim()) continue;
+              const conf = rawConf.toFixed(2);
+              if (rawConf > 0 && rawConf < 0.42 && words.length <= 2 && !localEmergency(piece) && !confirmationWord.test(piece)) {
                 logPipelineEvent("stt.noise_filtered", piece.trim(), { confidence: conf }, "WARN");
                 document.getElementById("liveTranscriptText").textContent = "Filtered faint background noise...";
+                continue;
+              }
+              if (rawConf === 0 && words.length <= 1 && speakingNow && !isStopCue && !confirmationWord.test(piece)) {
                 continue;
               }
               if (confirmationWord.test(piece)) {
@@ -3273,11 +3435,14 @@
               if (state.callActive && !state.isMuted && pendingTranscript && !confirmationWord.test(pendingTranscript)) {
                 commitRecognizedTurn(pendingTranscript);
               }
-            }, 950);
+            }, 1500);
           }
         };
         liveRec.onerror = (ev) => {
           const code = ev?.error || "unknown";
+          if (code === "no-speech" && pendingTranscript && state.callActive && !state.isMuted) {
+            commitRecognizedTurn(pendingTranscript);
+          }
           logPipelineEvent("stt.error", `SpeechRecognition error: ${code}`, {}, code === "no-speech" ? "WARN" : "ERROR");
           if (code === "not-allowed" || code === "service-not-allowed") {
             micDenied = true;

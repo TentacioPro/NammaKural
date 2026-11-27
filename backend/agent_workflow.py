@@ -239,6 +239,22 @@ def _derive_fsm_state(analysis: dict[str, Any], seal_res: dict[str, Any] | None)
     return "HITL_SEAL"
 
 
+def _parse_bilingual_json(raw: str) -> tuple[str, str | None]:
+    """Parse optional {"display_text", "tts_text"} JSON from fast LLM turn."""
+    cleaned = re.sub(r"```(?:json)?|```", "", raw).strip()
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start != -1 and end > start:
+        try:
+            obj = json.loads(cleaned[start : end + 1])
+            if isinstance(obj, dict) and obj.get("display_text"):
+                disp = str(obj["display_text"]).strip()
+                tts = str(obj.get("tts_text") or "").strip() or None
+                return disp, tts
+        except json.JSONDecodeError:
+            pass
+    return cleaned, None
+
+
 def _generate_natural_reply(
     utterance: str,
     state_code: str,
@@ -249,11 +265,12 @@ def _generate_natural_reply(
     cooldown: dict[str, Any] | None,
     history: list[dict[str, str]],
     persona_name: str = "Pallavi",
-) -> tuple[str | None, str]:
+) -> tuple[str | None, str | None, str]:
     """Single fast (~450ms) LLM conversational turn grounded directly on deterministic tool output.
 
     Skips Gemma-4's slow hidden thinking loop (`reasoning_effort='none'`) so natural Tamil/Tanglish
     conversation replies stream fast without falling back to rigid templates.
+    Returns `(display_text, tts_text, model_used)`.
     """
     state_name = REGISTRY.get(state_code).state_name if REGISTRY.list_summaries() else "Tamil Nadu"
     lm = analysis.get("landmark", {})
@@ -270,24 +287,27 @@ def _generate_natural_reply(
     }
     has_ta_script = bool(re.search(r"[\u0B80-\u0BFF]", utterance))
     if lang == "en" and not has_ta_script:
-        lang_rule = "Reply in warm, concise Indian English (1-2 sentences)."
+        lang_rule = (
+            "Reply in warm, conversational Indian English (1-2 short sentences). "
+            "Respond with plain text (no JSON)."
+        )
     else:
         lang_rule = (
-            "Reply naturally in warm spoken Tamil script mixed only with common English civic nouns "
-            "(like streetlight, pipe, bus stand, Ward, OTP) so a native Tamil speaker hears authentic Tamil. "
-            "NEVER lecture the user to speak English. Example: 'பரவாயில்லை! தாராளமாகத் தமிழிலேயே பேசுங்கள். "
-            "உங்கள் தெருவில் என்ன பிரச்சனை, எந்த area பக்கத்துல என்று சொல்லுங்கள்?'"
+            "Reply directly in warm, natural Chennai-style spoken Tamil (Kodunthamizh) mixed naturally with everyday English words "
+            "(like street, light, pipe, area, help, Ward, OTP). Write Tamil words in Tamil script (தமிழ்) and English words in English, "
+            "1-2 short friendly sentences, plain text only (no JSON, no markdown). "
+            "Vary your phrasing naturally like a warm neighbor—never repeat the same scripted line."
         )
 
     sys_msg = (
-        f"You are {persona_name}, a warm human-like civic voice assistant for NammaKural ({state_name}). "
-        f"{lang_rule} Ground your answer ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
-        f"If fsm_state is TRIAGE, chat warmly, acknowledge what they said, and gently ask what street problem and area they need help with. "
+        f"You are {persona_name}, a warm, friendly human civic voice assistant for NammaKural ({state_name}). "
+        f"{lang_rule} Ground facts ONLY on this verified backend state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
+        f"If fsm_state is TRIAGE, respond naturally to whatever the citizen just said (even casual chat like 'appadiya', 'ennanga', 'appuram') like a helpful neighbor, and gently invite them to share their street issue or area without repeating the exact same phrasing as earlier turns. "
         f"If fsm_state is DISAMBIGUATE, ask for the one missing detail cleanly. "
-        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி' in two separate turns (or approve the Clarity Popup and say it once)."
+        f"If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'உறுதி' / 'Confirm' in two separate turns (or approve the Clarity Popup and say it once)."
     )
     messages: list[dict[str, Any]] = [{"role": "system", "content": sys_msg}]
-    for h in history[-3:]:
+    for h in history[-4:]:
         messages.append({
             "role": "assistant" if h.get("role") == "agent" else "user",
             "content": scrub_pii_and_aadhaar(h.get("text", ""))["clean_text"],
@@ -297,17 +317,18 @@ def _generate_natural_reply(
     for backend in chat_backends(preferred_mode):
         try:
             t_llm = time.monotonic()
-            message = chat_message(backend, messages, max_tokens=130, temperature=0.45)
+            message = chat_message(backend, messages, max_tokens=180, temperature=0.55)
             content = str(message.get("content") or "").strip()
             if content:
+                disp, tts = _parse_bilingual_json(content)
                 log_event("llm.fast_turn", "Generated grounded reply", {
                     "model": backend["active_model"],
                     "latency_ms": round((time.monotonic() - t_llm) * 1000, 1),
                 })
-                return content, backend["active_model"]
+                return disp, tts, backend["active_model"]
         except (OSError, KeyError, IndexError, ValueError, TypeError, AttributeError) as exc:
             log_event("llm.fast_fallback", type(exc).__name__, level="WARN")
-    return None, "deterministic-tanglish-v1"
+    return None, None, "deterministic-tanglish-v1"
 
 
 def _run_llm_tool_loop(
@@ -526,9 +547,10 @@ def run_workflow_turn(
     fsm_state = _derive_fsm_state(analysis, ctx.get("seal_result"))
     lm = analysis["landmark"]
 
+    llm_tts: str | None = None
     # Fast (~450ms) conversational Tamil/Tanglish synthesis grounded in tool output!
     if llm_mode != "offline" and not llm_reply and analysis["urgency"]["tier"] != "CRITICAL_SAFETY":
-        llm_reply, fast_model = _generate_natural_reply(
+        llm_reply, llm_tts, fast_model = _generate_natural_reply(
             utterance=clean_latest,
             preferred_mode=llm_mode,
             state_code=state_code,
@@ -577,6 +599,29 @@ def run_workflow_turn(
             llm_reply = f"Complaint sealed for {lm['ward']}."
 
     safe_reply = post_guardrail_reply(llm_reply, {lm["ward"]} if analysis.get("has_place") else set())
+    candidate_tts = llm_tts or (safe_reply if model_used != "deterministic-tanglish-v1" else "")
+    if candidate_tts and re.search(r"[\u0B80-\u0BFF]", candidate_tts):
+        for eng, tam in (
+            (r"\bWard\b", "வார்டு"),
+            (r"\bOTP\b", "ஓடிபி"),
+            (r"\bGPS\b", "ஜிபிஎஸ்"),
+            (r"\barea\b", "ஏரியா"),
+            (r"\bstreetlight\b", "ஸ்ட்ரீட் லைட்"),
+            (r"\bstreet\b", "தெரு"),
+            (r"\bneighborhood\b", "பகுதி"),
+            (r"\bhelpful\b", "உதவியா"),
+            (r"\bhelp\b", "ஹெல்ப்"),
+            (r"\bperson\b", "நபர்"),
+            (r"\btrouble\b", "பிரச்சனை"),
+            (r"\bissue\b", "பிரச்சனை"),
+            (r"\bproblem\b", "பிரச்சனை"),
+            (r"\bConfirm\b", "உறுதி"),
+            (r"\bClarity Popup\b", "சரிபார்ப்புப் பெட்டி"),
+        ):
+            candidate_tts = re.sub(eng, tam, candidate_tts, flags=re.IGNORECASE)
+        tts_out = post_guardrail_reply(candidate_tts, {lm["ward"]} if analysis.get("has_place") else set())
+    else:
+        tts_out = _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))
     latency_ms = round((time.time() - t_start) * 1000, 1)
     log_event(
         "workflow.turn_complete",
@@ -599,6 +644,6 @@ def run_workflow_turn(
         "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
         "analysis": analysis,
         "cooldown": ctx.get("cooldown"),
-        **speech_fields(safe_reply, _tamil_prompt(fsm_state, analysis, ctx.get("cooldown"))),
+        **speech_fields(safe_reply, tts_out),
         "tool_trace": tool_trace,
     }

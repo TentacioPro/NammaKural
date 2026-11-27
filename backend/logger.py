@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.state import scrub_pii_and_aadhaar
-from backend.telemetry import emit_otlp_span
+from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION, emit_otlp_span
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 LOG_DIR = ROOT_DIR / "logs"
@@ -20,7 +20,7 @@ LOG_FILE = LOG_DIR / "nammakural.jsonl"
 CONV_FILE = LOG_DIR / "conversations.jsonl"
 
 _LOCK = threading.Lock()
-_RING: deque[dict[str, Any]] = deque(maxlen=150)
+_RING: deque[dict[str, Any]] = deque(maxlen=500)
 _CONVS: deque[dict[str, Any]] = deque(maxlen=200)
 
 _PY_LOGGER = logging.getLogger("nammakural")
@@ -77,6 +77,8 @@ def log_event(
     entry = {
         "ts": round(time.time(), 3),
         "time": time.strftime("%H:%M:%S"),
+        "agent_version": AGENT_VERSION,
+        "schema_version": TELEMETRY_SCHEMA_VERSION,
         "source": source,
         "level": level.upper(),
         "stage": stage,

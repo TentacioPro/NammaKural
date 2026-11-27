@@ -14,6 +14,9 @@ import urllib.request
 import uuid
 from typing import Any
 
+AGENT_VERSION = os.getenv("NAMMAKURAL_AGENT_VERSION", "0.3.0-langgraph-livekit").strip() or "0.3.0-langgraph-livekit"
+TELEMETRY_SCHEMA_VERSION = "2026-11-27.v1"
+
 
 def get_otlp_endpoint() -> str:
     ep = (os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or os.getenv("PHOENIX_COLLECTOR_ENDPOINT") or "").strip()
@@ -53,12 +56,14 @@ def emit_otlp_span(
                 "resource": {
                     "attributes": [
                         _to_otlp_attr("service.name", "nammakural-voice-agent"),
+                        _to_otlp_attr("service.version", AGENT_VERSION),
+                        _to_otlp_attr("telemetry.schema_version", TELEMETRY_SCHEMA_VERSION),
                         _to_otlp_attr("deployment.environment", os.getenv("VERCEL_REGION", "local")),
                     ]
                 },
                 "scopeSpans": [
                     {
-                        "scope": {"name": "nammakural.telemetry", "version": "0.2.0"},
+                        "scope": {"name": "nammakural.telemetry", "version": AGENT_VERSION},
                         "spans": [
                             {
                                 "traceId": uuid.uuid4().hex,
@@ -67,7 +72,11 @@ def emit_otlp_span(
                                 "kind": 1,
                                 "startTimeUnixNano": str(start_ns),
                                 "endTimeUnixNano": str(end_ns),
-                                "attributes": [_to_otlp_attr(k, v) for k, v in attributes.items()],
+                                "attributes": [
+                                    _to_otlp_attr("agent.version", AGENT_VERSION),
+                                    _to_otlp_attr("telemetry.schema_version", TELEMETRY_SCHEMA_VERSION),
+                                    *[_to_otlp_attr(k, v) for k, v in attributes.items()],
+                                ],
                                 "status": {"code": 1 if status_ok else 2},
                             }
                         ],

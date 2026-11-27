@@ -10,6 +10,7 @@ from threading import Lock
 from typing import Any
 
 from backend.session_store import STORE
+from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION
 
 # In-memory synthetic request history (no personal PII — synthetic fixture tickets only)
 _REQUEST_HISTORY: list[dict[str, Any]] = [
@@ -317,6 +318,8 @@ def record_telemetry_span(span: dict[str, Any]) -> dict[str, Any]:
     """Store redacted telemetry span for observability & offline HITL improvement metrics."""
     clean_span = {
         "session_id": str(span.get("session_id", "local"))[:16],
+        "agent_version": AGENT_VERSION,
+        "schema_version": TELEMETRY_SCHEMA_VERSION,
         "phase": str(span.get("phase", "unknown")),
         "urgency_tier": str(span.get("urgency_tier", "STANDARD")),
         "ward": str(span.get("ward", "")),

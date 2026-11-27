@@ -12,7 +12,7 @@ interface HealthInfo {
   sarvam_stt: boolean;
   sarvam_tts: boolean;
   livekit_ready?: boolean;
-  pregenerated_prompts: number;
+  agent_version?: string;
 }
 
 interface VoiceOption {
@@ -70,6 +70,7 @@ export default function VoiceAgentPage() {
   const [sessionId, setSessionId] = useState<string>("browser");
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [callActive, setCallActive] = useState<boolean>(false);
+  const [muted, setMuted] = useState<boolean>(false);
   const [listening, setListening] = useState<boolean>(false);
   const [speaking, setSpeaking] = useState<boolean>(false);
   const [inputText, setInputText] = useState<string>("");
@@ -100,6 +101,7 @@ export default function VoiceAgentPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const vadTimerRef = useRef<number | null>(null);
   const callActiveRef = useRef<boolean>(false);
+  const mutedRef = useRef<boolean>(false);
   const playbackGenRef = useRef<number>(0);
   const messagesRef = useRef<Array<{ role: "user" | "agent"; text: string; meta?: string }>>([]);
 
@@ -334,16 +336,8 @@ export default function VoiceAgentPage() {
       if (urgency === "CRITICAL_SAFETY" || urgency === "LIFE_SAFETY" || urgency === "P1") {
         setOrbState("urgent");
       }
-      const ambig = (data.analysis as any)?.ambiguous_area;
-      const isDeterministic = data.model === "deterministic-tanglish-v1";
-      const cachedUrl =
-        isDeterministic && data.fsm_state === "DISAMBIGUATE" && ambig === "anna_nagar"
-          ? "/assets/voice/anna-nagar.mp3"
-          : isDeterministic && data.fsm_state === "DISAMBIGUATE" && ambig === "velachery"
-            ? "/assets/voice/velachery.mp3"
-            : undefined;
       const speechTarget = data.tts_text || replyText;
-      await speakText(speechTarget, t0, cachedUrl);
+      await speakText(speechTarget, t0);
     } catch (err) {
       setOrbState("idle");
       setMessages((m) => [...m, { role: "agent", text: `Error: ${String(err)}` }]);
@@ -421,6 +415,7 @@ export default function VoiceAgentPage() {
       setOrbState("listening");
 
       vadTimerRef.current = window.setInterval(() => {
+        if (mutedRef.current) return;
         analyser.getFloatTimeDomainData(buf);
         let sum = 0;
         for (let i = 0; i < buf.length; i += 1) sum += buf[i] * buf[i];
@@ -442,7 +437,7 @@ export default function VoiceAgentPage() {
   }
 
   async function startListeningTurn() {
-    if (!callActiveRef.current || !consentGranted) return;
+    if (!callActiveRef.current || !consentGranted || mutedRef.current) return;
     stopMicCapture();
     if (health?.sarvam_stt) {
       const ok = await startSarvamMicTurn();
@@ -495,6 +490,30 @@ export default function VoiceAgentPage() {
     };
     recRef.current = rec;
     rec.start();
+  }
+
+  function toggleMute() {
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setMuted(next);
+    if (streamRef.current) {
+      streamRef.current.getAudioTracks().forEach((t) => {
+        t.enabled = !next;
+      });
+    }
+    if (next) {
+      if (recRef.current) {
+        try {
+          recRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+      setListening(false);
+      if (!speaking) setOrbState("idle");
+    } else if (callActiveRef.current && !speaking) {
+      startListeningTurn();
+    }
   }
 
   function toggleMic() {
@@ -644,6 +663,15 @@ export default function VoiceAgentPage() {
           <button type="button" className={`nk-btn ${callActive || listening ? "danger" : "primary"}`} onClick={toggleMic}>
             {callActive || listening ? <MicOff size={17} /> : <Mic size={17} />}
             {callActive || listening ? "End Call" : "Start Call"}
+          </button>
+          <button
+            type="button"
+            className={`nk-btn ${muted ? "danger" : ""}`}
+            aria-pressed={muted}
+            onClick={toggleMute}
+          >
+            {muted ? <MicOff size={15} /> : <Mic size={15} />}
+            {muted ? "Unmute" : "Mute"}
           </button>
           <button type="button" className="nk-btn" onClick={stopPlayback} disabled={!speaking}>
             <RotateCcw size={15} />

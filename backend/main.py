@@ -29,6 +29,7 @@ from backend.nlu import (
 from backend.portal_bridge import build_gcc_preview_packet
 from backend.sarvam_realtime import get_dynamic_keyterms
 from backend.session_store import STORE
+from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION
 from backend.state import (
     check_cooldown,
     issue_mobile_otp,
@@ -126,9 +127,10 @@ def health_check() -> dict[str, Any]:
         voice_mode = "live-neural"
     else:
         voice_mode = "offline-tanglish-engine"
-    pregenerated = len(list((ROOT_DIR / "assets" / "voice").glob("*.mp3")))
     return {
         "status": "ok",
+        "agent_version": AGENT_VERSION,
+        "telemetry_schema_version": TELEMETRY_SCHEMA_VERSION,
         "voice_mode": voice_mode,
         "engine_mode": "cloud_api" if cloud else ("local_gpu" if local_llm["available"] else "offline_fsm"),
         "store_backend": STORE.backend_name,
@@ -136,7 +138,6 @@ def health_check() -> dict[str, Any]:
         "sarvam_stt": sarvam_ready,
         "sarvam_tts": sarvam_ready,
         "livekit_ready": bool(_read_env_value("LIVEKIT_URL") and _read_env_value("LIVEKIT_API_KEY") and _read_env_value("LIVEKIT_API_SECRET")),
-        "pregenerated_prompts": pregenerated,
         "local_llm": local_llm,
         "optional_keys": {
             "UNSLOTH_API_KEY": "configured" if local_llm["available"] else "optional (offline Tanglish active)",
@@ -562,8 +563,8 @@ def debug_session(session_id: str = "browser", state_code: str = "tn", locality:
 
 
 @app.get("/api/telemetry/summary")
-def telemetry_summary() -> dict[str, Any]:
-    """Compute live P50/P90/P95/TTFT/TTFA and <500ms SLA metrics for /telemetry UI."""
+def telemetry_summary(version: str = "all") -> dict[str, Any]:
+    """Compute live versioned P50/P90/P95/TTFT/TTFA and <500ms SLA metrics for /telemetry UI."""
     import math
 
     def _pct(vals: list[float], f: float) -> float | None:
@@ -572,46 +573,80 @@ def telemetry_summary() -> dict[str, Any]:
         s = sorted(vals)
         return round(s[math.ceil(len(s) * f) - 1], 1)
 
-    wf_all: list[float] = []
-    wf_det: list[float] = []
-    llm_vals: list[float] = []
-    tts_vals: list[float] = []
-    ttfa_vals: list[float] = []
-    pending_wf: tuple[float, float] | None = None
-    for item in get_logs(150):
-        st = item.get("stage", "")
-        data = item.get("data") or {}
-        ms = data.get("latency_ms")
-        ts = item.get("ts")
-        if st == "workflow.turn_complete" and isinstance(ms, (int, float)):
-            wf_all.append(float(ms))
-            if data.get("model") == "deterministic-tanglish-v1":
-                wf_det.append(float(ms))
-            if isinstance(ts, (int, float)):
-                pending_wf = (float(ts), float(ms))
-        elif st == "llm.fast_turn" and isinstance(ms, (int, float)):
-            llm_vals.append(float(ms))
-        elif st == "tts.neural_synth" and isinstance(ms, (int, float)):
-            tts_vals.append(float(ms))
-            if pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
-                ttfa_vals.append(pending_wf[1] + float(ms))
+    def _summarize(items: list[dict[str, Any]]) -> dict[str, Any]:
+        wf_all: list[float] = []
+        wf_det: list[float] = []
+        llm_vals: list[float] = []
+        tts_vals: list[float] = []
+        ttfa_vals: list[float] = []
+        client_ttfa_vals: list[float] = []
+        pending_wf: tuple[float, float] | None = None
+        for item in items:
+            st = item.get("stage", "")
+            data = item.get("data") or {}
+            ms = data.get("latency_ms")
+            ts = item.get("ts")
+            if st == "workflow.turn_complete" and isinstance(ms, (int, float)):
+                wf_all.append(float(ms))
+                if data.get("model") == "deterministic-tanglish-v1":
+                    wf_det.append(float(ms))
+                if isinstance(ts, (int, float)):
+                    pending_wf = (float(ts), float(ms))
+            elif st == "llm.fast_turn" and isinstance(ms, (int, float)):
+                llm_vals.append(float(ms))
+            elif st in {"tts.neural_synth", "tts.sarvam_bulbul"} and isinstance(ms, (int, float)):
+                tts_vals.append(float(ms))
+                if pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
+                    ttfa_vals.append(pending_wf[1] + float(ms))
+                    pending_wf = None
+            elif st == "tts.cache_hit" and pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
+                ttfa_vals.append(pending_wf[1])
                 pending_wf = None
-        elif st == "tts.cache_hit" and pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
-            ttfa_vals.append(pending_wf[1])
-            pending_wf = None
-    under_500 = sum(1 for v in ttfa_vals if v <= 500.0)
+            elif st == "client.ttfa" and isinstance(ms, (int, float)):
+                client_ttfa_vals.append(float(ms))
+        under_500 = sum(1 for v in ttfa_vals if v <= 500.0)
+        return {
+            "workflow": {"count": len(wf_all), "p50": _pct(wf_all, 0.5), "p90": _pct(wf_all, 0.9), "p95": _pct(wf_all, 0.95)},
+            "deterministic": {"count": len(wf_det), "p50": _pct(wf_det, 0.5), "p90": _pct(wf_det, 0.9), "p95": _pct(wf_det, 0.95)},
+            "llm_ttft": {"count": len(llm_vals), "p50": _pct(llm_vals, 0.5), "p90": _pct(llm_vals, 0.9), "p95": _pct(llm_vals, 0.95)},
+            "tts_synth": {"count": len(tts_vals), "p50": _pct(tts_vals, 0.5), "p90": _pct(tts_vals, 0.9), "p95": _pct(tts_vals, 0.95)},
+            "client_ttfa": {"count": len(client_ttfa_vals), "p50": _pct(client_ttfa_vals, 0.5), "p90": _pct(client_ttfa_vals, 0.9), "p95": _pct(client_ttfa_vals, 0.95)},
+            "ttfa": {
+                "count": len(ttfa_vals),
+                "p50": _pct(ttfa_vals, 0.5),
+                "p90": _pct(ttfa_vals, 0.9),
+                "p95": _pct(ttfa_vals, 0.95),
+                "under_500ms_pct": round((under_500 / len(ttfa_vals) * 100), 1) if ttfa_vals else 0.0,
+            },
+        }
+
+    all_logs = get_logs(500)
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for entry in all_logs:
+        ver = str(entry.get("agent_version") or "0.2.0-legacy")
+        grouped.setdefault(ver, []).append(entry)
+
+    filtered = all_logs if version in ("", "all") else grouped.get(version, [])
+    summary = _summarize(filtered)
+    by_version = {
+        ver: {
+            "events": len(items),
+            "workflow_count": _summarize(items)["workflow"]["count"],
+            "workflow_p50": _summarize(items)["workflow"]["p50"],
+            "ttfa_p50": _summarize(items)["ttfa"]["p50"],
+            "ttfa_p95": _summarize(items)["ttfa"]["p95"],
+            "under_500ms_pct": _summarize(items)["ttfa"]["under_500ms_pct"],
+        }
+        for ver, items in grouped.items()
+    }
     return {
-        "workflow": {"count": len(wf_all), "p50": _pct(wf_all, 0.5), "p90": _pct(wf_all, 0.9), "p95": _pct(wf_all, 0.95)},
-        "deterministic": {"count": len(wf_det), "p50": _pct(wf_det, 0.5), "p90": _pct(wf_det, 0.9), "p95": _pct(wf_det, 0.95)},
-        "llm_ttft": {"count": len(llm_vals), "p50": _pct(llm_vals, 0.5), "p90": _pct(llm_vals, 0.9), "p95": _pct(llm_vals, 0.95)},
-        "tts_synth": {"count": len(tts_vals), "p50": _pct(tts_vals, 0.5), "p90": _pct(tts_vals, 0.9), "p95": _pct(tts_vals, 0.95)},
-        "ttfa": {
-            "count": len(ttfa_vals),
-            "p50": _pct(ttfa_vals, 0.5),
-            "p90": _pct(ttfa_vals, 0.9),
-            "p95": _pct(ttfa_vals, 0.95),
-            "under_500ms_pct": round((under_500 / len(ttfa_vals) * 100), 1) if ttfa_vals else 0.0,
-        },
+        "agent_version": AGENT_VERSION,
+        "telemetry_schema_version": TELEMETRY_SCHEMA_VERSION,
+        "selected_version": version,
+        "versions": sorted(grouped.keys(), reverse=True),
+        "by_version": by_version,
+        **summary,
+        "recent_events": filtered[-15:][::-1],
         "observability": observability_status(),
     }
 

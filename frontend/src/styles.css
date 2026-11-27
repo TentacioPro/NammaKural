@@ -122,23 +122,54 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
 [data-theme="dark"] .nk-tab.active { color: #080d1a; }
 
 .nk-main {
-  max-width: 1280px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 20px 14px 72px;
+  padding: 20px 16px 72px;
   overflow-x: hidden;
 }
 
-.nk-studio {
-  display: grid;
-  grid-template-columns: minmax(290px, 390px) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+.nk-open-canvas {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
 }
 
-.nk-studio > * { min-width: 0; }
+.nk-open-top {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 
-@media (max-width: 860px) {
-  .nk-studio { grid-template-columns: 1fr; gap: 16px; }
+.nk-open-composer {
+  width: 100%;
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.nk-open-composer input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-1);
+  font: inherit;
+  font-size: 0.94rem;
+  padding: 8px 14px;
+}
+
+.nk-open-composer input:focus-visible {
+  outline: none;
 }
 
 .nk-card {

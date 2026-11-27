@@ -684,89 +684,28 @@ export default function VoiceAgentPage() {
   const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
 
   return (
-    <div className="nk-studio">
-      {/* Left Column: Hero RiverOrb + Voice Controls (Orb untouched) */}
-      <section className="nk-hero-card">
-        <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+    <div className="nk-open-canvas">
+      {/* Minimal Waterline Controls */}
+      <div className="nk-open-top">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span className="nk-pill accent" title="Runtime Engine Mode">
             {health
               ? `${health.engine_mode} · ${health.store_backend}${health.livekit_ready ? " · livekit" : ""}`
               : "Connecting..."}
           </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <button
-              type="button"
-              className="nk-pill"
-              style={{ cursor: "pointer" }}
-              onClick={() => {
-                endCall();
-                setSessionId(`nk-${Date.now().toString(36)}`);
-                setMessages([]);
-                setLastTurn(null);
-                setPreviewPacket(null);
-                setOtpVerified(false);
-                setHitlApproved(false);
-                setHitlStatus("");
-              }}
-            >
-              New Call
-            </button>
-            <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.78rem", color: "var(--ink-2)", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={consentGranted}
-                onChange={(e) => {
-                  const next = e.target.checked;
-                  setConsentGranted(next);
-                  if (!next) {
-                    stopPlayback();
-                    submitTurn("consent withdraw");
-                  }
-                }}
-              />
-              Consent
-            </label>
-          </div>
+          {clientTtfaMs !== null && (
+            <span className={`nk-pill ${clientTtfaMs < 500 ? "emerald" : ""}`} style={{ fontVariantNumeric: "tabular-nums" }}>
+              TTFA: {clientTtfaMs} ms
+            </span>
+          )}
         </div>
 
-        <RiverOrb agentState={orbState} onClick={toggleMic} />
-        <LiveWaveform active={listening} speaking={speaking} />
-
-        <div className="nk-dock">
-          <button type="button" className={`nk-btn ${callActive || listening ? "danger" : "primary"}`} onClick={toggleMic}>
-            {callActive || listening ? <MicOff size={17} /> : <Mic size={17} />}
-            {callActive || listening ? "End Call" : "Start Call"}
-          </button>
-          <button
-            type="button"
-            className={`nk-btn ${muted ? "danger" : ""}`}
-            aria-pressed={muted}
-            onClick={toggleMute}
-          >
-            {muted ? <MicOff size={15} /> : <Mic size={15} />}
-            {muted ? "Unmute" : "Mute"}
-          </button>
-          <button type="button" className="nk-btn" onClick={stopPlayback} disabled={!speaking}>
-            <RotateCcw size={15} />
-            Barge-in
-          </button>
-          <button
-            type="button"
-            className="nk-btn"
-            onClick={() => speakText("வணக்கம்! நான் நம்ம குரல். உங்கள் புகாரைச் சொல்லுங்கள்.")}
-          >
-            <Volume2 size={15} />
-            Test Voice
-          </button>
-        </div>
-
-        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
-          <label htmlFor="voice-select" style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--ink-3)" }}>
-            Voice ({health?.sarvam_tts ? "Sarvam Bulbul v3 + Edge" : "Edge-TTS / Offline"})
-          </label>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <select
+            aria-label="TTS Voice"
             id="voice-select"
             className="nk-select"
+            style={{ minHeight: 44, padding: "6px 12px", borderRadius: 999, fontSize: "0.82rem" }}
             value={selectedVoice}
             onChange={(e) => setSelectedVoice(e.target.value)}
           >
@@ -776,162 +715,206 @@ export default function VoiceAgentPage() {
               </option>
             ))}
           </select>
-        </div>
-
-        {clientTtfaMs !== null && (
-          <div className={`nk-pill ${clientTtfaMs < 500 ? "emerald" : ""}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-            TTFA: {clientTtfaMs} ms {clientTtfaMs < 500 ? "(< 500 ms)" : ""}
-          </div>
-        )}
-      </section>
-
-      {/* Right Column: Natural Conversation Stream + Progressive Civic Actions */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <section className="nk-card" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <h2 style={{ margin: 0, fontSize: "1.06rem" }}>Live Conversation</h2>
-            <span className="nk-pill mono" style={{ fontSize: "0.72rem" }}>session: {sessionId}</span>
-          </div>
-
-          <div className="nk-chat-stream" aria-live="polite" aria-label="Conversation transcript">
-            {messages.length === 0 && (
-              <div style={{ padding: "24px 12px", textAlign: "center", color: "var(--ink-3)", fontSize: "0.92rem" }}>
-                Tap <strong>Start Call</strong> or type in Tamil / Tanglish below to begin a natural conversation.
-              </div>
-            )}
-            {messages.map((m, idx) => (
-              <div key={idx} className={`nk-bubble ${m.role}`}>
-                <div className="nk-bubble-meta">
-                  {m.role === "user" ? "You" : "NammaKural"} {m.meta ? `· ${m.meta}` : ""}
-                </div>
-                <div>{m.text}</div>
-              </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="nk-pill"
+            onClick={() => {
+              endCall();
+              setSessionId(`nk-${Date.now().toString(36)}`);
+              setMessages([]);
+              setLastTurn(null);
+              setPreviewPacket(null);
+              setOtpVerified(false);
+              setHitlApproved(false);
+              setHitlStatus("");
+            }}
+          >
+            New Call
+          </button>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--ink-2)", cursor: "pointer" }}>
             <input
-              aria-label="Civic complaint input"
-              className="nk-input"
-              style={{ flex: "1 1 200px", minWidth: 0 }}
-              placeholder="Speak or type in Tamil / Tanglish (e.g. Anna Nagar-la streetlight eriyala)..."
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submitTurn(inputText);
+              type="checkbox"
+              checked={consentGranted}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setConsentGranted(next);
+                if (!next) {
+                  stopPlayback();
+                  submitTurn("consent withdraw");
+                }
               }}
             />
-            <button type="button" className="nk-btn primary" onClick={() => submitTurn(inputText)}>
-              <Send size={15} />
-              Send
-            </button>
-          </div>
-
-          <details>
-            <summary style={{ cursor: "pointer", fontSize: "0.84rem", fontWeight: 600, color: "var(--ink-2)", padding: "6px 0" }}>
-              Sample Tanglish / Tamil Prompts
-            </summary>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 8 }}>
-              {SAMPLE_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  className="nk-pill"
-                  onClick={() => submitTurn(p)}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </details>
-        </section>
-
-        {/* Extracted Slots Summary */}
-        {lastTurn && (
-          <section className="nk-card" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-              <span className="nk-pill accent">{lastTurn.fsm_state} · v{lastTurn.complaint_version ?? 1}</span>
-              <span className="nk-pill">Service: {String(analysis.service_id || slots.issue || "—")}</span>
-              <span className="nk-pill">Place: {String(analysis.landmark_text || slots.landmark || "—")}</span>
-              <span className={`nk-pill ${analysis.landmark?.ward ? "emerald" : ""}`}>
-                Ward: {String(analysis.landmark?.ward || "Pending")}
-              </span>
-            </div>
-            <span style={{ fontSize: "0.78rem", color: "var(--ink-3)" }}>
-              {String(analysis.urgency?.badge_en || "")}
-            </span>
-          </section>
-        )}
-
-        {/* Progressive OTP + Dual-Confirm HITL Gate + GCC Preview */}
-        <section
-          className="nk-card"
-          aria-live="assertive"
-          style={{ borderColor: lastTurn?.fsm_state === "HITL_SEAL" ? "var(--emerald)" : "var(--border)" }}
-        >
-          <h2 style={{ margin: "0 0 12px", fontSize: "1rem", display: "flex", alignItems: "center", gap: 7 }}>
-            <ShieldCheck size={18} />
-            Citizen Verification &amp; GCC Pre-Submit Packet
-          </h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
-            <input
-              aria-label="Masked phone number"
-              className="nk-input"
-              style={{ width: 145 }}
-              value={phoneMasked}
-              onChange={(e) => setPhoneMasked(e.target.value)}
-            />
-            <button type="button" className="nk-btn" onClick={handleSendOtp}>
-              Send OTP
-            </button>
-            {otpDemoHint && <span className="nk-pill mono">OTP: {otpDemoHint}</span>}
-            <input
-              aria-label="OTP code"
-              className="nk-input"
-              style={{ width: 100 }}
-              placeholder="Code"
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value)}
-            />
-            <button type="button" className="nk-btn primary" onClick={handleVerifyOtp} disabled={!otpSessionId}>
-              Verify
-            </button>
-            {otpVerified && <span className="nk-pill emerald">OTP Verified</span>}
-          </div>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.86rem", cursor: "pointer" }}>
-              <input type="checkbox" checked={modalOk} onChange={(e) => setModalOk(e.target.checked)} />
-              Clarity Popup OK
-            </label>
-            <button type="button" className="nk-btn emerald" onClick={handleHitlSeal}>
-              <CheckCircle2 size={15} />
-              Seal HITL (&quot;உறுதி / Confirm&quot;)
-            </button>
-            <button type="button" className="nk-btn" onClick={handleGeneratePreview}>
-              Build GCC Packet
-            </button>
-            {hitlStatus && <span className="nk-pill">{hitlStatus}</span>}
-          </div>
-
-          {previewPacket && (
-            <div style={{ marginTop: 14, padding: 14, borderRadius: 12, border: "1px solid var(--emerald)", background: "var(--bg)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                <strong className="mono">{previewPacket.preview_id}</strong>
-                <span className="nk-pill emerald">
-                  {previewPacket.ready_for_portal ? "Ready for Portal (Dry-Run)" : `Missing: ${previewPacket.missing_fields.join(", ")}`}
-                </span>
-              </div>
-              <p style={{ margin: "8px 0 4px", fontSize: "0.86rem" }}>{previewPacket.notice_ta}</p>
-              <p style={{ margin: "0 0 10px", fontSize: "0.84rem", color: "var(--ink-2)" }}>{previewPacket.notice_en}</p>
-              <pre className="mono" style={{ margin: 0, fontSize: "0.75rem", overflowX: "auto" }}>
-                {JSON.stringify(previewPacket.fields, null, 2)}
-              </pre>
-            </div>
-          )}
-        </section>
+            Consent
+          </label>
+        </div>
       </div>
+
+      {/* Centerpiece RiverOrb (Untouched) + Waveform + Floating Pill Dock */}
+      <RiverOrb agentState={orbState} onClick={toggleMic} />
+      <LiveWaveform active={listening} speaking={speaking} />
+
+      <div className="nk-dock" style={{ maxWidth: 440 }}>
+        <button type="button" className={`nk-btn ${callActive || listening ? "danger" : "primary"}`} onClick={toggleMic}>
+          {callActive || listening ? <MicOff size={17} /> : <Mic size={17} />}
+          {callActive || listening ? "End Call" : "Start Call"}
+        </button>
+        <button
+          type="button"
+          className={`nk-btn ${muted ? "danger" : ""}`}
+          aria-pressed={muted}
+          onClick={toggleMute}
+        >
+          {muted ? <MicOff size={15} /> : <Mic size={15} />}
+          {muted ? "Unmute" : "Mute"}
+        </button>
+        <button type="button" className="nk-btn" onClick={stopPlayback} disabled={!speaking}>
+          <RotateCcw size={15} />
+          Barge-in
+        </button>
+        <button
+          type="button"
+          className="nk-btn"
+          onClick={() => speakText("வணக்கம்! நான் நம்ம குரல். உங்கள் புகாரைச் சொல்லுங்கள்.")}
+        >
+          <Volume2 size={15} />
+          Test Voice
+        </button>
+      </div>
+
+      {/* Open-Canvas Conversation Stream */}
+      <div
+        className="nk-chat-stream"
+        aria-live="polite"
+        aria-label="Conversation transcript"
+        style={{ width: "100%", maxHeight: 300 }}
+      >
+        {messages.length === 0 && (
+          <p style={{ margin: "6px 0", textAlign: "center", color: "var(--ink-3)", fontSize: "0.92rem" }}>
+            Tap the orb or <strong>Start Call</strong> and speak naturally in Tamil or Tanglish.
+          </p>
+        )}
+        {messages.map((m, idx) => (
+          <div key={idx} className={`nk-bubble ${m.role}`}>
+            <div className="nk-bubble-meta">
+              {m.role === "user" ? "You" : "NammaKural"} {m.meta ? `· ${m.meta}` : ""}
+            </div>
+            <div>{m.text}</div>
+          </div>
+        ))}
+        <div ref={chatEndRef} />
+      </div>
+
+      {/* Pill Text Composer */}
+      <div className="nk-open-composer">
+        <input
+          aria-label="Civic complaint input"
+          placeholder="Speak or type in Tamil / Tanglish..."
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submitTurn(inputText);
+          }}
+        />
+        <button type="button" className="nk-btn primary" onClick={() => submitTurn(inputText)}>
+          <Send size={15} />
+          Send
+        </button>
+      </div>
+
+      {/* Active Slot Pills (Only shown once a complaint is detected) */}
+      {lastTurn && (
+        <div style={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+          <span className="nk-pill accent">{lastTurn.fsm_state} · v{lastTurn.complaint_version ?? 1}</span>
+          <span className="nk-pill">Service: {String(analysis.service_id || slots.issue || "—")}</span>
+          <span className="nk-pill">Place: {String(analysis.landmark_text || slots.landmark || "—")}</span>
+          <span className={`nk-pill ${analysis.landmark?.ward ? "emerald" : ""}`}>
+            Ward: {String(analysis.landmark?.ward || "Pending")}
+          </span>
+        </div>
+      )}
+
+      {/* Collapsible Sample Prompts & OTP/HITL Clarity Drawer */}
+      <details style={{ width: "100%" }}>
+        <summary style={{ cursor: "pointer", textAlign: "center", fontSize: "0.84rem", fontWeight: 600, color: "var(--ink-3)", padding: "6px 0" }}>
+          Sample Prompts &amp; Citizen Verification (Optional)
+        </summary>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+            {SAMPLE_PROMPTS.map((p) => (
+              <button key={p} type="button" className="nk-pill" onClick={() => submitTurn(p)}>
+                {p}
+              </button>
+            ))}
+          </div>
+
+          <section
+            className="nk-card"
+            aria-live="assertive"
+            style={{ borderColor: lastTurn?.fsm_state === "HITL_SEAL" ? "var(--emerald)" : "var(--border)" }}
+          >
+            <h2 style={{ margin: "0 0 12px", fontSize: "1rem", display: "flex", alignItems: "center", gap: 7 }}>
+              <ShieldCheck size={18} />
+              Citizen Verification &amp; GCC Pre-Submit Packet
+            </h2>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
+              <input
+                aria-label="Masked phone number"
+                className="nk-input"
+                style={{ width: 145 }}
+                value={phoneMasked}
+                onChange={(e) => setPhoneMasked(e.target.value)}
+              />
+              <button type="button" className="nk-btn" onClick={handleSendOtp}>
+                Send OTP
+              </button>
+              {otpDemoHint && <span className="nk-pill mono">OTP: {otpDemoHint}</span>}
+              <input
+                aria-label="OTP code"
+                className="nk-input"
+                style={{ width: 100 }}
+                placeholder="Code"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+              />
+              <button type="button" className="nk-btn primary" onClick={handleVerifyOtp} disabled={!otpSessionId}>
+                Verify
+              </button>
+              {otpVerified && <span className="nk-pill emerald">OTP Verified</span>}
+            </div>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.86rem", cursor: "pointer" }}>
+                <input type="checkbox" checked={modalOk} onChange={(e) => setModalOk(e.target.checked)} />
+                Clarity Popup OK
+              </label>
+              <button type="button" className="nk-btn emerald" onClick={handleHitlSeal}>
+                <CheckCircle2 size={15} />
+                Seal HITL (&quot;உறுதி / Confirm&quot;)
+              </button>
+              <button type="button" className="nk-btn" onClick={handleGeneratePreview}>
+                Build GCC Packet
+              </button>
+              {hitlStatus && <span className="nk-pill">{hitlStatus}</span>}
+            </div>
+
+            {previewPacket && (
+              <div style={{ marginTop: 14, padding: 14, borderRadius: 12, border: "1px solid var(--emerald)", background: "var(--bg)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+                  <strong className="mono">{previewPacket.preview_id}</strong>
+                  <span className="nk-pill emerald">
+                    {previewPacket.ready_for_portal ? "Ready for Portal (Dry-Run)" : `Missing: ${previewPacket.missing_fields.join(", ")}`}
+                  </span>
+                </div>
+                <p style={{ margin: "8px 0 4px", fontSize: "0.86rem" }}>{previewPacket.notice_ta}</p>
+                <p style={{ margin: "0 0 10px", fontSize: "0.84rem", color: "var(--ink-2)" }}>{previewPacket.notice_en}</p>
+                <pre className="mono" style={{ margin: 0, fontSize: "0.75rem", overflowX: "auto" }}>
+                  {JSON.stringify(previewPacket.fields, null, 2)}
+                </pre>
+              </div>
+            )}
+          </section>
+        </div>
+      </details>
     </div>
   );
 }

@@ -782,7 +782,7 @@ def _node_respond_conversational(state: _GraphState) -> dict[str, Any]:
 
     # Enforce Code > LLM on HITL_SEAL so Ward IDs are never omitted or hallucinated.
     if fsm_state == "HITL_SEAL" and llm_reply and (
-        "?" in llm_reply or (lm["ward"].lower() not in llm_reply.lower() and lm["ward"].replace("Ward", "வார்டு") not in llm_reply)
+        lm["ward"].lower() not in llm_reply.lower() and lm["ward"].replace("Ward", "வார்டு") not in llm_reply
     ):
         llm_reply = llm_tts = None
 

@@ -441,8 +441,8 @@ def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None)
         issue = "streetlight_eb"
 
     ticket_m = re.search(r"#?[A-Z]{2,5}-?\d{4,6}", combined_text, re.IGNORECASE)
-    ticket_ref = ticket_m.group(0).upper() if ticket_m else "#GCC-20491"
-    if not ticket_ref.startswith("#"):
+    ticket_ref = ticket_m.group(0).upper() if ticket_m else ""
+    if ticket_ref and not ticket_ref.startswith("#"):
         ticket_ref = "#" + ticket_ref
 
     if not explicit and area == "Velachery" and ticket_m and ticket_ref == "#GCC-20491":

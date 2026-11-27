@@ -82,14 +82,22 @@ def cloud_llm() -> dict[str, str] | None:
     base_url = _read_env_value("LLM_BASE_URL").rstrip("/")
     key = _read_env_value("LLM_API_KEY")
     model = _pick_chat_model([_read_env_value("LLM_MODEL")])
-    if not (base_url.startswith(("https://", "http://")) and key and model):
-        return None
-    return {
-        "provider": "cloud-api",
-        "active_model": model,
-        "url": f"{base_url}/chat/completions",
-        "key": key,
-    }
+    if base_url.startswith(("https://", "http://")) and key and model:
+        return {
+            "provider": "cloud-api",
+            "active_model": model,
+            "url": f"{base_url}/chat/completions",
+            "key": key,
+        }
+    sarvam_key = _read_env_value("SARVAM_API_KEY")
+    if sarvam_key and not _read_env_value("LLM_MODEL"):
+        return {
+            "provider": "sarvam-cloud",
+            "active_model": "sarvam-105b-conversations",
+            "url": "https://api.sarvam.ai/v1/chat/completions",
+            "key": sarvam_key,
+        }
+    return None
 
 
 def chat_backends(preferred_mode: str):
@@ -119,7 +127,10 @@ def chat_backends(preferred_mode: str):
 def chat_message(backend: dict[str, str], messages: list[dict[str, Any]], **options: Any) -> dict[str, Any]:
     headers = {"Content-Type": "application/json"}
     if backend["key"]:
-        headers["Authorization"] = f"Bearer {backend['key']}"
+        if backend["provider"] == "sarvam-cloud":
+            headers["api-subscription-key"] = backend["key"]
+        else:
+            headers["Authorization"] = f"Bearer {backend['key']}"
     if backend["provider"] == "unsloth-studio":
         options["reasoning_effort"] = "none"
     payload = json.dumps({"model": backend["active_model"], "messages": messages, **options}).encode("utf-8")

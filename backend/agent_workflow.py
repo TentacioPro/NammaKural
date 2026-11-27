@@ -619,7 +619,7 @@ def _node_safety_and_vad(state: _GraphState) -> dict[str, Any]:
         return {"early_return": {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, **speech_fields("", ""), "tool_trace": []}}
 
     chitchat = classify_conversational_chitchat(clean_latest)
-    if chitchat is not None and state.get("llm_mode", "offline") == "offline":
+    if chitchat is not None and not next(iter(chat_backends(state.get("llm_mode", "offline"))), None):
         reply = chitchat["reply_ta"] if lang == "ta" else (chitchat.get("reply_tanglish", chitchat["reply_en"]) if lang == "tanglish" else chitchat["reply_en"])
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
         return {

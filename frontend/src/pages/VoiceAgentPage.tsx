@@ -67,7 +67,7 @@ const SAMPLE_PROMPTS = [
 export default function VoiceAgentPage() {
   const [health, setHealth] = useState<HealthInfo | null>(null);
   const [consentGranted, setConsentGranted] = useState<boolean>(true);
-  const [sessionId, setSessionId] = useState<string>("browser");
+  const [sessionId, setSessionId] = useState<string>(() => `nk-${Date.now().toString(36)}`);
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [callActive, setCallActive] = useState<boolean>(false);
   const [muted, setMuted] = useState<boolean>(false);

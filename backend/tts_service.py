@@ -11,7 +11,7 @@ import os
 import re
 import time
 from collections import OrderedDict
-from typing import Any
+from typing import Any, AsyncIterator
 
 from backend.logger import log_event
 
@@ -113,15 +113,24 @@ async def synthesize_neural_mp3(
     # Venky B §4: Space out reference IDs (e.g. NK-PREVIEW-A1B2 -> N K A 1 B 2) for clear spoken readback
     tts_input = re.sub(r"#?([A-Z]{2,5})-([A-Z0-9]{4,8})", lambda m: f"{' '.join(m.group(1))} {' '.join(m.group(2))}", tts_input)
 
-    # Prefer Sarvam Bulbul v3 (~250-350ms, true code-mix) when SARVAM_API_KEY is configured
+    # Prefer Sarvam Bulbul v3 (~250-350ms, true code-mix) with LRU cache when SARVAM_API_KEY is configured
     if os.getenv("SARVAM_API_KEY", "").strip() and (
         preferred_voice == "auto" or preferred_voice.startswith(("sarvam", "bulbul"))
     ):
+        bulbul_speaker = "shubh" if "Valluvar" in voice or "Prabhat" in voice else "kavitha"
+        sarvam_cache_key = (f"sarvam-{bulbul_speaker}", tts_input)
+        if sarvam_cache_key in _TTS_CACHE:
+            _TTS_CACHE.move_to_end(sarvam_cache_key)
+            log_event("tts.cache_hit", tts_input[:60], {"voice": f"sarvam-{bulbul_speaker}", "bytes": len(_TTS_CACHE[sarvam_cache_key])})
+            return {"ok": True, "voice": f"sarvam-{bulbul_speaker}", "audio": _TTS_CACHE[sarvam_cache_key], "media_type": "audio/wav", "cached": True}
+
         from backend.sarvam_realtime import synthesize_bulbul_sync
 
-        bulbul_speaker = "shubh" if "Valluvar" in voice or "Prabhat" in voice else "kavitha"
         bulbul = synthesize_bulbul_sync(tts_input, speaker=bulbul_speaker)
         if bulbul.get("ok") and bulbul.get("audio"):
+            _TTS_CACHE[sarvam_cache_key] = bulbul["audio"]
+            if len(_TTS_CACHE) > _MAX_CACHE_ITEMS:
+                _TTS_CACHE.popitem(last=False)
             return {
                 "ok": True,
                 "voice": bulbul["voice"],
@@ -162,3 +171,44 @@ async def synthesize_neural_mp3(
     except Exception as exc:
         log_event("tts.fallback_browser", f"Neural TTS unavailable ({type(exc).__name__}); browser fallback", {"voice": voice}, level="WARN")
         return {"ok": False, "voice": voice, "audio": b""}
+
+
+async def stream_neural_mp3(
+    text: str,
+    preferred_voice: str = "auto",
+    lang: str = "tanglish",
+) -> AsyncIterator[bytes]:
+    """Stream MP3 audio chunks immediately via Sarvam Bulbul v3 stream or edge-tts."""
+    clean_text = re.sub(r"[`*_#>\[\]]", "", text).strip()
+    if not clean_text:
+        return
+    voice = select_neural_voice(clean_text, preferred_voice, lang)
+    tts_input = _normalize_tamil_tts(clean_text, voice)
+    tts_input = re.sub(r"#?([A-Z]{2,5})-([A-Z0-9]{4,8})", lambda m: f"{' '.join(m.group(1))} {' '.join(m.group(2))}", tts_input)
+
+    if os.getenv("SARVAM_API_KEY", "").strip() and (
+        preferred_voice == "auto" or preferred_voice.startswith(("sarvam", "bulbul"))
+    ):
+        bulbul_speaker = "shubh" if "Valluvar" in voice or "Prabhat" in voice else "kavitha"
+        cache_key = (f"sarvam-mp3-{bulbul_speaker}", tts_input)
+        if cache_key in _TTS_CACHE:
+            _TTS_CACHE.move_to_end(cache_key)
+            log_event("tts.cache_hit", tts_input[:60], {"voice": f"sarvam-{bulbul_speaker}", "bytes": len(_TTS_CACHE[cache_key])})
+            yield _TTS_CACHE[cache_key]
+            return
+
+        from backend.sarvam_realtime import stream_bulbul_mp3
+
+        buf: list[bytes] = []
+        async for chunk in stream_bulbul_mp3(tts_input, speaker=bulbul_speaker):
+            buf.append(chunk)
+            yield chunk
+        if buf:
+            _TTS_CACHE[cache_key] = b"".join(buf)
+            if len(_TTS_CACHE) > _MAX_CACHE_ITEMS:
+                _TTS_CACHE.popitem(last=False)
+            return
+
+    res = await synthesize_neural_mp3(clean_text, preferred_voice=preferred_voice, lang=lang)
+    if res.get("ok") and res.get("audio"):
+        yield res["audio"]

@@ -222,6 +222,79 @@ export default function VoiceAgentPage() {
       let url = cachedAssetUrl || "";
       let revokeAfter = false;
       if (!url) {
+        const canMse = typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg");
+        if (canMse) {
+          const res = await fetch("/api/tts/stream", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: selectedVoice, lang: "ta-IN" }),
+            signal: ctrl.signal,
+          });
+          if (myGen !== playbackGenRef.current) return;
+          if (res.ok && res.body) {
+            const ms = new MediaSource();
+            const msUrl = URL.createObjectURL(ms);
+            const audio = new Audio(msUrl);
+            audioRef.current = audio;
+            audio.onplay = () => {
+              if (myGen !== playbackGenRef.current) {
+                audio.pause();
+                return;
+              }
+              if (turnStartMs) {
+                const ttfa = Math.round(performance.now() - turnStartMs);
+                setClientTtfaMs(ttfa);
+                fetch("/api/client-log", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ stage: "client.ttfa", message: "Browser streaming audio started", data: { latency_ms: ttfa, streamed: true } }),
+                }).catch(() => null);
+              }
+            };
+            audio.onended = () => {
+              URL.revokeObjectURL(msUrl);
+              resumeIfCallActive();
+            };
+            audio.onerror = () => {
+              URL.revokeObjectURL(msUrl);
+              resumeIfCallActive();
+            };
+
+            ms.addEventListener("sourceopen", async () => {
+              try {
+                const sb = ms.addSourceBuffer("audio/mpeg");
+                const reader = res.body!.getReader();
+                let started = false;
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (myGen !== playbackGenRef.current) {
+                    reader.cancel().catch(() => null);
+                    return;
+                  }
+                  if (done) {
+                    if (ms.readyState === "open") ms.endOfStream();
+                    break;
+                  }
+                  if (value && value.byteLength > 0) {
+                    if (sb.updating) {
+                      await new Promise<void>((resolve) => sb.addEventListener("updateend", () => resolve(), { once: true }));
+                    }
+                    sb.appendBuffer(value);
+                    await new Promise<void>((resolve) => sb.addEventListener("updateend", () => resolve(), { once: true }));
+                    if (!started) {
+                      started = true;
+                      audio.play().catch(() => null);
+                    }
+                  }
+                }
+              } catch {
+                resumeIfCallActive();
+              }
+            });
+            return;
+          }
+        }
+
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

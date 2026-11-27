@@ -10,14 +10,14 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Response, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from backend.agent_workflow import run_workflow_turn, set_workflow_consent, split_tts_clauses
 from backend.llm_bridge import _read_env_value, cloud_llm, generate_civic_turn, probe_local_llm
 from backend.logger import LOG_FILE, clear_logs, get_conversations, get_logs, log_event, observability_status, save_conversation_turn
-from backend.tts_service import VOICE_CATALOG, synthesize_neural_mp3
+from backend.tts_service import VOICE_CATALOG, stream_neural_mp3, synthesize_neural_mp3
 from backend.nlu import (
     SERVICE_CATALOG,
     analyze_turn,
@@ -523,6 +523,15 @@ async def synthesize_tts(req: TtsRequest) -> Response:
     )
 
 
+@app.post("/api/tts/stream")
+async def stream_tts(req: TtsRequest) -> StreamingResponse:
+    """Low-TTFA chunked MP3 streaming via Sarvam Bulbul v3 / edge-tts."""
+    return StreamingResponse(
+        stream_neural_mp3(req.text, preferred_voice=req.voice, lang=req.lang),
+        media_type="audio/mpeg",
+    )
+
+
 class PortalPreviewRequest(BaseModel):
     service_id: str = "streetlight_eb"
     landmark: dict[str, Any] = Field(default_factory=dict)
@@ -594,7 +603,7 @@ def telemetry_summary(version: str = "all") -> dict[str, Any]:
                     pending_wf = (float(ts), float(ms))
             elif st == "llm.fast_turn" and isinstance(ms, (int, float)):
                 llm_vals.append(float(ms))
-            elif st in {"tts.neural_synth", "tts.sarvam_bulbul"} and isinstance(ms, (int, float)):
+            elif st in {"tts.neural_synth", "tts.sarvam_bulbul", "tts.sarvam_stream_ttfb"} and isinstance(ms, (int, float)):
                 tts_vals.append(float(ms))
                 if pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
                     ttfa_vals.append(pending_wf[1] + float(ms))

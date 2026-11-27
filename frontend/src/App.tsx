@@ -17,9 +17,8 @@ export default function App() {
     <>
       <header className="nk-nav">
         <div className="nk-brand">
-          <span className="nk-brand-dot" aria-hidden="true" />
-          <strong style={{ fontSize: "1.08rem", letterSpacing: "-0.01em" }}>நம்ம குரல் · NammaKural</strong>
-          <span className="nk-pill">Tamil / Tanglish Voice AI</span>
+          <strong style={{ fontSize: "1.05rem", letterSpacing: "-0.02em" }}>நம்ம குரல் · NammaKural</strong>
+          <span style={{ fontSize: "0.78rem", color: "var(--ink-3)" }}>Tamil / Tanglish Voice AI</span>
         </div>
 
         <nav className="nk-nav-links" aria-label="Primary">

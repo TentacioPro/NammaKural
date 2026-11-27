@@ -7,6 +7,18 @@
 
 ---
 
+## Run on a CPU with zero API keys
+
+Run `docker compose up --build`, then open [the local app](http://localhost:8000). The default Compose service runs on a CPU and reports `offline_fsm` in `GET /api/health`. The civic workflow runs locally. Browser speech and optional Edge neural audio depend on browser and network support. Typed input works without a speech provider.
+
+| Engine | Setup |
+|---|---|
+| Offline FSM | Use the default Compose service or run FastAPI locally with no keys. |
+| Cloud API | For local FastAPI, copy `.env.example` to `.env` and set `LLM_BASE_URL` (including the provider API prefix, typically `/v1`), `LLM_API_KEY`, and `LLM_MODEL`. |
+| Local GPU | The Dell G15 demo target uses an RTX 3050 (4 or 6 GB VRAM), 32 GB RAM, and Gemma 4 E2B Q4_K_M. Run Unsloth Studio (port 8888) with `UNSLOTH_API_KEY`, or Ollama (port 11434), and use `LOCAL_LLM_MODEL` to select the installed model. |
+
+Automatic mode tries a configured cloud endpoint, then a detected local model, then the deterministic workflow. Optional `SARVAM_API_KEY` enables Saaras v4 code-mixed transcription. Emergency guidance and filing approval run in deterministic code.
+
 ## Why NammaKural?
 Filing a civic complaint in Tamil Nadu means navigating **9+ disconnected portals** (`GCC PGRS`, `CMWSSB Metro Water`, `TWAD PUNAL`, `TANGEDCO CCMS`, `Mudhalvarin Mugavari 1100`, `TNPDS`) with English-only cascading dropdowns (`District -> Zone -> Ward -> Department -> Sub-Category`) and surprise OTP/CAPTCHA gates on Page 1.
 
@@ -16,7 +28,7 @@ Citizens stand on the street and speak in mixed **Tanglish, Tamil, and landmarks
 **NammaKural** turns that single breath into verified jurisdiction data and safe dispatch actions:
 1. **Pure Voice Agent Canvas (No Upfront Form Wall):** Animated 3-layer harmonic `AcousticOrb` (`idle -> listening -> thinking -> clarifying -> hitl_review -> approved_dispatch`), paired with a single Wispr Flow dictation bar and 5 real-photo street scenarios.
 2. **Asks ONLY If Needed:** Automatically detects missing issues, missing locations, or ambiguous multi-ward neighborhoods (e.g., asking `"Vijayanagar Bus Stand (Ward 178) or Phoenix Marketcity (Ward 175)?"` for broad *"Velachery"* inputs).
-3. **Sentiment & Urgency Triage:** Elevates live electrical/hazard terms (`spark`, `fire`, `shock`) to **`P1 Critical Safety`** (prioritizing `1912` emergency dial) and chronic/falsely-closed tickets (`fix pannama close pannitanga`, `1100`) to **`P2 High Urgency Escalation`**.
+3. **Sentiment & Urgency Triage:** Routes life-safety emergencies to P0 (112, 108, 101, or 1906), live electrical hazards to P1 (1912), and chronic or falsely closed tickets to P2 escalation.
 4. **Mandatory HITL Final Clarity Check:** Locks dispatch actions behind an explicit **Confirm Before Dispatch** summary (`Approve & Prepare Dispatch` vs. `Speak / Type a Change`).
 5. **Dual Exit Ramps & Evidence Stamper:** Unlocks 1-tap Official WhatsApp bots (`GCC +91 94450 61913`, `CMWSSB +91 81449 30308`, `TWAD +91 94999 91916`, `TANGEDCO 94987 94987`), direct email (`cmcell@tn.gov.in`), emergency helplines, `<1 MB` Tap-to-Mark GIS stamped JPEG photos, conversational `ta-IN` Tamil TTS read-back, `A+ Text`, and `2G Lite Mode`.
 
@@ -37,19 +49,7 @@ Citizens stand on the street and speak in mixed **Tanglish, Tamil, and landmarks
 
 ---
 
-## Quick Start (One Command via Docker — Zero Secret Keys Required)
-
-`NammaKural` boots cleanly with **zero API keys required** (`offline-tanglish-engine` runs locally; optional `SARVAM_API_KEY` or `GEMINI_API_KEY` in `.env` enables live neural streaming).
-
-### Option A: Docker Compose (Recommended for Judges)
-```bash
-git clone https://github.com/TentacioPro/NammaKural.git
-cd NammaKural
-docker compose up --build
-# Open http://localhost:8000
-```
-
-### Option B: Local Python (FastAPI + Uvicorn)
+## Local Python (FastAPI + Uvicorn)
 ```bash
 pip install -r requirements.txt
 uvicorn backend.main:app --host 0.0.0.0 --port 8000

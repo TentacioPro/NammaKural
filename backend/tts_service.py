@@ -69,7 +69,7 @@ async def synthesize_neural_mp3(
     try:
         import edge_tts
 
-        communicate = edge_tts.Communicate(clean_text, voice)
+        communicate = edge_tts.Communicate(clean_text, voice, rate="+6%")
         chunks: list[bytes] = []
         async for chunk in communicate.stream():
             if chunk.get("type") == "audio":

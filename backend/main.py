@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+import uuid
 import re
 from pathlib import Path
 from typing import Any
@@ -13,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from backend.agent_workflow import run_workflow_turn, split_tts_clauses
-from backend.llm_bridge import generate_civic_turn, probe_local_llm
+from backend.llm_bridge import _read_env_value, cloud_llm, generate_civic_turn, probe_local_llm
 from backend.logger import LOG_FILE, clear_logs, get_conversations, get_logs, log_event, observability_status, save_conversation_turn
 from backend.tts_service import VOICE_CATALOG, synthesize_neural_mp3
 from backend.nlu import (
@@ -31,7 +33,7 @@ from backend.state import (
     record_dpdp_consent,
     record_telemetry_span,
     scrub_pii_and_aadhaar,
-    verify_hitl_seal,
+    seal_verified_turn,
     verify_mobile_otp,
 )
 from backend.state_packs import REGISTRY
@@ -54,7 +56,7 @@ class TurnRequest(BaseModel):
     gps_lon: float | None = None
     assistant_speaking: bool = False
     lang: str = "en"
-    llm_mode: str = "offline"
+    llm_mode: str = "auto"
     history: list[dict[str, str]] = Field(default_factory=list)
 
 
@@ -76,7 +78,7 @@ class HitlSealRequest(BaseModel):
     mode: str = "modal_plus_voice"
     spoken_phrase: str = ""
     modal_ok: bool = False
-    otp_verified: bool = False
+    otp_session_id: str = ""
     ward: str
     service_id: str
     urgency_tier: str = "STANDARD"
@@ -100,8 +102,9 @@ def serve_home() -> FileResponse:
 @app.get("/api/health")
 def health_check() -> dict[str, Any]:
     """Confirm app boots cleanly without required external secret keys."""
-    sarvam_ready = bool(os.getenv("SARVAM_API_KEY", "").strip())
+    sarvam_ready = bool(_read_env_value("SARVAM_API_KEY"))
     gemini_ready = bool(os.getenv("GEMINI_API_KEY", "").strip())
+    cloud = cloud_llm()
     local_llm = probe_local_llm()
     if local_llm["available"]:
         voice_mode = "local-unsloth-llm"
@@ -112,6 +115,7 @@ def health_check() -> dict[str, Any]:
     return {
         "status": "ok",
         "voice_mode": voice_mode,
+        "engine_mode": "cloud_api" if cloud else ("local_gpu" if local_llm["available"] else "offline_fsm"),
         "local_llm": local_llm,
         "optional_keys": {
             "UNSLOTH_API_KEY": "configured" if local_llm["available"] else "optional (offline Tanglish active)",
@@ -126,7 +130,11 @@ def health_check() -> dict[str, Any]:
 def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
     """Run Semantic VAD, natural greeting/mic-check handling, optional Local Unsloth LLM, Tanglish NLU & cooldown."""
     utterance = req.latest_text if req.latest_text is not None else req.combined_text
-    vad = classify_semantic_vad(utterance, req.assistant_speaking)
+    combined = scrub_pii_and_aadhaar(req.combined_text)["clean_text"]
+    emergency = analyze_turn(f"{combined} {scrub_pii_and_aadhaar(utterance)['clean_text']}")
+    if emergency["urgency"]["tier"] == "LIFE_SAFETY":
+        return {"phase": "life_safety", "analysis": emergency, "cooldown": None, "llm": {"used": False}}
+    vad = classify_semantic_vad(scrub_pii_and_aadhaar(utterance)["clean_text"], req.assistant_speaking)
     if vad["action"] == "not_turn":
         return {"vad": vad, "phase": "ignored_backchannel"}
 
@@ -146,9 +154,11 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
     if req.gps_lat is not None and req.gps_lon is not None:
         gps_lm = resolve_gps_to_landmark(req.gps_lat, req.gps_lon)["landmark"]
 
-    analysis = analyze_turn(req.combined_text, gps_lm)
+    analysis = analyze_turn(combined, gps_lm)
     if (not analysis["has_place"] or not analysis["has_issue"]) and llm_res and llm_res.get("landmark_text"):
-        analysis = analyze_turn(f"{req.combined_text} {llm_res['landmark_text']}".strip(), gps_lm)
+        candidate = analyze_turn(f"{combined} {llm_res['landmark_text']}".strip(), gps_lm)
+        if candidate["urgency"] == analysis["urgency"]:
+            analysis = candidate
 
     cooldown = check_cooldown(
         analysis["landmark"]["ward"],
@@ -247,11 +257,11 @@ def check_otp(req: OtpVerifyRequest) -> dict[str, Any]:
 @app.post("/api/hitl/seal")
 def seal_hitl(req: HitlSealRequest) -> dict[str, Any]:
     """Enforce Dual-Confirm Tamil HITL seal & 24h cooldown before unlocking dispatch."""
-    res = verify_hitl_seal(
+    res = seal_verified_turn(
+        otp_session_id=req.otp_session_id,
         mode=req.mode,
         spoken_phrase=req.spoken_phrase,
         modal_ok=req.modal_ok,
-        otp_verified=req.otp_verified,
         ward=req.ward,
         service_id=req.service_id,
         urgency_tier=req.urgency_tier,
@@ -284,7 +294,7 @@ class WorkflowTurnRequest(BaseModel):
     combined_text: str
     state_code: str = "tn"
     lang: str = "tanglish"
-    llm_mode: str = "offline"
+    llm_mode: str = "auto"
     history: list[dict[str, str]] = Field(default_factory=list)
     gps_lat: float | None = None
     gps_lon: float | None = None
@@ -337,8 +347,11 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         }
     )
     ward_lbl = res.get("analysis", {}).get("landmark", {}).get("ward", "")
-    save_conversation_turn("browser", "user", req.utterance, fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=req.persona_name)
-    save_conversation_turn("browser", "agent", res.get("reply", ""), fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=req.persona_name)
+    if req.dpdp_consented and res.get("fsm_state") != "LIFE_SAFETY":
+        save_conversation_turn("browser", "user", scrub_pii_and_aadhaar(req.utterance)["clean_text"],
+                               fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=scrub_pii_and_aadhaar(req.persona_name)["clean_text"])
+        save_conversation_turn("browser", "agent", res.get("reply", ""),
+                               fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=scrub_pii_and_aadhaar(req.persona_name)["clean_text"])
     return res
 
 
@@ -448,19 +461,30 @@ async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-I
     """Optional backend STT endpoint routing recorded WebM/WAV clips to Sarvam Saaras or local whisper-server."""
     raw = await audio.read()
     size_kb = round(len(raw) / 1024, 1)
-    sarvam_key = os.getenv("SARVAM_API_KEY", "").strip()
+    sarvam_key = _read_env_value("SARVAM_API_KEY")
     if sarvam_key:
         import urllib.request
 
-        boundary = "----NammaKuralBoundary7MA4YWxkTrZu0gW"
-        body = (
+        boundary = uuid.uuid4().hex
+        formats = {"audio/wav": "wav", "audio/x-wav": "wav", "audio/mpeg": "mp3",
+                   "audio/mp4": "m4a", "audio/ogg": "ogg", "audio/webm": "webm"}
+        mime = (audio.content_type or "").split(";")[0]
+        if mime not in formats:
+            mime = "audio/webm"
+        extension = formats[mime]
+        fields = {"model": "saaras:v4", "mode": "codemix"}
+        body = "".join(
+            f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'
+            for name, value in fields.items()
+        ).encode("utf-8")
+        body += (
             f"--{boundary}\r\n"
-            f'Content-Disposition: form-data; name="file"; filename="{audio.filename or "speech.webm"}"\r\n'
-            f"Content-Type: {audio.content_type or 'audio/webm'}\r\n\r\n"
+            f'Content-Disposition: form-data; name="file"; filename="speech.{extension}"\r\n'
+            f"Content-Type: {mime}\r\n\r\n"
         ).encode("utf-8") + raw + f"\r\n--{boundary}--\r\n".encode("utf-8")
         try:
             req = urllib.request.Request(
-                "https://api.sarvam.ai/speech-to-text-translate",
+                "https://api.sarvam.ai/speech-to-text",
                 data=body,
                 headers={
                     "api-subscription-key": sarvam_key,
@@ -468,9 +492,9 @@ async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-I
                 },
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
-                parsed = __import__("json").loads(resp.read().decode("utf-8"))
+                parsed = json.loads(resp.read().decode("utf-8"))
                 txt = str(parsed.get("transcript", "")).strip()
-                log_event("stt.sarvam_saaras", txt[:80], {"size_kb": size_kb, "lang": lang})
+                log_event("stt.sarvam_saaras", "Transcribed audio clip", {"size_kb": size_kb, "lang": lang})
                 return JSONResponse({"ok": True, "provider": "sarvam-saaras", "transcript": txt})
         except Exception as exc:
             log_event("stt.sarvam_error", type(exc).__name__, {"size_kb": size_kb}, level="WARN")
@@ -481,6 +505,6 @@ async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-I
             "ok": False,
             "provider": "browser-fallback",
             "size_kb": size_kb,
-            "message": "Server STT key/daemon not set — use ta-IN browser speech or Wispr Flow hotkey.",
+            "message": "Server STT key/daemon not set — use ta-IN browser speech.",
         }
     )

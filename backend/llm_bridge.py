@@ -11,12 +11,12 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
 
 from backend.logger import log_event
+from backend.state import scrub_pii_and_aadhaar
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -52,15 +52,12 @@ def _read_env_value(name: str, default: str = "") -> str:
 
 
 def _pick_chat_model(models: list[str], override: str = "") -> str:
-    if override and override in models:
-        return override
-    # Exclude STT/TTS/embed utilities and non-compliant model families (Bharat sovereign/open-weight policy)
     disallowed = ("asr", "whisper", "tts", "embed", "qwen", "deepseek")
-    chat_candidates = [m for m in models if not any(tok in m.lower() for tok in disallowed)]
+    chat_candidates = [m for m in models if m and not any(tok in m.lower() for tok in disallowed)]
+    if override in chat_candidates:
+        return override
     if not chat_candidates:
-        chat_candidates = [m for m in models if not any(tok in m.lower() for tok in ("asr", "whisper", "tts", "embed"))]
-    if not chat_candidates:
-        return models[0] if models else ""
+        return ""
     for preferred in ("gemma-4", "nemotron", "phi-4", "sarvam", "llama"):
         for m in chat_candidates:
             if preferred in m.lower():
@@ -83,11 +80,11 @@ def probe_local_llm() -> dict[str, Any]:
             with urllib.request.urlopen(req, timeout=1.5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 models = [str(m.get("id", "")) for m in data.get("data", []) if m.get("id")]
-                if models:
+                if active_model := _pick_chat_model(models, model_override):
                     return {
                         "available": True,
                         "provider": "unsloth-studio",
-                        "active_model": _pick_chat_model(models, model_override),
+                        "active_model": active_model,
                         "models": models,
                     }
         except Exception:
@@ -98,11 +95,11 @@ def probe_local_llm() -> dict[str, Any]:
         with urllib.request.urlopen(f"{ollama_url}/api/tags", timeout=1.0) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             models = [str(m.get("name", "")) for m in data.get("models", []) if m.get("name")]
-            if models:
+            if active_model := _pick_chat_model(models, model_override):
                 return {
                     "available": True,
                     "provider": "ollama",
-                    "active_model": _pick_chat_model(models, model_override),
+                    "active_model": active_model,
                     "models": models,
                 }
     except Exception:
@@ -114,6 +111,57 @@ def probe_local_llm() -> dict[str, Any]:
         "active_model": "deterministic-tanglish-v1",
         "models": [],
     }
+
+
+def cloud_llm() -> dict[str, str] | None:
+    base_url = _read_env_value("LLM_BASE_URL").rstrip("/")
+    key = _read_env_value("LLM_API_KEY")
+    model = _pick_chat_model([_read_env_value("LLM_MODEL")])
+    if not (base_url.startswith(("https://", "http://")) and key and model):
+        return None
+    return {
+        "provider": "cloud-api",
+        "active_model": model,
+        "url": f"{base_url}/chat/completions",
+        "key": key,
+    }
+
+
+def chat_backends(preferred_mode: str):
+    """Yield cloud then local endpoints, allowing callers to fall back on request failure."""
+    if preferred_mode == "offline":
+        return
+    if preferred_mode not in {"unsloth", "ollama", "local_gpu"}:
+        cloud = cloud_llm()
+        if cloud:
+            yield cloud
+    local = probe_local_llm()
+    if not local["available"]:
+        return
+    provider = local["provider"]
+    if preferred_mode == "ollama" and provider != "ollama":
+        return
+    unsloth = provider == "unsloth-studio"
+    setting, default = ("UNSLOTH_STUDIO_URL", "http://127.0.0.1:8888") if unsloth else ("OLLAMA_URL", "http://127.0.0.1:11434")
+    yield {
+        "provider": provider,
+        "active_model": local["active_model"],
+        "url": f"{_read_env_value(setting, default).rstrip('/')}/v1/chat/completions",
+        "key": _read_env_value("UNSLOTH_API_KEY") if unsloth else "",
+    }
+
+
+def chat_message(backend: dict[str, str], messages: list[dict[str, Any]], **options: Any) -> dict[str, Any]:
+    headers = {"Content-Type": "application/json"}
+    if backend["key"]:
+        headers["Authorization"] = f"Bearer {backend['key']}"
+    if backend["provider"] == "unsloth-studio":
+        options["reasoning_effort"] = "none"
+    payload = json.dumps({"model": backend["active_model"], "messages": messages, **options}).encode("utf-8")
+    req = urllib.request.Request(backend["url"], data=payload, headers=headers)
+    with urllib.request.urlopen(req, timeout=5.0) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        return data["choices"][0]["message"]
 
 
 def _extract_json_object(raw_text: str) -> dict[str, Any] | None:
@@ -140,21 +188,16 @@ def generate_civic_turn(
     if preferred_mode == "offline":
         return None
 
-    status = probe_local_llm()
-    if not status["available"] or not status["active_model"]:
+    latest = scrub_pii_and_aadhaar(utterance)
+    combined = scrub_pii_and_aadhaar(combined_text)
+    if latest["aadhaar_blocked"] or combined["aadhaar_blocked"]:
         return None
-
-    if preferred_mode == "ollama" and status["provider"] != "ollama":
-        return None
-
-    unsloth_url = _read_env_value("UNSLOTH_STUDIO_URL", "http://127.0.0.1:8888").rstrip("/")
-    unsloth_key = _read_env_value("UNSLOTH_API_KEY", "")
-    ollama_url = _read_env_value("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-
+    utterance = latest["clean_text"]
+    combined_text = combined["clean_text"]
     messages: list[dict[str, str]] = [{"role": "system", "content": _SYSTEM_PROMPT}]
     for item in (history or [])[-4:]:
         role = "assistant" if item.get("role") == "agent" else "user"
-        txt = str(item.get("text", "")).strip()
+        txt = scrub_pii_and_aadhaar(str(item.get("text", "")))["clean_text"].strip()
         if txt:
             messages.append({"role": role, "content": txt})
 
@@ -166,46 +209,22 @@ def generate_civic_turn(
     )
     messages.append({"role": "user", "content": user_msg})
 
-    endpoint = (
-        f"{unsloth_url}/v1/chat/completions"
-        if status["provider"] == "unsloth-studio"
-        else f"{ollama_url}/v1/chat/completions"
-    )
-    headers = {"Content-Type": "application/json"}
-    if status["provider"] == "unsloth-studio" and unsloth_key:
-        headers["Authorization"] = f"Bearer {unsloth_key}"
-
-    payload = json.dumps(
-        {
-            "model": status["active_model"],
-            "messages": messages,
-            "max_tokens": 180,
-            "temperature": 0.35,
-            "reasoning_effort": "none",
-        }
-    ).encode("utf-8")
-
-    try:
-        log_event("llm.request", f"Calling {status['provider']} ({status['active_model']})", {"lang": lang})
-        req = urllib.request.Request(endpoint, data=payload, headers=headers)
-        with urllib.request.urlopen(req, timeout=8.0) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-            content = str(body["choices"][0]["message"].get("content", "")).strip()
+    for backend in chat_backends(preferred_mode):
+        try:
+            message = chat_message(backend, messages, max_tokens=180, temperature=0.35)
+            content = str(message.get("content") or "").strip()
             if not content:
-                log_event("llm.empty_response", "LLM returned empty content; falling back to deterministic router", level="WARN")
-                return None
+                continue
             parsed = _extract_json_object(content)
-            reply = str(parsed.get("reply", "")).strip() if parsed else content
-            log_event("llm.response", "LLM generated conversational response", {"model": status["active_model"], "parsed_json": bool(parsed)})
             return {
                 "used": True,
-                "provider": status["provider"],
-                "model": status["active_model"],
-                "reply": reply,
+                "provider": backend["provider"],
+                "model": backend["active_model"],
+                "reply": str(parsed.get("reply", "")) if parsed else content,
                 "service_hint": str(parsed.get("service_hint", "")) if parsed else "",
                 "landmark_text": str(parsed.get("landmark_text", "")) if parsed else "",
                 "urgency_hint": str(parsed.get("urgency_hint", "")) if parsed else "",
             }
-    except (urllib.error.URLError, TimeoutError, KeyError, IndexError, ValueError) as exc:
-        log_event("llm.error", f"Fallback to deterministic engine: {type(exc).__name__}", level="WARN")
-        return None
+        except (OSError, KeyError, IndexError, ValueError, TypeError, AttributeError) as exc:
+            log_event("llm.error", f"Chat backend unavailable: {type(exc).__name__}", level="WARN")
+    return None

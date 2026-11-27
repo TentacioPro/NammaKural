@@ -19,10 +19,12 @@ def test_health_boots_without_secret_keys(monkeypatch) -> None:
 
     import backend.main as main_mod
     monkeypatch.setattr(main_mod, "probe_local_llm", lambda: {"available": False, "provider": "offline-tanglish-engine", "active_model": "deterministic-tanglish-v1", "models": []})
-    monkeypatch.delenv("SARVAM_API_KEY", raising=False)
+    monkeypatch.setenv("SARVAM_API_KEY", "")
+    monkeypatch.setenv("LLM_BASE_URL", "")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
     cold = client.get("/api/health").json()
     assert cold["voice_mode"] == "offline-tanglish-engine"
+    assert cold["engine_mode"] == "offline_fsm"
 
 
 def test_critical_safety_spark_overrides_and_splits() -> None:
@@ -92,49 +94,30 @@ def test_otp_and_dual_confirm_hitl_gates() -> None:
     ver = client.post("/api/otp/verify", json={"otp_session_id": sid, "code": "4829"}).json()
     assert ver["verified"] is True
 
-    # Voice double requires two confirmations (1 fails, 2 succeeds)
-    one_hit = client.post(
-        "/api/hitl/seal",
-        json={
-            "mode": "voice_double",
-            "spoken_phrase": "உறுதி",
-            "modal_ok": False,
-            "otp_verified": True,
-            "ward": "Ward 103",
-            "service_id": "streetlight_eb",
-            "urgency_tier": "CRITICAL_SAFETY",
-        },
-    ).json()
-    assert one_hit["approved"] is False
+    payload = {
+        "mode": "voice_double",
+        "otp_session_id": sid,
+        "ward": "Ward 103",
+        "service_id": "streetlight_eb",
+        "urgency_tier": "CRITICAL_SAFETY",
+    }
+    single_breath = client.post("/api/hitl/seal", json={**payload, "spoken_phrase": "Confirm, Confirm", "distinct_turns": 2}).json()
+    assert single_breath["approved"] is False
+    forged_otp = client.post("/api/hitl/seal", json={**payload, "otp_session_id": "unknown", "otp_verified": True, "spoken_phrase": "உறுதி"}).json()
+    assert forged_otp["approved"] is False
 
-    two_hits = client.post(
-        "/api/hitl/seal",
-        json={
-            "mode": "voice_double",
-            "spoken_phrase": "உறுதி, உறுதி",
-            "modal_ok": False,
-            "otp_verified": True,
-            "ward": "Ward 103",
-            "service_id": "streetlight_eb",
-            "urgency_tier": "CRITICAL_SAFETY",
-        },
-    ).json()
-    assert two_hits["approved"] is True
-    assert two_hits["seal_method"] == "voice_double_affirmation"
+    first = client.post("/api/hitl/seal", json={**payload, "spoken_phrase": "உறுதி"}).json()
+    assert first["approved"] is False
+    assert first["pending_confirmation"] is True
 
-    # Modal OK + single native Tamil confirmation succeeds
-    modal_ok = client.post(
-        "/api/hitl/seal",
-        json={
-            "mode": "modal_plus_voice",
-            "spoken_phrase": "உறுதி",
-            "modal_ok": True,
-            "otp_verified": True,
-            "ward": "Ward 102",
-            "service_id": "streetlight_eb",
-            "urgency_tier": "STANDARD",
-        },
-    ).json()
+    second = client.post("/api/hitl/seal", json={**payload, "spoken_phrase": "உறுதி"}).json()
+    assert second["approved"] is True
+    assert second["seal_method"] == "voice_double_affirmation"
+
+    modal_ok = client.post("/api/hitl/seal", json={
+        **payload, "mode": "modal_plus_voice", "ward": "Ward 102",
+        "urgency_tier": "STANDARD", "spoken_phrase": "உறுதி", "modal_ok": True,
+    }).json()
     assert modal_ok["approved"] is True
 
 
@@ -217,3 +200,29 @@ def test_llm_bridge_offline_fallback_and_mocked_unsloth_turn(monkeypatch) -> Non
     assert body["llm"]["used"] is True
     assert body["llm"]["model"] == "gemma-4-E2B-it-Q4_K_M"
     assert body["analysis"]["landmark"]["ward"] == "Ward 103"
+
+def test_engine_health_selection_and_policy(monkeypatch):
+    import backend.main as main_mod
+
+    monkeypatch.setattr(main_mod, "probe_local_llm", lambda: {"available": True, "provider": "ollama", "active_model": "gemma-4"})
+    monkeypatch.setenv("LLM_BASE_URL", "https://example.invalid/v1")
+    monkeypatch.setenv("LLM_API_KEY", "dummy")
+    monkeypatch.setenv("LLM_MODEL", "gemma-4")
+    assert client.get("/api/health").json()["engine_mode"] == "cloud_api"
+    monkeypatch.setenv("LLM_MODEL", "deepseek")
+    assert client.get("/api/health").json()["engine_mode"] == "local_gpu"
+
+
+def test_sarvam_upload_uses_v4_codemix(monkeypatch):
+    import io
+    import urllib.request
+
+    def fetch(request, timeout):
+        assert request.full_url == "https://api.sarvam.ai/speech-to-text"
+        assert b'saaras:v4' in request.data and b'codemix' in request.data
+        return io.BytesIO(b'{"transcript": "streetlight test"}')
+
+    monkeypatch.setenv("SARVAM_API_KEY", "dummy")
+    monkeypatch.setattr(urllib.request, "urlopen", fetch)
+    response = client.post("/api/stt", files={"audio": ("clip.webm", b"audio", "audio/webm")})
+    assert response.json()["transcript"] == "streetlight test"

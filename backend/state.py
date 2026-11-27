@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from threading import Lock
 from typing import Any
 
 # In-memory synthetic request history (no personal PII — synthetic fixture tickets only)
@@ -29,6 +30,7 @@ _REQUEST_HISTORY: list[dict[str, Any]] = [
     },
 ]
 
+_HITL_LOCK = Lock()
 _OTP_SESSIONS: dict[str, dict[str, Any]] = {}
 _TRACE_SPANS: list[dict[str, Any]] = []
 _CONSENT_LOG: dict[str, dict[str, Any]] = {}
@@ -138,11 +140,11 @@ def check_cooldown(ward: str, service_id: str, urgency_tier: str) -> dict[str, A
             "reason": "No recent active ticket for this Ward and Department.",
             "existing_ticket": None,
         }
-    if urgency_tier == "CRITICAL_SAFETY":
+    if urgency_tier in {"LIFE_SAFETY", "CRITICAL_SAFETY"}:
         return {
             "in_cooldown": True,
             "override_allowed": True,
-            "reason": f"P1 Critical Safety hazard overrides 24h cooldown on {active_match['ticket_id']}.",
+            "reason": f"Safety hazard overrides 24h cooldown on {active_match['ticket_id']}.",
             "existing_ticket": active_match,
         }
     remaining = _COOLDOWN_HOURS - active_match["hours_ago"]
@@ -191,10 +193,11 @@ def verify_hitl_seal(
     ward: str,
     service_id: str,
     urgency_tier: str,
+    distinct_turns: int = 0,
 ) -> dict[str, Any]:
     """Enforce mandatory anti-spam + Dual-Confirm Tamil HITL Gate before unlocking dispatch tools (I2)."""
     cooldown = check_cooldown(ward, service_id, urgency_tier)
-    if cooldown["in_cooldown"] and not cooldown["override_allowed"] and service_id != "garbage_1100":
+    if cooldown["in_cooldown"] and not cooldown["override_allowed"]:
         return {
             "approved": False,
             "reason": cooldown["reason"],
@@ -213,7 +216,7 @@ def verify_hitl_seal(
     )
 
     if mode == "voice_double":
-        if confirm_hits >= 2:
+        if distinct_turns >= 2 and confirm_hits >= 1:
             ticket_id = f"#NK-{uuid.uuid4().hex[:5].upper()}"
             _REQUEST_HISTORY.insert(
                 0,
@@ -230,7 +233,7 @@ def verify_hitl_seal(
             return {"approved": True, "seal_method": "voice_double_affirmation", "ticket_id": ticket_id}
         return {
             "approved": False,
-            "reason": "Say confirmation keyword twice (e.g. 'Confirm, Confirm' or 'உறுதி, உறுதி').",
+            "reason": "Say Confirm or உறுதி in two separate turns.",
         }
 
     if mode == "modal_plus_voice":
@@ -255,6 +258,33 @@ def verify_hitl_seal(
         }
 
     return {"approved": False, "reason": f"Unknown HITL seal mode: {mode}"}
+
+
+_CONFIRMATION = re.compile(r"[\s.!?,]*(?:confirm|உறுதி|urudhi|yes|சரி|அனுப்பு)[\s.!?,]*", re.IGNORECASE)
+
+
+def seal_verified_turn(
+    otp_session_id: str, mode: str, spoken_phrase: str, modal_ok: bool,
+    ward: str, service_id: str, urgency_tier: str,
+) -> dict[str, Any]:
+    """Track each confirmation server-side against the verified OTP and complaint."""
+    with _HITL_LOCK:
+        session = _OTP_SESSIONS.get(otp_session_id)
+        if not session or not session["verified"]:
+            return {"approved": False, "reason": "Verify Citizen Mobile OTP before sealing dispatch."}
+        if not _CONFIRMATION.fullmatch(spoken_phrase):
+            session.pop("pending_confirmation", None)
+            return {"approved": False, "reason": "Say only Confirm or உறுதி in a separate turn."}
+
+        complaint = (ward, service_id, urgency_tier)
+        previous = session.pop("pending_confirmation", None)
+        distinct_turns = 1 + int(previous == complaint)
+        result = verify_hitl_seal(mode, spoken_phrase, modal_ok, True,
+                                  ward, service_id, urgency_tier, distinct_turns)
+        if mode == "voice_double" and distinct_turns == 1 and "cooldown" not in result:
+            session["pending_confirmation"] = complaint
+            return {**result, "pending_confirmation": True}
+        return result
 
 
 def record_telemetry_span(span: dict[str, Any]) -> dict[str, Any]:

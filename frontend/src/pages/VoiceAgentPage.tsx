@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Volume2, ShieldCheck, Send, CheckCircle2, RotateCcw } from "lucide-react";
-import { RiverOrb, type OrbState } from "../components/RiverOrb";
+import { Mic, MicOff, Volume2, ShieldCheck, Send, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RiverOrb, type OrbState, type OrbVoiceTheme } from "../components/RiverOrb";
 import { LiveWaveform } from "../components/LiveWaveform";
 
 interface HealthInfo {
@@ -52,6 +52,25 @@ interface PreviewPacket {
   notice_en: string;
   notice_ta: string;
   fields: Record<string, unknown>;
+}
+
+const VOICE_THEMES: Record<string, OrbVoiceTheme> = {
+  auto: { rgb: "30, 58, 138", top: "#3B82F6", mid: "#1E3A8A", bot: "#0F766E" },
+  "ta-IN-PallaviNeural": { rgb: "190, 24, 93", top: "#F472B6", mid: "#BE185D", bot: "#831843" },
+  "ta-IN-ValluvarNeural": { rgb: "15, 118, 110", top: "#2DD4BF", mid: "#0F766E", bot: "#115E59" },
+  "ta-SG-VenbaNeural": { rgb: "5, 150, 105", top: "#34D399", mid: "#059669", bot: "#065F46" },
+  "ta-SG-AnbuNeural": { rgb: "217, 119, 6", top: "#FBBF24", mid: "#D97706", bot: "#92400E" },
+  "ta-MY-KaniNeural": { rgb: "124, 58, 237", top: "#A78BFA", mid: "#7C3AED", bot: "#4C1D95" },
+  "ta-MY-SuryaNeural": { rgb: "234, 88, 12", top: "#FB923C", mid: "#EA580C", bot: "#9A3412" },
+  "ta-LK-SaranyaNeural": { rgb: "8, 145, 178", top: "#22D3EE", mid: "#0891B2", bot: "#155E75" },
+  "ta-LK-KumarNeural": { rgb: "71, 85, 105", top: "#94A3B8", mid: "#475569", bot: "#1E293B" },
+  "en-IN-PrabhatNeural": { rgb: "37, 99, 235", top: "#60A5FA", mid: "#2563EB", bot: "#1E40AF" },
+  "en-IN-NeerjaExpressiveNeural": { rgb: "162, 28, 175", top: "#E879F9", mid: "#A21CAF", bot: "#701A75" },
+  "en-IN-NeerjaNeural": { rgb: "109, 40, 217", top: "#C084FC", mid: "#6D28D9", bot: "#4C1D95" },
+};
+
+function getVoiceTheme(id: string): OrbVoiceTheme {
+  return VOICE_THEMES[id] ?? VOICE_THEMES.auto;
 }
 
 const BACKCHANNEL_RE = /^(mm+|mmm+|hmm+|seri|sari|aama|ama|ok|okay|haan|ஆமா|சரி)$/i;
@@ -701,23 +720,10 @@ export default function VoiceAgentPage() {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <select
-            aria-label="TTS Voice"
-            id="voice-select"
-            className="nk-select"
-            style={{ minHeight: 44, padding: "6px 12px", borderRadius: 999, fontSize: "0.82rem" }}
-            value={selectedVoice}
-            onChange={(e) => setSelectedVoice(e.target.value)}
-          >
-            {voices.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.label}
-              </option>
-            ))}
-          </select>
           <button
             type="button"
             className="nk-pill"
+            title="Start a fresh conversation session"
             onClick={() => {
               endCall();
               setSessionId(`nk-${Date.now().toString(36)}`);
@@ -731,7 +737,10 @@ export default function VoiceAgentPage() {
           >
             New Call
           </button>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--ink-2)", cursor: "pointer" }}>
+          <label
+            title="DPDP Act 2023 voice processing consent"
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.8rem", color: "var(--ink-2)", cursor: "pointer" }}
+          >
             <input
               type="checkbox"
               checked={consentGranted}
@@ -749,8 +758,61 @@ export default function VoiceAgentPage() {
         </div>
       </div>
 
-      {/* Centerpiece RiverOrb (Untouched) + Waveform + Floating Pill Dock */}
-      <RiverOrb agentState={orbState} onClick={toggleMic} />
+      {/* Voice Orb Carousel (Swipe/Click arrows or voice chips below to shift orb color & voice) */}
+      <div className="nk-carousel-row">
+        <button
+          type="button"
+          className="nk-carousel-arrow"
+          aria-label="Previous voice"
+          title="Previous voice"
+          onClick={() => {
+            const idx = voices.findIndex((v) => v.id === selectedVoice);
+            const prev = (idx <= 0 ? voices.length - 1 : idx - 1);
+            if (voices[prev]) setSelectedVoice(voices[prev].id);
+          }}
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        <RiverOrb agentState={orbState} onClick={toggleMic} voiceTheme={getVoiceTheme(selectedVoice)} />
+
+        <button
+          type="button"
+          className="nk-carousel-arrow"
+          aria-label="Next voice"
+          title="Next voice"
+          onClick={() => {
+            const idx = voices.findIndex((v) => v.id === selectedVoice);
+            const next = (idx + 1) % Math.max(1, voices.length);
+            if (voices[next]) setSelectedVoice(voices[next].id);
+          }}
+        >
+          <ChevronRight size={20} />
+        </button>
+      </div>
+
+      <div className="nk-voice-strip" role="listbox" aria-label="Voice Persona Carousel">
+        {voices.map((v) => {
+          const vt = getVoiceTheme(v.id);
+          const active = v.id === selectedVoice;
+          const shortName = v.label.split("·")[0].trim();
+          return (
+            <button
+              key={v.id}
+              type="button"
+              role="option"
+              aria-selected={active}
+              title={v.label}
+              className={`nk-voice-chip${active ? " active" : ""}`}
+              onClick={() => setSelectedVoice(v.id)}
+            >
+              <span className="nk-voice-dot" style={{ background: vt.mid }} aria-hidden="true" />
+              {shortName}
+            </button>
+          );
+        })}
+      </div>
+
       <LiveWaveform active={listening} speaking={speaking} />
 
       <div className="nk-dock" style={{ maxWidth: 440 }}>

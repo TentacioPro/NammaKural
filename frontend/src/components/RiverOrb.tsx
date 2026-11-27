@@ -3,9 +3,17 @@ import { AlertTriangle, Mic, Pause, Sparkles } from "lucide-react";
 
 export type OrbState = "idle" | "listening" | "thinking" | "talking" | "paused" | "urgent";
 
+export interface OrbVoiceTheme {
+  rgb: string;
+  top: string;
+  mid: string;
+  bot: string;
+}
+
 interface RiverOrbProps {
   agentState: OrbState;
   onClick: () => void;
+  voiceTheme?: OrbVoiceTheme;
 }
 
 const LABELS: Record<OrbState, { ta: string; en: string }> = {
@@ -17,10 +25,12 @@ const LABELS: Record<OrbState, { ta: string; en: string }> = {
   urgent: { ta: "அவசரம்", en: "Urgent" },
 };
 
-export function RiverOrb({ agentState, onClick }: RiverOrbProps) {
+export function RiverOrb({ agentState, onClick, voiceTheme }: RiverOrbProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const stateRef = useRef<OrbState>(agentState);
+  const themeRef = useRef<OrbVoiceTheme | undefined>(voiceTheme);
   stateRef.current = agentState;
+  themeRef.current = voiceTheme;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,6 +60,7 @@ export function RiverOrb({ agentState, onClick }: RiverOrbProps) {
         lastRipple = ts;
       }
 
+      const vt = themeRef.current;
       const rgb =
         st === "urgent" || st === "paused"
           ? "185, 28, 28"
@@ -57,7 +68,7 @@ export function RiverOrb({ agentState, onClick }: RiverOrbProps) {
             ? "4, 120, 87"
             : st === "thinking"
               ? "217, 119, 6"
-              : "30, 58, 138";
+              : (vt?.rgb ?? "30, 58, 138");
 
       if (!reduced) phase += active ? 0.045 : 0.015;
 
@@ -111,8 +122,9 @@ export function RiverOrb({ agentState, onClick }: RiverOrbProps) {
         grad.addColorStop(0, "#FBBF24");
         grad.addColorStop(1, "#D97706");
       } else {
-        grad.addColorStop(0, "#3B82F6");
-        grad.addColorStop(0.55, "#1E3A8A");
+        grad.addColorStop(0, vt?.top ?? "#3B82F6");
+        grad.addColorStop(0.55, vt?.mid ?? "#1E3A8A");
+        grad.addColorStop(1, vt?.bot ?? "#0F766E");
         grad.addColorStop(1, "#0EA5E9");
       }
       ctx.fillStyle = grad;

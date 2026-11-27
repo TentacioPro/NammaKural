@@ -885,6 +885,8 @@ def _node_finalize(state: _GraphState) -> dict[str, Any]:
         ):
             candidate_tts = re.sub(eng, tam, candidate_tts, flags=re.IGNORECASE)
         tts_out = post_guardrail_reply(candidate_tts, {lm["ward"]} if analysis.get("has_place") else set())
+    elif state.get("use_generated_speech") and safe_reply:
+        tts_out = safe_reply
     else:
         tts_out = _tamil_prompt(fsm_state, analysis, state["ctx"].get("cooldown"))
 

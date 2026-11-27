@@ -1,0 +1,137 @@
+{
+  "state_code": "tn",
+  "state_name": "Tamil Nadu",
+  "languages": ["ta-IN", "en-IN", "tanglish"],
+  "accents": ["madras", "madurai", "kongu", "tirunelveli", "delta"],
+  "fallback_helpline": "1100",
+  "fallback_email": "cmcell@tn.gov.in",
+  "issue_lexicon": {
+    "streetlight_eb": ["streetlight", "light", "eriyala", "wire", "transformer", "spark", "தெருவிளக்கு", "மின் கம்பி"],
+    "sewage_pothole": ["sewage", "saakkadai", "sakadai", "pothole", "drainage", "சாக்கடை", "குழி"],
+    "water_pipe": ["kudineer", "water", "pipe", "thanni", "குடிநீர்", "தண்ணி"],
+    "ration_tnpds": ["ration", "arisi", "fingerprint", "tnpds", "ரேஷன்"],
+    "garbage_1100": ["garbage", "kuppai", "close", "20491", "1100", "குப்பை"]
+  },
+  "ambiguous_areas": {
+    "velachery": {
+      "trigger_pattern": "\\bvelachery\\b|வேளச்சேரி",
+      "specific_tokens": ["vijaya\\s*nagar", "phoenix", "bus\\s*stand", "20491", "close", "garbage", "kuppai"],
+      "prompt_en": "Velachery spans multiple Wards. Which landmark is closest — Vijayanagar Bus Stand (Ward 178) or Phoenix Marketcity (Ward 175)?",
+      "prompt_ta": "வேளச்சேரி 2 வார்டுகளில் உள்ளது. எது அருகில் — விஜயநகர் பேருந்து நிலையம் (வார்டு 178) அல்லது பீனிக்ஸ் மால் (வார்டு 175)?"
+    },
+    "anna_nagar": {
+      "trigger_pattern": "\\banna\\s*nagar\\b|அண்ணா",
+      "specific_tokens": ["tower\\s*park", "arch", "5th", "3rd", "iii"],
+      "prompt_en": "Anna Nagar Zone 08 spans multiple Wards. Which landmark is closer — Tower Park (Ward 103) or Anna Arch (Ward 102)?",
+      "prompt_ta": "அண்ணா நகர் மண்டலம் 08-ல் சரியான இடம் எது — டவர் பார்க் (வார்டு 103) அல்லது அண்ணா ஆர்ச் (வார்டு 102)?"
+    }
+  },
+  "portals": [
+    {
+      "id": "gcc_pgrs",
+      "name": "GCC PGRS (Chennai Municipal)",
+      "url": "https://gccservices.in/pgr/registercomplaints",
+      "helpline": "1913",
+      "whatsapp": "919445061913",
+      "auth_gate": "open_without_otp"
+    },
+    {
+      "id": "tangedco_ccms",
+      "name": "TANGEDCO Minnagam",
+      "url": "https://ccms.tangedco.org/tangedco-public/",
+      "helpline": "1912",
+      "whatsapp": "919498794987",
+      "auth_gate": "captcha_and_otp"
+    },
+    {
+      "id": "cmwssb_gms",
+      "name": "CMWSSB Metro Water",
+      "url": "https://cms-cmwssb.tn.gov.in/#/portalcomplregistration",
+      "helpline": "1916",
+      "whatsapp": "918144930308",
+      "auth_gate": "captcha_and_otp"
+    },
+    {
+      "id": "cm_cell_1100",
+      "name": "Mudhalvarin Mugavari (CM Cell)",
+      "url": "https://cmhelpline.tnega.org/portal/en/signin",
+      "helpline": "1100",
+      "email": "cmcell@tn.gov.in",
+      "auth_gate": "zoho_otp_or_direct_email"
+    }
+  ],
+  "landmarks": [
+    {
+      "name": "Tower Park Back Side · Vth Ave",
+      "district": "Chennai",
+      "zone": "Zone 08",
+      "ward": "Ward 103",
+      "street": "Vth Avenue",
+      "road_id": "76370",
+      "lat": 13.0850,
+      "lon": 80.2101,
+      "aliases": ["tower park", "5th ave", "vth ave", "3rd cross"],
+      "default_service": "streetlight_eb"
+    },
+    {
+      "name": "Anna Arch · IIIrd Ave",
+      "district": "Chennai",
+      "zone": "Zone 08",
+      "ward": "Ward 102",
+      "street": "IIIrd Avenue",
+      "road_id": "76312",
+      "lat": 13.0792,
+      "lon": 80.2156,
+      "aliases": ["anna arch", "iii ave", "iiird ave", "3rd ave"],
+      "default_service": "streetlight_eb"
+    },
+    {
+      "name": "Vijayanagar Bus Stand · Velachery Main Rd",
+      "district": "Chennai",
+      "zone": "Zone 13",
+      "ward": "Ward 178",
+      "street": "Velachery Main Rd",
+      "road_id": "91420",
+      "lat": 12.9792,
+      "lon": 80.2212,
+      "aliases": ["vijayanagar", "vijaya nagar", "velachery main", "bus stand"],
+      "default_service": "sewage_pothole"
+    },
+    {
+      "name": "Phoenix Marketcity · 100 Feet Rd",
+      "district": "Chennai",
+      "zone": "Zone 13",
+      "ward": "Ward 175",
+      "street": "Velachery Bypass Rd",
+      "road_id": "91105",
+      "lat": 12.9915,
+      "lon": 80.2167,
+      "aliases": ["phoenix"],
+      "default_service": "sewage_pothole"
+    },
+    {
+      "name": "Kuruvikaran Salai · Anna Bus Stand",
+      "district": "Madurai",
+      "zone": "Zone II",
+      "ward": "Ward 44",
+      "street": "Kuruvikaran Salai",
+      "road_id": "MD-4402",
+      "lat": 9.9312,
+      "lon": 78.1342,
+      "aliases": ["madurai", "kuruvikaran", "anna bus stand", "மதுரை"],
+      "default_service": "water_pipe"
+    },
+    {
+      "name": "Gandhipuram 100 Feet Road",
+      "district": "Coimbatore",
+      "zone": "Central",
+      "ward": "Ward 32",
+      "street": "100 Feet Road",
+      "road_id": "CB-3210",
+      "lat": 11.0183,
+      "lon": 76.9685,
+      "aliases": ["coimbatore", "gandhipuram", "கோவை"],
+      "default_service": "water_pipe"
+    }
+  ]
+}

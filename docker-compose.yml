@@ -7,4 +7,15 @@ services:
     environment:
       - SARVAM_API_KEY=${SARVAM_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - UNSLOTH_API_KEY=${UNSLOTH_API_KEY:-}
+      - TURN_SERVER_URL=${TURN_SERVER_URL:-turn:127.0.0.1:3478}
+    restart: unless-stopped
+
+  coturn:
+    image: coturn/coturn:4.6.2
+    container_name: nammakural-turn-relay
+    profiles: ["rtc"]
+    network_mode: host
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
     restart: unless-stopped

@@ -1,0 +1,44 @@
+{
+  "state_code": "ka",
+  "state_name": "Karnataka (Extension Pack)",
+  "languages": ["kn-IN", "en-IN", "kanglish"],
+  "accents": ["bengaluru_urban", "north_karnataka", "coastal_mangaluru"],
+  "fallback_helpline": "1533",
+  "issue_lexicon": {
+    "streetlight_eb": ["bescom", "streetlight", "current illa", "pole", "wire", "spark"],
+    "sewage_pothole": ["charandi", "gundi", "pothole", "drainage", "sewage"],
+    "water_pipe": ["bwssb", "neeru", "pipe", "water leak"],
+    "garbage_1100": ["kasa", "garbage", "bbmp"]
+  },
+  "ambiguous_areas": {},
+  "portals": [
+    {
+      "id": "ka_ipgrs",
+      "name": "Karnataka Janaspandana (iPGRS)",
+      "url": "https://ipgrs.karnataka.gov.in",
+      "helpline": "1902",
+      "auth_gate": "mobile_otp"
+    },
+    {
+      "id": "bbmp_sahaaya",
+      "name": "BBMP Sahaaya 2.0",
+      "url": "https://bbmp.gov.in",
+      "helpline": "1533",
+      "auth_gate": "mobile_otp"
+    }
+  ],
+  "landmarks": [
+    {
+      "name": "Indiranagar 100 Feet Rd · Metro Pillar 88",
+      "district": "Bengaluru Urban",
+      "zone": "East",
+      "ward": "Ward 80",
+      "street": "100 Feet Rd",
+      "road_id": "BLR-080-100FT",
+      "lat": 12.9784,
+      "lon": 77.6408,
+      "aliases": ["indiranagar", "100 feet", "cmh road"],
+      "default_service": "streetlight_eb"
+    }
+  ]
+}

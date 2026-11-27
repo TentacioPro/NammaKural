@@ -31,14 +31,87 @@ _REQUEST_HISTORY: list[dict[str, Any]] = [
 
 _OTP_SESSIONS: dict[str, dict[str, Any]] = {}
 _TRACE_SPANS: list[dict[str, Any]] = []
+_CONSENT_LOG: dict[str, dict[str, Any]] = {}
 _COOLDOWN_HOURS = 24
+
+# Official UIDAI Aadhaar Verhoeff multiplication, permutation, and inverse tables
+_VERHOEFF_D = (
+    (0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    (1, 2, 3, 4, 0, 6, 7, 8, 9, 5),
+    (2, 3, 4, 0, 1, 7, 8, 9, 5, 6),
+    (3, 4, 0, 1, 2, 8, 9, 5, 6, 7),
+    (4, 0, 1, 2, 3, 9, 5, 6, 7, 8),
+    (5, 9, 8, 7, 6, 0, 4, 3, 2, 1),
+    (6, 5, 9, 8, 7, 1, 0, 4, 3, 2),
+    (7, 6, 5, 9, 8, 2, 1, 0, 4, 3),
+    (8, 7, 6, 5, 9, 3, 2, 1, 0, 4),
+    (9, 8, 7, 6, 5, 4, 3, 2, 1, 0),
+)
+_VERHOEFF_P = (
+    (0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
+    (1, 5, 7, 6, 2, 8, 3, 0, 9, 4),
+    (5, 8, 0, 3, 7, 9, 6, 1, 4, 2),
+    (8, 9, 1, 6, 0, 4, 3, 5, 2, 7),
+    (9, 4, 5, 3, 1, 2, 6, 8, 7, 0),
+    (4, 2, 8, 6, 5, 7, 3, 9, 0, 1),
+    (2, 7, 9, 3, 8, 0, 6, 4, 1, 5),
+    (7, 0, 4, 6, 9, 1, 3, 2, 5, 8),
+)
+
+
+def is_valid_verhoeff_aadhaar(digits: str) -> bool:
+    """Validate whether a 12-digit numeric string satisfies UIDAI's Verhoeff checksum."""
+    cleaned = re.sub(r"\D", "", digits)
+    if len(cleaned) != 12 or cleaned[0] in ("0", "1"):
+        return False
+    c = 0
+    for idx, ch in enumerate(reversed(cleaned)):
+        c = _VERHOEFF_D[c][_VERHOEFF_P[idx % 8][int(ch)]]
+    return c == 0
+
+
+def scrub_pii_and_aadhaar(text: str) -> dict[str, Any]:
+    """Pre-LLM DPDP & UIDAI firewall: strip raw Aadhaar, phone & email BEFORE LLM/log processing."""
+    aadhaar_hits = 0
+
+    def _replace_12_digit(m: re.Match[str]) -> str:
+        nonlocal aadhaar_hits
+        raw_digits = re.sub(r"\D", "", m.group(0))
+        if len(raw_digits) == 12:
+            aadhaar_hits += 1
+            return "[AADHAAR_BLOCKED]"
+        return m.group(0)
+
+    # Match both unspaced (123456789012) and grouped (1234 5678 9012 / 1234-5678-9012) 12-digit patterns
+    scrubbed = re.sub(r"(?<!\d)(?:\d{4}[\s\-]?){2}\d{4}(?!\d)", _replace_12_digit, text)
+    phone_hits = len(re.findall(r"(?<!\d)(?:\+91[\s\-]?)?[6-9]\d{9}\b", scrubbed))
+    scrubbed = re.sub(r"(?<!\d)(?:\+91[\s\-]?)?[6-9]\d{9}\b", "[REDACTED_NUM]", scrubbed)
+    scrubbed = re.sub(r"\b\d{10,12}\b", "[REDACTED_NUM]", scrubbed)
+    email_hits = len(re.findall(r"[\w.\-]+@[\w.\-]+\.\w+", scrubbed))
+    scrubbed = re.sub(r"[\w.\-]+@[\w.\-]+\.\w+", "[REDACTED_EMAIL]", scrubbed)
+
+    return {
+        "clean_text": scrubbed,
+        "aadhaar_blocked": aadhaar_hits > 0,
+        "pii_masked": aadhaar_hits > 0 or phone_hits > 0 or email_hits > 0,
+    }
 
 
 def redact_pii(text: str) -> str:
-    """Strip phone numbers, email addresses, and Aadhaar-like digit clusters before logging traces (I4)."""
-    text = re.sub(r"\b\d{10,12}\b", "[REDACTED_NUM]", text)
-    text = re.sub(r"[\w.\-]+@[\w.\-]+\.\w+", "[REDACTED_EMAIL]", text)
-    return text
+    """Strip phone numbers, emails, and Aadhaar numbers before storing telemetry spans (I4)."""
+    return scrub_pii_and_aadhaar(text)["clean_text"]
+
+
+def record_dpdp_consent(session_id: str, consented: bool) -> dict[str, Any]:
+    """Record DPDP Act Section 5-6 explicit consent or withdrawal per session (volatile memory only)."""
+    entry = {
+        "session_id": session_id[:24],
+        "consented": consented,
+        "purpose": "civic_grievance_routing_only",
+        "ts": round(time.time(), 2),
+    }
+    _CONSENT_LOG[session_id[:24]] = entry
+    return entry
 
 
 def list_request_history() -> list[dict[str, Any]]:

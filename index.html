@@ -1206,6 +1206,11 @@
           </button>
         </div>
 
+        <div style="font-size:0.75rem;color:var(--ink-3);display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+          <span id="dpdpNoticeText">DPDP 2023: Voice used solely for grievance routing · Zero Aadhaar stored</span>
+          <button type="button" id="dpdpConsentBtn" style="background:none;border:0;color:var(--teal-dark);font-weight:700;cursor:pointer;font-size:0.75rem;text-decoration:underline;padding:0;" aria-pressed="true">Consent: Active (Withdraw)</button>
+        </div>
+
         <!-- Subtle Borderless Live Transcript Stream & Gathered Particulars -->
         <div id="liveTranscriptText" style="font-size:0.88rem;color:var(--ink-2);min-height:20px;max-width:620px;" aria-live="polite"></div>
         <div class="particulars-row" id="particularsStrip" aria-label="Gathered complaint particulars"></div>
@@ -1408,8 +1413,19 @@
           <option value="sarvam">Sarvam AI Saaras+Bulbul / Gemini Live (Optional Key in .env)</option>
         </select>
       </div>
+      <div class="hitl-box">
+        <span class="hitl-label">Pluggable Bharat State Pack (Active Knowledge + Portal Schema)</span>
+        <select id="statePackSelect" class="otp-input" style="width:100%;font-family:var(--font-sans);">
+          <option value="tn">Tamil Nadu (tn): Live Showcase (GCC 1913 / CMWSSB / TANGEDCO / 1100)</option>
+          <option value="ka">Karnataka (ka): Extension Pack (iPGRS / BBMP 1533 Preview)</option>
+          <option value="in_central">India Central (in_central): CPGRAMS / Swachhata 1969 / 139</option>
+        </select>
+      </div>
       <div style="font-size:0.84rem;color:var(--ink-2);" id="modelSetupStatus">
         Active: Offline Tanglish Civic Engine (0 secret keys needed; works cleanly via Docker & file://).
+      </div>
+      <div style="font-size:0.78rem;color:var(--ink-3);" id="rtcTurnStatus">
+        Transport: Self-owned WebRTC + coturn TURN ready (degrades cleanly to HTTP/2G Lite).
       </div>
       <div style="display:flex;justify-content:flex-end;">
         <button type="button" class="btn-hitl-approve" id="modelSetupSaveBtn">Apply Voice Setup</button>
@@ -1712,6 +1728,8 @@
       isMuted: false,
       sttMode: "hybrid",
       llmMode: "auto",
+      stateCode: "tn",
+      dpdpConsented: true,
       historyItems: [
         { ticket_id: "#GCC-20491", ward: "Ward 178", service_id: "garbage_1100", agency: "GCC PGRS (1913)", summary: "Velachery Main Rd garbage overflow — marked Resolved without clearance", hours_ago: 14, status: "PREMATURELY_CLOSED" },
         { ticket_id: "#TN-CMW-8821", ward: "Ward 178", service_id: "sewage_pothole", agency: "CMWSSB Metro Water (1916)", summary: "Vijayanagar Bus Stand sewage backflow report", hours_ago: 11, status: "OPEN_IN_COOLDOWN" }
@@ -2410,11 +2428,42 @@
       return null;
     }
 
+    function scrubAadhaarAndPii(text) {
+      let blocked = false;
+      let cleaned = String(text || "").replace(/(?<!\d)(?:\d{4}[\s\-]?){2}\d{4}(?!\d)/g, () => {
+        blocked = true;
+        return "[AADHAAR_BLOCKED]";
+      });
+      cleaned = cleaned.replace(/(?<!\d)(?:\+91[\s\-]?)?[6-9]\d{9}\b/g, "[REDACTED_NUM]");
+      return { cleaned, blocked };
+    }
+
     async function handleAgentTurn(raw, fromPreset = false) {
-      const msg = (raw || "").trim();
-      if (!msg) {
+      const rawMsg = (raw || "").trim();
+      if (!rawMsg) {
         voiceInput.focus();
         showToast("Speak or type your street problem first");
+        return;
+      }
+      if (!state.dpdpConsented) {
+        const consentWarn = "DPDP consent is withdrawn. Tap 'Withdraw / Re-enable' above to use AI voice, or dial 1913 / 1100 directly.";
+        state.turns.push({ role: "agent", text: consentWarn, needsInput: false });
+        renderAll(false);
+        showToast("Consent withdrawn — AI routing paused");
+        return;
+      }
+      const piiCheck = scrubAadhaarAndPii(rawMsg);
+      const msg = piiCheck.cleaned;
+      if (piiCheck.blocked) {
+        state.turns.push({ role: "user", text: msg });
+        const warn = state.lang === "ta"
+          ? "ஆதார் எண் சொல்ல வேண்டாம் — மொபைல் OTP மட்டுமே போதும். உங்கள் தெருப் பிரச்சனையைச் சொல்லுங்கள்."
+          : "Do not share your Aadhaar number — Mobile OTP is sufficient. Please tell me your street issue instead.";
+        state.turns.push({ role: "agent", text: warn, needsInput: true });
+        if (!fromPreset) voiceInput.value = "";
+        renderAll(false);
+        speakReply(warn);
+        showToast("Blocked raw Aadhaar digits (UIDAI compliant)");
         return;
       }
 
@@ -3032,9 +3081,27 @@
     document.getElementById("endCallBtn").addEventListener("click", endCall);
 
     /* STT & AI Model Setup Modal */
+    document.getElementById("dpdpConsentBtn").addEventListener("click", (e) => {
+      state.dpdpConsented = !state.dpdpConsented;
+      e.currentTarget.setAttribute("aria-pressed", state.dpdpConsented ? "true" : "false");
+      e.currentTarget.textContent = state.dpdpConsented ? "Consent: Active (Withdraw)" : "Consent Withdrawn (Tap to Re-enable)";
+      apiCall("/api/dpdp/consent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: "browser", consented: state.dpdpConsented })
+      });
+      if (!state.dpdpConsented) {
+        endCall();
+        showToast("DPDP consent withdrawn — voice routing paused (1913/1100 open)");
+      } else {
+        showToast("DPDP consent active");
+      }
+    });
+
     document.getElementById("modelSetupOpenBtn").addEventListener("click", () => {
       document.getElementById("sttEngineSelect").value = state.sttMode;
       document.getElementById("llmEngineSelect").value = state.llmMode;
+      document.getElementById("statePackSelect").value = state.stateCode;
       document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "true");
     });
     document.getElementById("modelSetupCloseBtn").addEventListener("click", () => {
@@ -3043,6 +3110,7 @@
     document.getElementById("modelSetupSaveBtn").addEventListener("click", () => {
       state.sttMode = document.getElementById("sttEngineSelect").value;
       state.llmMode = document.getElementById("llmEngineSelect").value;
+      state.stateCode = document.getElementById("statePackSelect").value;
       const sttLabels = {
         hybrid: "Hybrid Web Speech + Wispr Flow",
         wispr: "Wispr Flow Hotkey Only",
@@ -3056,7 +3124,7 @@
         sarvam: "Sarvam / Gemini Live (.env optional key fallback to offline)"
       };
       document.getElementById("modelSetupStatus").textContent =
-        `Active: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
+        `Active [${state.stateCode.toUpperCase()}]: ${sttLabels[state.sttMode]} · ${llmLabels[state.llmMode]}`;
       document.getElementById("modelSetupModalBackdrop").setAttribute("data-open", "false");
       if (state.callActive && !state.isMuted) startSpeechCapture();
       showToast(`Voice setup updated (${sttLabels[state.sttMode]})`);
@@ -3360,6 +3428,12 @@
     /* Start pure and sunlit: open canvas river-ripple orb + Call/Mute/Cut + single input */
     updateCallDockUi();
     renderAll(false);
+    apiCall("/api/rtc/config").then(rtc => {
+      const rtcEl = document.getElementById("rtcTurnStatus");
+      if (!rtc || !rtcEl) return;
+      const servers = (rtc.iceServers || []).flatMap(x => x.urls || []);
+      rtcEl.textContent = `Transport: Self-owned WebRTC (${rtc.transport}) · ICE: ${servers.join(", ")}`;
+    });
     apiCall("/api/health").then(info => {
       const statusEl = document.getElementById("modelSetupStatus");
       if (!info || !statusEl) return;

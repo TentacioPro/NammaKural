@@ -1,0 +1,43 @@
+{
+  "state_code": "in_central",
+  "state_name": "National Central Portals (Pan-India Pack)",
+  "languages": ["hi-IN", "en-IN", "hinglish"],
+  "accents": ["delhi_ncr", "awadhi", "bhojpuri", "marwari"],
+  "fallback_helpline": "1969",
+  "issue_lexicon": {
+    "garbage_1100": ["swachhata", "kachra", "kuda", "garbage", "1969"],
+    "water_pipe": ["paani", "pipe", "water", "railmadad"],
+    "streetlight_eb": ["batti", "light", "bijli", "wire"]
+  },
+  "ambiguous_areas": {},
+  "portals": [
+    {
+      "id": "cpgrams",
+      "name": "CPGRAMS (Central Ministries & States)",
+      "url": "https://pgportal.gov.in/",
+      "helpline": "1969",
+      "auth_gate": "otp_or_login"
+    },
+    {
+      "id": "railmadad",
+      "name": "Indian Railways RailMadad",
+      "url": "https://railmadad.indianrailways.gov.in",
+      "helpline": "139",
+      "auth_gate": "open_mobile_otp"
+    }
+  ],
+  "landmarks": [
+    {
+      "name": "New Delhi Railway Station · Ajmeri Gate",
+      "district": "New Delhi",
+      "zone": "Central",
+      "ward": "NDMC Circle 1",
+      "street": "Bhavbhuti Marg",
+      "road_id": "DL-NDLS-01",
+      "lat": 28.6429,
+      "lon": 77.2191,
+      "aliases": ["new delhi station", "ajmeri gate", "ndls"],
+      "default_service": "garbage_1100"
+    }
+  ]
+}

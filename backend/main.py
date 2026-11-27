@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from backend.agent_workflow import run_workflow_turn, split_tts_clauses
 from backend.llm_bridge import generate_civic_turn, probe_local_llm
 from backend.nlu import (
     SERVICE_CATALOG,
@@ -25,10 +26,13 @@ from backend.state import (
     issue_mobile_otp,
     list_request_history,
     list_telemetry_spans,
+    record_dpdp_consent,
     record_telemetry_span,
+    scrub_pii_and_aadhaar,
     verify_hitl_seal,
     verify_mobile_otp,
 )
+from backend.state_packs import REGISTRY
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
@@ -271,3 +275,96 @@ def log_telemetry(req: TelemetryRequest) -> dict[str, Any]:
 def read_telemetry() -> dict[str, Any]:
     """Inspect recent anonymized spans."""
     return {"spans": list_telemetry_spans(), "services_count": len(SERVICE_CATALOG)}
+
+
+class WorkflowTurnRequest(BaseModel):
+    utterance: str
+    combined_text: str
+    state_code: str = "tn"
+    lang: str = "en"
+    llm_mode: str = "offline"
+    history: list[dict[str, str]] = Field(default_factory=list)
+    gps_lat: float | None = None
+    gps_lon: float | None = None
+    otp_verified: bool = False
+    dpdp_consented: bool = True
+    assistant_speaking: bool = False
+
+
+class DpdpConsentRequest(BaseModel):
+    session_id: str = "local"
+    consented: bool
+
+
+class RtcOfferRequest(BaseModel):
+    sdp: str
+    type: str = "offer"
+
+
+@app.get("/api/state-packs")
+def list_state_packs() -> dict[str, Any]:
+    """List loaded pluggable Pan-Bharat State Packs."""
+    packs = REGISTRY.list_summaries()
+    return {"count": len(packs), "default_state": "tn", "packs": packs}
+
+
+@app.post("/api/workflow/turn")
+def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
+    """Run stateful 6-state Tool-Calling Workflow FSM with Pre-LLM Aadhaar/PII guardrails."""
+    res = run_workflow_turn(
+        utterance=req.utterance,
+        combined_text=req.combined_text,
+        state_code=req.state_code,
+        lang=req.lang,
+        llm_mode=req.llm_mode,
+        history=req.history,
+        gps_lat=req.gps_lat,
+        gps_lon=req.gps_lon,
+        otp_verified=req.otp_verified,
+        dpdp_consented=req.dpdp_consented,
+        assistant_speaking=req.assistant_speaking,
+    )
+    record_telemetry_span(
+        {
+            "phase": res.get("fsm_state", "unknown"),
+            "urgency_tier": res.get("analysis", {}).get("urgency", {}).get("tier", "STANDARD"),
+            "ward": res.get("analysis", {}).get("landmark", {}).get("ward", ""),
+            "note": scrub_pii_and_aadhaar(res.get("reply", ""))["clean_text"][:120],
+        }
+    )
+    return res
+
+
+@app.post("/api/dpdp/consent")
+def update_dpdp_consent(req: DpdpConsentRequest) -> dict[str, Any]:
+    """Record DPDP Act 2023 explicit notice consent or withdrawal."""
+    return record_dpdp_consent(req.session_id, req.consented)
+
+
+@app.get("/api/rtc/config")
+def get_webrtc_config() -> dict[str, Any]:
+    """Return self-owned STUN + coturn TURN ICE configuration without SaaS vendor lock-in."""
+    turn_url = os.getenv("TURN_SERVER_URL", "turn:127.0.0.1:3478").strip()
+    return {
+        "transport": "webrtc-opus-plc",
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {
+                "urls": [turn_url],
+                "username": "nammakural",
+                "credential": "bharat-rtc-demo",
+            },
+        ],
+    }
+
+
+@app.post("/api/rtc/offer")
+def rtc_offer_signaling(req: RtcOfferRequest) -> dict[str, Any]:
+    """Receive client WebRTC SDP offer and prepare TURN-ready peer signaling metadata."""
+    return {
+        "status": "signaling_ready",
+        "received_type": req.type,
+        "sdp_bytes": len(req.sdp),
+        "turn_enabled": True,
+        "audio_codec": "opus/16000",
+    }

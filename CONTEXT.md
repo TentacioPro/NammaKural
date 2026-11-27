@@ -1,12 +1,11 @@
 # CONTEXT — NammaKural (*நம்ம குரல்*)
 
-Updated: `2026-11-27 04:54 IST` · Repo: `D:\NammaKural` · Stack: FastAPI (`backend/`) + Unsloth Studio Local LLM (`gemma-4-E2B-it-Q4_K_M`, zero-key fallback) + Open-Canvas Voice UI (`index.html`)
+Updated: `2026-11-27 06:28 IST` · Repo: `D:\NammaKural` · Stack: FastAPI (`backend/`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State Tool-Calling Workflow + Unsloth/Zero-Key Fallback + Self-Owned WebRTC `coturn` + Open-Canvas UI (`index.html`)
 
 ## Now
 - **Round 1 Cleared (`3 of 3`):** Activity 01, 02, and 03 passed; **Round 2 Build Live** (**Submit by `30 Nov, 11:59 pm`** · Theme: *Public infrastructure and civic services*).
-- **Round 2 Working App Complete:** Zero-key FastAPI backend (`backend/main.py`, `nlu.py`, `state.py`, `llm_bridge.py`) + `Dockerfile` + `docker-compose.yml` (`8000`) + Open-Canvas Voice UI (`index.html`: `Call`/`Mute`/`Cut`, River-Ripple Orb, proactive greeting, `STT & Model` setup modal, live `#particularsStrip`, GPS + runtime attach, Request History + 24h cooldown, Mobile OTP `4829`, Dual-Confirm HITL seal).
-- **Local Unsloth Studio LLM Wired:** Auto-detects running Unsloth Studio on `127.0.0.1:8888` (`gemma-4-E2B-it-Q4_K_M`, `NVIDIA-Nemotron-3.5-Bolt-E4B-GGUF`) via `.env` (`UNSLOTH_API_KEY`, gitignored) while falling back instantaneously to `offline-tanglish-engine` when no local server or secret keys exist (Docker-ready).
-- **Last Gate (`2026-11-27 04:54 IST`):** `pytest -q` -> `8 passed`; `impeccable detect --json index.html` -> `[]`; Playwright (`file://` + live HTTP `1440px`/`768px`/`390px`) -> `0` console/page/network errors, `0` horizontal overflow.
+- **Intermediate Architecture Complete:** Added declarative Bharat **State Packs** (`state_packs/tn.json`, `ka.json`, `in_central.json` via Pydantic `backend/state_packs.py`), **6-State Tool-Calling Workflow FSM** (`backend/agent_workflow.py`) supporting Bharat-safe LLMs (`Gemma-4-E2B`, `Nemotron`, `Phi-4`, `Sarvam`) + zero-key parity, **Verhoeff Aadhaar & PII Pre-LLM Firewall** + **DPDP 2023 Consent Shield** (`backend/state.py` + `index.html`), and **Self-Owned WebRTC + `coturn` TURN signaling/config** (`docker-compose.yml`, `turnserver.conf`, `/api/rtc/*`).
+- **Last Gate (`2026-11-27 06:28 IST`):** `pytest -q` -> `12 passed` (8 API + 4 multi-turn behavioral/guardrail/Aadhaar/state-pack tests); `impeccable detect --json index.html` -> `[]`; `docker compose config --quiet` ok; Playwright (`file://` + live HTTP `1440px`/`768px`/`390px`) -> `0` console/page/network errors, `0` horizontal overflow.
 - **Remaining for Final Submit (`30 Nov`):** (1) Test `docker compose up --build` with Docker Desktop started, (2) Record <=3m YouTube demo video, (3) Build PDF Pitch Deck (4 required text sections via `open-design` / HTML->PDF), (4) Submit on Scaler portal.
 - **Next Build Phase (Round 2 `27–30 Nov`, submit `30 Nov`):** Wire live audio/Tanglish backend per [`specs/INDEX.md`](specs/INDEX.md) and [`docs/architecture/VOICE_AGENT_ARCHITECTURE.md`](docs/architecture/VOICE_AGENT_ARCHITECTURE.md).
 

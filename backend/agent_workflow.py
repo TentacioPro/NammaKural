@@ -529,7 +529,7 @@ def _tamil_prompt(state: str, analysis: dict[str, Any], cooldown: dict[str, Any]
         prefix = f"வார்டு {ward} கிடைச்சிருக்கு. " if ward else ""
         warning = "மின் ஆபத்துக்கு 1912 எண்ணை அழையுங்க. " if analysis["urgency"]["tier"] == "CRITICAL_SAFETY" else ""
         return warning + prefix + "ஒருமுறை கடவுச்சொல்லை சரிபார்த்துட்டு, தனித்தனி முறையா உறுதின்னு சொல்லுங்க."
-    return "உங்க தெருவுல என்ன பிரச்சனை? எந்த இடத்துக்குப் பக்கம்னு சொல்லுங்க."
+    return "என்ன உதவி அல்லது புகார் சொல்ல விரும்புறீங்க? எந்த இடம்னு சொல்லுங்க."
 
 
 class _GraphState(TypedDict, total=False):
@@ -803,11 +803,11 @@ def _node_respond_deterministic(state: _GraphState) -> dict[str, Any]:
 
     if fsm_state == "TRIAGE":
         if lang == "ta":
-            reply = f'"{clean_latest}" — உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்.'
+            reply = f'"{clean_latest}" — என்ன பிரச்சனை அல்லது உதவி தேவை, எந்த இடம்னு சொல்லுங்கள்.'
         elif lang == "tanglish":
-            reply = f'"{clean_latest}" keten. Ungal theru problem enna, endha landmark pakkam-nu sollunga?'
+            reply = f'"{clean_latest}" keten. Enna vishayam / problem, endha idam pakkam-nu sollunga?'
         else:
-            reply = f'I heard "{clean_latest}". Tell me what civic problem needs fixing and where.'
+            reply = f'I heard "{clean_latest}". Tell me what issue or help you need and where it is located.'
     elif fsm_state == "DISAMBIGUATE":
         if analysis.get("ambiguous_area"):
             area = analysis["ambiguous_area"]
@@ -828,15 +828,15 @@ def _node_respond_deterministic(state: _GraphState) -> dict[str, Any]:
             )
         elif not analysis.get("has_place"):
             reply = (
-                "Issue purinjidhu. GPS allow pannunga illa nearest landmark sollunga?"
+                "Vishayam purinjidhu. GPS allow pannunga illa nearest landmark / area sollunga?"
                 if lang == "tanglish"
-                else "Understood the issue. Allow GPS or share your nearest street landmark?"
+                else "Understood the issue. Allow GPS or share your nearest landmark or area?"
             )
         else:
             reply = (
-                "Location note pannitten. Anga enna civic issue-nu sollunga?"
+                "Location note pannitten. Anga enna issue-nu sollunga?"
                 if lang == "tanglish"
-                else "Got the location. What civic problem needs fixing there?"
+                else "Got the location. What issue needs fixing there?"
             )
     elif fsm_state == "HITL_SEAL":
         if lang == "ta":

@@ -65,45 +65,11 @@ def _pick_chat_model(models: list[str], override: str = "") -> str:
 
 
 def probe_local_llm() -> dict[str, Any]:
-    """Detect running local Unsloth Studio or Ollama endpoints without exposing any secret keys."""
-    unsloth_url = _read_env_value("UNSLOTH_STUDIO_URL", "http://127.0.0.1:8888").rstrip("/")
-    unsloth_key = _read_env_value("UNSLOTH_API_KEY", "")
-    model_override = _read_env_value("LOCAL_LLM_MODEL", "")
-
-    if unsloth_url and unsloth_key:
-        try:
-            req = urllib.request.Request(
-                f"{unsloth_url}/v1/models",
-                headers={"Authorization": f"Bearer {unsloth_key}"},
-            )
-            with urllib.request.urlopen(req, timeout=1.5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                models = [str(m.get("id", "")) for m in data.get("data", []) if m.get("id")]
-                if active_model := _pick_chat_model(models, model_override):
-                    return {
-                        "available": True,
-                        "provider": "unsloth-studio",
-                        "active_model": active_model,
-                        "models": models,
-                    }
-        except Exception:
-            pass
-
-    ollama_url = _read_env_value("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
-    try:
-        with urllib.request.urlopen(f"{ollama_url}/api/tags", timeout=1.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            models = [str(m.get("name", "")) for m in data.get("models", []) if m.get("name")]
-            if active_model := _pick_chat_model(models, model_override):
-                return {
-                    "available": True,
-                    "provider": "ollama",
-                    "active_model": active_model,
-                    "models": models,
-                }
-    except Exception:
-        pass
-
+    """Local Gemma-4 (Unsloth/Ollama) probe disabled for now; use Cloud APIs or deterministic engine."""
+    # unsloth_url = _read_env_value("UNSLOTH_STUDIO_URL", "http://127.0.0.1:8888").rstrip("/")
+    # unsloth_key = _read_env_value("UNSLOTH_API_KEY", "")
+    # model_override = _read_env_value("LOCAL_LLM_MODEL", "")
+    # ... (Gemma-4 local probe commented out to focus on APIs)
     return {
         "available": False,
         "provider": "offline-tanglish-engine",

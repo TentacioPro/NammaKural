@@ -313,16 +313,16 @@ def classify_conversational_chitchat(text: str) -> dict[str, Any] | None:
     if _CHAT_GREETING_RE.search(cleaned):
         return {
             "kind": "greeting_or_mic_check",
-            "reply_en": "Yes, I hear you clearly! Tell me your street problem and landmark in Tanglish or Tamil.",
-            "reply_tanglish": "Ama, nalla kekudhu! Ungal street problem-a yum landmark-a yum sollunga.",
-            "reply_ta": "வணக்கம், நன்றாகக் கேட்கிறது! உங்கள் தெருப் பிரச்சனையையும் பகுதியையும் சொல்லுங்கள்.",
+            "reply_en": "Yes, I hear you clearly! Tell me what issue or help you need and your location in Tanglish or Tamil.",
+            "reply_tanglish": "Ama, nalla kekudhu! Enna vishayam / problem-nu yum endha idam-nu yum sollunga.",
+            "reply_ta": "வணக்கம், நன்றாகக் கேட்கிறது! என்ன பிரச்சனை அல்லது உதவி தேவை, எந்த இடம்னு சொல்லுங்கள்.",
         }
     if _CHAT_HELP_RE.search(cleaned):
         return {
             "kind": "help",
-            "reply_en": "Just tell me what broke on your street and where. I will detect urgency, verify your Ward, and wait for your confirmation before sending.",
-            "reply_tanglish": "Ungal theru problem-um landmark-um sollunga podhum; Ward check panni confirm ketutu send panren.",
-            "reply_ta": "உங்கள் தெருப் பிரச்சனையையும் இடத்தையும் சொன்னால் போதும்; வார்டு கண்டறிந்து உங்கள் அனுமதியுடன் புகார் அனுப்புவேன்.",
+            "reply_en": "Just tell me what issue needs fixing and where. I will detect urgency, verify your Ward, and wait for your confirmation before sending.",
+            "reply_tanglish": "Ungal problem-um idamum sollunga podhum; Ward check panni confirm ketutu send panren.",
+            "reply_ta": "உங்கள் பிரச்சனையையும் இடத்தையும் சொன்னால் போதும்; வார்டு கண்டறிந்து உங்கள் அனுமதியுடன் புகார் அனுப்புவேன்.",
         }
     return None
 

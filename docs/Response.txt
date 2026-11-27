@@ -1,0 +1,195 @@
+﻿"""
+---------------------------------------------------------
+2. BUILD SKILLS (5 Updated SKILL.md files)
+---------------------------------------------------------
+files["skills/tamil-voice-agent-architect/SKILL.md"] = """---
+name: tamil-voice-agent-architect
+description: Design, build, debug, and test NammaKural, a local-first full-stack Tamil and Tanglish civic voice agent with a 3-tier auto-detect engine (Offline CPU -> Cloud API -> Local GPU). Use when working on backend/agent_workflow.py, backend/nlu.py, backend/state.py, backend/llm_bridge.py, backend/tts_service.py, state_packs/, SmallWebRTC/coturn, or docker-compose.yml.
+tamil-voice-agent-architect
+Architect and maintain NammaKural's Code > LLM Tamil/Tanglish voice pipeline so it runs effortlessly on any judge's CPU-only laptop (docker compose up, zero keys), scales via optional Cloud APIs, and runs sovereignly on a local consumer GPU (Dell G15 RTX 3050 4GB/6GB + 32GB RAM).
+When to Use
+ * Implementing or debugging the 3-Tier Auto-Detect Engine (Offline CPU -> Cloud API -> Local Gemma-4 E2B)
+ * Fixing Tamil TTS prosody (display_text vs. tts_text Tamil Unicode split + rate="+6%") or Tanglish STT ingestion (saaras:v4 codemix / browser ta-IN)
+ * Modifying the 6-state FSM (GREET -> DISAMBIGUATE -> CONFIRM_CLARITY -> COOLDOWN_AND_OTP -> HITL_SEAL -> DISPATCH)
+ * Enforcing Pre-LLM PII/Aadhaar firewall, DPDP 2023 consent gates, P0/P1 safety overrides, or Bharat State Packs (state_packs/*.json)
+Steps
+ * Enforce the 3-Tier Auto-Detect Engine in backend/llm_bridge.py (never bottleneck to a local GPU):
+   * Tier 1 (Default — Zero Keys, CPU-Only): deterministic-tanglish-v1 upgraded with warm colloquial Tamil Unicode replies + Browser WebSpeech (ta-IN) + edge-tts/Browser TTS.
+   * Tier 2 (Optional .env Cloud API): Any OpenAI-compatible endpoint via LLM_BASE_URL, LLM_API_KEY, LLM_MODEL (Groq, OpenRouter, Gemini) + optional SARVAM_API_KEY (saaras:v4, mode="codemix" + top-50 TN landmark keyterms).
+   * Tier 3 (Local GPU — Dell G15 Demo / Finale): Local Gemma 4 E2B Q4_K_M (reasoning_effort: "none", ~180-token compacted state) via Unsloth (:8888) or Ollama (:11434), keeping docker-compose.yml strictly CPU-safe (no NVIDIA runtime requirements in default compose).
+   * Expose active mode cleanly in /api/health (engine_mode: offline_fsm | cloud_api | local_gpu) so the UI displays an honest Engine Pill.
+ * Eliminate robotic/accented Tamil TTS by splitting display_text vs. tts_text:
+   * Never send Romanized Tanglish ("Unga complaint sollunga") to ta-IN-PallaviNeural.
+   * Emit display_text (Tanglish/bilingual for screen) and tts_text (strictly colloquial Kodunthamizh in Tamil Unicode script, e.g., "உங்க ஏரியாவுல கரண்ட் கட் ஆயிடுச்சா?") with rate="+6%" in edge_tts.Communicate.
+   * Maintain the en-IN -> ta-IN guard whenever Tamil Unicode appears.
+ * Enforce Code > LLM invariants on every turn:
+   * Run scrub_pii_and_aadhaar() and DPDP consent checks BEFORE any LLM call or JSONL log write.
+   * Run classify_semantic_vad() to ignore backchannels (seri, aama, mm-hmm, சரி, ஆமா) and honor barge-in (stop, wait, niruthunga, நிறுத்து).
+   * Prefer Bharat-Safe models (gemma-4, nemotron, phi-4, sarvam, llama); explicitly exclude qwen and deepseek.
+   * Keep P0 (life safety: fire/medical/gas -> 112/108/101/1906) and P1 (live wire/spark -> 1912) deterministic and cooldown-exempt.
+Gotchas
+ * Never add GPU/NVIDIA device reservations to the default docker-compose.yml; judges run on CPU-only laptops.
+ * Never allow single-breath double confirmation ("aama uruthi"); require two distinct VAD turns or Clarity Popup OK + one spoken confirmation.
+ * For optional live hosting, inject cloud API keys only via server environment variables — keep the public GitHub repo 100% key-free.
+   """
+files["skills/voice-agent-a11y-ui/SKILL.md"] = """---
+name: voice-agent-a11y-ui
+description: Build universally accessible (WCAG 2.2 AA+), mobile-first, clutter-free Voice Agent UIs for blind, elderly, disabled, literate, and illiterate users. Use when editing index.html or migrating to React/Vite, redesigning the voice orb and pill dock, removing Wispr Flow branding, adding the runtime Engine Mode Pill, or building pre/mid/post-conversation Clarity Popups.
+voice-agent-a11y-ui
+Design and implement NammaKural's universally accessible, mobile-first -> tablet -> web Voice UI so blind, elderly, motor-impaired, and non-literate citizens can file grievances effortlessly — and judges immediately see which runtime engine mode is active.
+When to Use
+ * Stripping third-party branding (Wispr Flow colors, purple-blue orb, hotkey placeholders) in favor of a daylight-readable Civic High-Contrast Palette
+ * Upgrading the Voice Orb, 3-Button Pill Dock, and mobile-first responsive layout (390px, 768px, 1440px)
+ * Adding an honest Engine Mode Pill (Offline FSM (No Key Set) / Local Gemma-4 / Cloud API) and graceful "API key not set — using Browser Voice" notices
+ * Building focus-managed Clarity Popups that support pre-, mid-, and post-conversation edits synced live to the agent
+Steps
+ * Keep the proven centered layout (Voice Orb + Status + 3-Button Pill Dock), but upgrade every element for universal accessibility:
+   * Canvas: Paper White (#FFFFFF) with a 1-tap High-Contrast Dark Mode (#0B1220) toggle. Zero cream/purple Wispr Flow styling.
+   * Tactile State Orb (>= 140x140px tappable <button>): Convey state through Color + Icon + Bilingual Label + Audio Earcon (never color alone):
+     * Idle: Deep Indigo (#1E3A8A) + Mic icon + பேசுங்க / Speak
+     * Listening: Emerald (#047857) + Animated Ring (static meter under prefers-reduced-motion) + கேட்கிறேன் / Listening
+     * Thinking: Warm Amber (#D97706) + Pulse icon + சரிபார்க்கிறேன் / Checking
+     * Paused / Urgent: Crimson (#B91C1C) + Pause/Alert icon + நிறுத்தப்பட்டது / Paused
+   * 3-Button Pill Dock (>= 56px height, >= 4.5:1 contrast even inactive): பேசு / Call, நிறுத்து / Pause, முடி / End.
+ * Eliminate mobile clutter (< 640px):
+   * Collapse all secondary controls (Type, Attach Photo/Bill, Check GPS, Voice Selector, Test Voice, + New) behind one clean toggle: ⌨️ Type / 📷 Photo (Optional).
+   * On tablet/desktop (>= 768px), render a 2-column split: Orb + Dock on the left; Live Bilingual Transcript + Mid-Call Clarity Popup on the right.
+ * Surface Runtime Engine Transparency for Judges:
+   * Read engine_mode from GET /api/health and display a subtle, high-contrast header badge (Mode: Offline FSM (No Key Set) / Local Gemma-4 / Cloud API).
+   * If a user triggers an optional cloud feature without keys (e.g., Sarvam STT), show a polite inline banner ("Sarvam key not set — running Browser Voice (ta-IN)") without crashing.
+ * Enforce Blind & Screen-Reader Ergonomics:
+   * Distinct Web Audio earcon chimes (Listening Start, Thinking, Confirmation Ready, Error).
+   * aria-live="polite" for transcripts, aria-live="assertive" for Clarity Popups and P0/P1 safety alerts, visible 3px focus rings, and Noto Sans Tamil with line-height: 1.6.
+   * Never mute the mic when a Clarity Popup opens; allow inline edit OR spoken "Confirm" / "உறுதி" to resolve the same state.
+Gotchas
+ * Never leave any "wispr" string in DOM text, placeholders, comments, or CSS tokens.
+ * Verify zero horizontal overflow at 390x844, 768x1024, and 1440x900 using Playwright before shipping.
+   """
+files["skills/civic-ai-pitch-deck/SKILL.md"] = """---
+name: civic-ai-pitch-deck
+description: Create text-first, judge-ready PDF pitch decks for NammaKural and civic AI voice products. Use when drafting or updating the hackathon PDF pitch deck, market sizing, 3-tier engine dependency/fallback analysis, or launch plan.
+civic-ai-pitch-deck
+Build a crisp, text-first PDF pitch deck where every required judge criterion is readable directly as text (never trapped inside screenshots or diagrams).
+When to Use
+ * Generating the Round 2 hackathon PDF Pitch Deck (deadline Nov 30, 11:59 PM)
+ * Covering all 4 mandatory judge sections: Problem & Solution, Who It Is For, What It Depends On (Cost/Outage Fallbacks), and Launch Plan
+Steps
+ * Write for a judge reading the PDF silently without you presenting (60–80 clear words per slide, assertion-based headlines, zero walls of text).
+ * Cover the 4 mandatory hackathon sections explicitly:
+   * Problem & Solution: Multi-page English/formal-Tamil civic portals, OTPs, and CAPTCHAs exclude blind, elderly, disabled, and non-literate citizens. NammaKural provides a WCAG-accessible Tamil/Tanglish voice intake agent with Code > LLM safety, Clarity Popup + double confirmation (உறுதி twice), and automatic formal petition routing.
+   * Who It Is For & Scale: 7+ crore Tamil Nadu citizens (prioritizing elderly, blind/low-vision, motor-impaired, and rural residents) across 6 civic agencies (GCC, CMWSSB, TWAD, TANGEDCO, CM Cell 1100, TNPDS), expandable nationwide via zero-code JSON Bharat State Packs (tn.json, ka.json, in_central.json).
+   * What It Depends On & 3-Tier Fallback Plan: List every dependency (STT: WebSpeech / Sarvam saaras:v4; LLM: 3-Tier Auto-Detect — Offline deterministic-tanglish-v1 / OpenAI-compatible Cloud API / Local Gemma 4 E2B Q4_K_M on RTX 3050; TTS: edge-tts / Browser TTS / Local Piper; Transport: WebRTC + coturn). State clearly what happens if any service gets costly or stops working: swap cloud APIs in 1 config line, drop to a ₹60k local consumer GPU at $0 API cost, or continue running offline via the deterministic Tamil FSM + SQLite outbox queue.
+   * Launch Plan: Phase 1 hyper-local pilot with Chennai RWAs, blind/elderly NGOs, and e-Sevai centers (first 100 real grievances with HITL verification); Phase 2 TNeGA / Municipal API integration and WhatsApp/helpline complement; Phase 3 multi-state expansion via community State Packs.
+ * Back every claim with verifiable proof (zero-key docker compose up, hardware specs used for local demo: Dell G15 RTX 3050 4GB/6GB + 32GB RAM at ~450ms/turn, Verhoeff PII firewall, automated pytest + Playwright A11y suite).
+Gotchas
+ * Never put core arguments only inside images; every key point must be selectable PDF text.
+ * Keep the deck tight (8–11 slides) so a judge can read every word in under 2 minutes.
+   """
+files["skills/youtube-video-editor/SKILL.md"] = """---
+name: youtube-video-editor
+description: Plan, script, and programmatically build YouTube demo videos and Shorts (<= 3 minutes) using Remotion (React) or HeyGen HyperFrames (HTML/GSAP). Use when producing NammaKural's hackathon demo video, kinetic Tamil/English captions, or architecture reveals.
+youtube-video-editor
+Produce a tight, retention-engineered <= 3-minute YouTube demo video for NammaKural using Remotion or HeyGen HyperFrames.
+When to Use
+ * Scripting, editing, or captioning the mandatory <= 3-minute hackathon YouTube demo (public or unlisted)
+ * Building animated title cards, kinetic bilingual subtitles, or 3-tier architecture reveals in HyperFrames or Remotion
+Steps
+ * Follow the strict 3-minute hackathon beat sheet (target 2:45–2:55):
+   * 0:00–0:20 Hook & Problem: Contrast a cluttered civic portal form with an elderly/blind citizen tapping NammaKural's giant tactile orb and speaking Tanglish.
+   * 0:20–1:25 Live End-to-End Mobile-First Flow: Speak Tanglish TNEB/GCC issue -> interrupt mid-sentence ("niruthunga") -> multi-ward disambiguation & mid-call repair ("illa Anna Arch") -> Clarity Popup -> edit/confirm ("உறுதி" twice) -> formal petition receipt.
+   * 1:25–2:05 Safety, Privacy & Accessibility: Show P1 live-wire emergency override (1912), Pre-LLM PII firewall scrubbing a dummy ID before logs, and high-contrast / screen-reader ergonomics.
+   * 2:05–2:45 3-Tier Resilience & Zero-Key Docker: Show docker compose up booting on CPU with zero keys (Engine Pill: Offline FSM), plus local Gemma-4 E2B (~450ms) and Bharat State Packs (tn, ka, in_central).
+   * 2:45–2:55 Close: Summary + public GitHub repo URL.
+ * Engine & Lint Discipline:
+   * HyperFrames: Follow motion-doctrine (continuous motion, GPU-safe x/y/scale/opacity transforms only) and run npx hyperframes lint + npx hyperframes check.
+   * Remotion: Deterministic useCurrentFrame() / interpolate() / spring(); zero Date.now() or unseeded Math.random().
+ * Audio & Captions:
+   * Normalize audio to -14 LUFS.
+   * Burn high-contrast English + Tamil captions in the bottom safe zone so muted judges still follow 100% of the Tanglish dialogue.
+Gotchas
+ * Never exceed 3:00.
+ * Always show the mobile viewport (390x844) prominently to prove mobile-first accessibility.
+   """
+files["skills/nammakural-tdd-evals/SKILL.md"] = """---
+name: nammakural-tdd-evals
+description: Write, run, and expand TDD unit tests, behavioral regression gates, Playwright accessibility audits, and JSONL log analytics for NammaKural. Use when adding features, verifying behavioral invariants, analyzing logs/nammakural.jsonl, or running pre-submission quality checks.
+nammakural-tdd-evals
+Maintain zero-regression quality across NammaKural's voice, NLU, 3-tier engine, privacy, accessibility, and analytics layers using TDD and automated behavioral gates.
+When to Use
+ * Adding any feature or bug fix (Red -> Green -> Refactor)
+ * Running pytest -v, tests/test_behavioral_matrix.py, tests/test_a11y_playwright.py, and analytics/eval_gate.py
+ * Inspecting P50/P95 latencies, FSM funnel, and PII firewall stats via analytics/analyze_logs.py
+Steps
+ * Verify all 6 testing perspectives on every change:
+   * Functional: 6-state FSM, slot extraction, dual-script NLU, Bharat State Packs, OTP/HITL seals.
+   * Latency/Perf: Turn latency P95, TTS cache hits, zero-key cold start.
+   * Acoustic/Dialect: Backchannels (seri/aama), barge-in (stop/niruthunga), multi-ward disambiguation, mid-call repair, Tamil Unicode tts_text purity.
+   * Accessibility (A11y): Contrast >= 4.5:1, touch targets >= 44px, aria-live, keyboard focus, zero "wispr" leftovers.
+   * Security/Privacy: Pre-LLM PII/Aadhaar firewall, DPDP consent withdrawal, 24h cooldown anti-spam.
+   * Resilience/Failure: 3-Tier Auto-Detect fallback (Cloud API -> Local GPU -> Offline CPU), CPU-only docker compose up, en-IN -> ta-IN TTS guard.
+ * Run the full verification gate before every commit:
+   * pytest -v
+   * pytest tests/test_a11y_playwright.py -v
+   * python analytics/eval_gate.py --golden analytics/golden_cases.jsonl
+   * python analytics/analyze_logs.py --logs logs/nammakural.jsonl --convs logs/conversations.jsonl
+ * Append every manually discovered voice/Tanglish bug to analytics/golden_cases.jsonl immediately so it never regresses.
+Gotchas
+ * Never use real citizen phone numbers or government IDs in test fixtures; use clearly synthetic dummy strings.
+ * Never claim a task is complete until the verification commands have been executed fresh and passed.
+   """
+---------------------------------------------------------
+3. DEDICATED REVIEW / VALIDATION SKILLS (3 New SKILL.md files)
+---------------------------------------------------------
+files["skills/review-voice-agent-code/SKILL.md"] = """---
+name: review-voice-agent-code
+description: Perform a strict, read-only code and architecture review of a voice agent codebase (FastAPI, Pipecat/WebRTC, STT/LLM/TTS, Docker). Use after implementing features or before hackathon submission to catch zero-key Docker traps, GPU lock-in, PII leaks, TTS accent bugs, and FSM regressions.
+review-voice-agent-code
+Conduct a read-only, severity-ranked code review tailored specifically to voice agents and NammaKural's Code > LLM invariants. Do NOT edit files during review — return structured findings (P0-Blocker, P1-Important, P2-Minor) with exact file paths and line numbers.
+When to Use
+ * Before merging a major change or cutting the final hackathon submission commit
+ * After an AI coding agent edits backend/, index.html, or docker-compose.yml
+ * Auditing whether a CPU-only judge machine can boot the repo with zero secret keys
+Review Checklist
+ * Zero-Key & CPU-Only Judge Boot (P0 Check):
+   * Inspect docker-compose.yml and Dockerfile: Flag any mandatory GPU/NVIDIA runtime, hardcoded localhost:8888 crash, or missing default env vars.
+   * Verify README.md clearly alerts judges to the 3 runtime modes (Offline CPU, Optional Cloud API, Local GPU Specs).
+   * Verify /api/health exposes the active engine_mode and the UI displays an honest status pill without crashing when keys are absent.
+ * Voice Pipeline & Tamil/Tanglish Integrity (P0 Check):
+   * Check backend/tts_service.py and backend/agent_workflow.py: Flag any Romanized Tanglish ("unga", "sollunga") leaking into tts_text or any Tamil Unicode hitting en-IN voices.
+   * Check backend/llm_bridge.py: Verify reasoning_effort: "none" for Gemma-4, Bharat-Safe model filtering (no qwen/deepseek), and clean fallback to deterministic-tanglish-v1.
+   * Check async discipline: Flag any blocking disk I/O or synchronous HTTP call inside the live WebSocket/voice loop.
+ * Safety, Privacy & Code > LLM Discipline (P0 Check):
+   * Confirm scrub_pii_and_aadhaar() executes BEFORE any LLM call and BEFORE log_event() / save_conversation_turn().
+   * Confirm P0/P1 safety emergencies bypass cooldowns deterministically.
+   * Confirm Dual-Confirm HITL seal cannot be bypassed in a single breath or by LLM hallucination.
+ * Tests & Real Behavior (P1 Check):
+   * Verify tests assert real behavior (not trivial mocks) and cover both happy paths and failure/fallback paths.
+Output Format
+ * Strengths: 2–3 concrete things done well (with file:line references).
+ * Issues (P0-Blocker -> P1-Important -> P2-Minor): Exact file:line, root cause, and concrete fix recommendation.
+ * Ship Verdict: READY TO SUBMIT or BLOCKED (Fix P0s first).
+   """
+files["skills/review-pitch-deck/SKILL.md"] = """---
+name: review-pitch-deck
+description: Audit a hackathon or investor pitch deck (PDF, Markdown, or HTML slides) for text-first readability, narrative clarity, judge rubric coverage, and visual discipline. Use before exporting or submitting the final pitch deck PDF.
+review-pitch-deck
+Perform a read-only, judge-lens audit of a pitch deck — specifically calibrated for hackathon judges who read the words in the PDF, not the pictures.
+When to Use
+ * Reviewing a drafted pitch deck outline, HTML deck, or exported PDF before submission
+ * Checking whether all 4 mandatory hackathon prompts are answered clearly and persuasively in plain text
+Review Checklist
+ * Mandatory 4-Prompt Rubric Coverage (P0 Check):
+   * Problem & Solution: Is the human pain crystal clear (blind, elderly, disabled, non-literate TN citizens vs. complex portals) and tied directly to what the prototype actually does?
+   * Who It Is For & Scale: Are concrete user segments and realistic TAM/SAM numbers stated as text (not vague adjectives like "huge market")?
+   * Dependencies & Cost/Outage Fallbacks: Are every STT, LLM, TTS, and transport dependency named explicitly — AND does it clearly explain what happens if they get costly or stop working (3-Tier Auto-Detect Engine: Cloud API -> Local RTX 3050 Gemma-4 -> Offline Deterministic FSM + Outbox Queue)?
+   * Launch Plan: Is there a realistic, step-by-step path to the first 100 real users (RWAs, blind/elderly NGOs, e-Sevai centers) before institutional scale?
+ * Text-First & Silent-Readability Test (P0 Check):
+   * Can a tired judge read the PDF at 11 PM with zero audio narration and understand every claim in <2 minutes?
+   * Flag any critical information trapped inside screenshots or tiny diagram labels.
+   * Check slide headlines: Flag generic labels ("Architecture", "Market") and suggest assertion headlines ("3-Tier Engine Eliminates Vendor Lock-In & Runs Offline on a ₹60k GPU").
+ * Clarity & Credibility (P1 Check):
+   * Word budget: 40–80 words per slide for send-ahead PDFs; flag dense paragraphs.
+   * Fact-check every metric against the actual repo (e.g., pytest count, latency ms, hardware specs, State Packs).
+   * Visual hygiene: Max 2 brand colors + 1 accent, high text contrast (>= 4.5:1), readable font size (>= 14pt body).
+Output Format
+ * Rubric Scorecard: Pass/Weak/Missing for each of the 4 judge prom

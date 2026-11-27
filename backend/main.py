@@ -24,7 +24,11 @@ from backend.nlu import (
     classify_conversational_chitchat,
     classify_semantic_vad,
     resolve_gps_to_landmark,
+    validate_phone_digits,
 )
+from backend.portal_bridge import build_gcc_preview_packet
+from backend.sarvam_realtime import get_dynamic_keyterms
+from backend.session_store import STORE
 from backend.state import (
     check_cooldown,
     issue_mobile_otp,
@@ -46,6 +50,9 @@ app = FastAPI(
 )
 
 app.mount("/assets", StaticFiles(directory=str(ROOT_DIR / "assets")), name="assets")
+_spa_assets = ROOT_DIR / "frontend" / "dist" / "spa-assets"
+if _spa_assets.is_dir():
+    app.mount("/spa-assets", StaticFiles(directory=str(_spa_assets)), name="spa-assets")
 
 
 class TurnRequest(BaseModel):
@@ -94,8 +101,14 @@ class TelemetryRequest(BaseModel):
 
 
 @app.get("/")
+@app.get("/debug")
+@app.get("/traces")
+@app.get("/telemetry")
 def serve_home() -> FileResponse:
-    """Serve the primary pure light Voice Agent canvas."""
+    """Serve the built React SPA if present, else fall back to index.html."""
+    spa_index = ROOT_DIR / "frontend" / "dist" / "index.html"
+    if spa_index.is_file() and os.getenv("NK_LEGACY_INDEX", "") != "1":
+        return FileResponse(str(spa_index))
     return FileResponse(str(ROOT_DIR / "index.html"))
 
 
@@ -112,10 +125,16 @@ def health_check() -> dict[str, Any]:
         voice_mode = "live-neural"
     else:
         voice_mode = "offline-tanglish-engine"
+    pregenerated = len(list((ROOT_DIR / "assets" / "voice").glob("*.mp3")))
     return {
         "status": "ok",
         "voice_mode": voice_mode,
         "engine_mode": "cloud_api" if cloud else ("local_gpu" if local_llm["available"] else "offline_fsm"),
+        "store_backend": STORE.backend_name,
+        "vercel_region": os.getenv("VERCEL_REGION", "local"),
+        "sarvam_stt": sarvam_ready,
+        "sarvam_tts": sarvam_ready,
+        "pregenerated_prompts": pregenerated,
         "local_llm": local_llm,
         "optional_keys": {
             "UNSLOTH_API_KEY": "configured" if local_llm["available"] else "optional (offline Tanglish active)",
@@ -450,15 +469,109 @@ def list_tts_voices() -> dict[str, Any]:
 
 @app.post("/api/tts")
 async def synthesize_tts(req: TtsRequest) -> Response:
-    """Stream neural Tamil / Indian-English MP3 via edge-tts, or 204 for client fallback."""
+    """Stream neural Tamil / Indian-English audio via Sarvam Bulbul or edge-tts, or 204 for client fallback."""
     res = await synthesize_neural_mp3(req.text, preferred_voice=req.voice, lang=req.lang)
     if not res["ok"] or not res["audio"]:
         return Response(status_code=204)
     return Response(
         content=res["audio"],
-        media_type="audio/mpeg",
+        media_type=res.get("media_type", "audio/mpeg"),
         headers={"X-NammaKural-Voice": res["voice"], "X-NammaKural-Cached": str(res.get("cached", False)).lower()},
     )
+
+
+class PortalPreviewRequest(BaseModel):
+    service_id: str = "streetlight_eb"
+    landmark: dict[str, Any] = Field(default_factory=dict)
+    summary_text: str = ""
+    urgency_tier: str = "STANDARD"
+    complaint_version: int = 1
+    otp_verified: bool = False
+    hitl_approved: bool = False
+    attachment_size_kb: float = 0.0
+
+
+@app.post("/api/portal/preview")
+def portal_preview(req: PortalPreviewRequest) -> dict[str, Any]:
+    """Validate complaint fields against GCC PGRS schema and return NK-PREVIEW packet (zero outbound gov requests)."""
+    return build_gcc_preview_packet(
+        service_id=req.service_id,
+        landmark=req.landmark,
+        summary_text=req.summary_text,
+        urgency_tier=req.urgency_tier,
+        complaint_version=req.complaint_version,
+        otp_verified=req.otp_verified,
+        hitl_approved=req.hitl_approved,
+        attachment_size_kb=req.attachment_size_kb,
+    )
+
+
+@app.get("/api/debug/session")
+def debug_session(session_id: str = "browser", state_code: str = "tn", locality: str = "") -> dict[str, Any]:
+    """Expose persisted ComplaintSlots, dynamic keyterms, and store backend for /debug UI."""
+    slots = STORE.get_json(f"slots:{session_id}:{state_code}") or {}
+    return {
+        "session_id": session_id,
+        "state_code": state_code,
+        "store_backend": STORE.backend_name,
+        "slots": slots,
+        "dynamic_keyterms": get_dynamic_keyterms(state_code, locality),
+    }
+
+
+@app.get("/api/telemetry/summary")
+def telemetry_summary() -> dict[str, Any]:
+    """Compute live P50/P90/P95/TTFT/TTFA and <500ms SLA metrics for /telemetry UI."""
+    import math
+
+    def _pct(vals: list[float], f: float) -> float | None:
+        if not vals:
+            return None
+        s = sorted(vals)
+        return round(s[math.ceil(len(s) * f) - 1], 1)
+
+    wf_all: list[float] = []
+    wf_det: list[float] = []
+    llm_vals: list[float] = []
+    tts_vals: list[float] = []
+    ttfa_vals: list[float] = []
+    pending_wf: tuple[float, float] | None = None
+    for item in get_logs(150):
+        st = item.get("stage", "")
+        data = item.get("data") or {}
+        ms = data.get("latency_ms")
+        ts = item.get("ts")
+        if st == "workflow.turn_complete" and isinstance(ms, (int, float)):
+            wf_all.append(float(ms))
+            if data.get("model") == "deterministic-tanglish-v1":
+                wf_det.append(float(ms))
+            if isinstance(ts, (int, float)):
+                pending_wf = (float(ts), float(ms))
+        elif st == "llm.fast_turn" and isinstance(ms, (int, float)):
+            llm_vals.append(float(ms))
+        elif st == "tts.neural_synth" and isinstance(ms, (int, float)):
+            tts_vals.append(float(ms))
+            if pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
+                ttfa_vals.append(pending_wf[1] + float(ms))
+                pending_wf = None
+        elif st == "tts.cache_hit" and pending_wf and isinstance(ts, (int, float)) and 0 <= float(ts) - pending_wf[0] <= 10.0:
+            ttfa_vals.append(pending_wf[1])
+            pending_wf = None
+    under_500 = sum(1 for v in ttfa_vals if v <= 500.0)
+    return {
+        "workflow": {"count": len(wf_all), "p50": _pct(wf_all, 0.5), "p90": _pct(wf_all, 0.9), "p95": _pct(wf_all, 0.95)},
+        "deterministic": {"count": len(wf_det), "p50": _pct(wf_det, 0.5), "p90": _pct(wf_det, 0.9), "p95": _pct(wf_det, 0.95)},
+        "llm_ttft": {"count": len(llm_vals), "p50": _pct(llm_vals, 0.5), "p90": _pct(llm_vals, 0.9), "p95": _pct(llm_vals, 0.95)},
+        "tts_synth": {"count": len(tts_vals), "p50": _pct(tts_vals, 0.5), "p90": _pct(tts_vals, 0.9), "p95": _pct(tts_vals, 0.95)},
+        "ttfa": {
+            "count": len(ttfa_vals),
+            "p50": _pct(ttfa_vals, 0.5),
+            "p90": _pct(ttfa_vals, 0.9),
+            "p95": _pct(ttfa_vals, 0.95),
+            "under_500ms_pct": round((under_500 / len(ttfa_vals) * 100), 1) if ttfa_vals else 0.0,
+        },
+        "observability": observability_status(),
+    }
 
 
 @app.post("/api/stt")

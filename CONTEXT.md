@@ -1,13 +1,11 @@
 # CONTEXT — NammaKural (*நம்ம குரல்*)
 
-Updated: `2026-11-27 19:25 IST` · Branch: `feat/v4-specs-003-004-memory` · Stack: FastAPI (`backend/`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State FSM + 3-Tier Engine (`offline_fsm` / `cloud_api` / `local_gpu`) + 11-Voice Neural TTS (`edge-tts`, `rate="+6%"`) + Self-Owned WebRTC `coturn` + WCAG 2.2 AA+ Civic Voice UI (`index.html`)
+Updated: `2026-11-27 21:40 IST` · Branch: `main` · Stack: FastAPI (`backend/` + `api/index.py` Vercel `bom1`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State FSM + RapidFuzz + Redis/Memory `SessionStore` + Sarvam `saaras:v4`/`bulbul:v2` & `edge-tts` + Vite/React/TS SPA (`frontend/`: `/`, `/debug`, `/traces`, `/telemetry`)
 
 ## Now
-- **Specs `003–004` branch:** `feat/v4-specs-003-004-memory` adds Tamil-script Tanglish, regional landmark matching, session slot memory, and browser turn cancellation. The workflow retains out-of-fixture locations while asking for ward verification. Verified with 74 pytest tests and 31 golden cases.
-- **Round 1 Cleared (`3 of 3`):** Activity 01, 02, and 03 passed; **Round 2 Build Live** (**Submit by `30 Nov, 11:59 pm`** · Theme: *Public infrastructure and civic services*).
-- **Specs `006–008` Merged (`main`):** Implemented 3-tier auto-detect engine (`engine_mode` in `/api/health`), `display_text` vs Tamil-Unicode `tts_text` (`rate="+6%"`), Sarvam `saaras:v4` `codemix`, deterministic `P0` life-safety (`112`/`108`/`101`/`1906`), two-turn HITL seal (`seal_verified_turn`), WCAG 2.2 AA+ Paper White / Dark Mode UI with `140x140px` Tactile Orb, Engine Mode Pill & collapsed `<640px` drawer, and `analytics/eval_gate.py` + `analyze_logs.py`.
-- **Verified Main Baseline (`17:30 IST`):** `pytest` -> `50 passed`; `analytics/eval_gate.py` -> `17/17 passed`; `analytics/analyze_logs.py` -> `0` PII leaks across `431` records; `impeccable detect --json index.html` -> `[]`; Playwright QA (`390/768/1440px`) -> `0` errors, `0` overflow, `0` `"wispr"` strings.
-- **Remaining for Final Submit (`30 Nov`):** (1) Live browser mic STT/barge-in & Unsloth `gemma-4-E2B` voice QA, (2) `docker compose up --build` CPU-only smoke check, (3) `<=3m` YouTube demo video, (4) 4-section PDF Pitch Deck, (5) Scaler Round 2 submission.
+- **Round 2 Architecture & React SPA Shipped (`main`):** Merged `feat/v4-specs-003-004-memory`, decluttered scratch/zip files, added `backend/session_store.py` (Redis + TTL memory + HMAC tokens), `backend/sarvam_realtime.py`, `backend/portal_bridge.py` (`NK-PREVIEW-*` GCC dry-run validator, zero outbound gov requests), `api/index.py` + `vercel.json` (`bom1`), `RapidFuzz` landmark ranking, and Vite/React/TS frontend (`/` Voice Agent, `/debug`, `/traces`, `/telemetry`).
+- **Verified Main Baseline (`21:40 IST`):** `npm run build` (`frontend/`) -> `0` TS/Vite errors; `pytest -v` -> `83 passed`; `analytics/eval_gate.py` -> `31/31 passed (100%)`; `analytics/analyze_logs.py` -> `0 PII leaks across 1054 records`; `impeccable detect --json index.html` -> `[]`.
+- **Remaining for Final Submit (`30 Nov`):** (1) Set `SARVAM_API_KEY` + `REDIS_URL` in Vercel env & deploy, (2) Live Tamil Nadu handset TTFA & SMS OTP verification, (3) `<=3m` YouTube demo video, (4) 4-section PDF Pitch Deck, (5) Scaler Round 2 submission.
 
 ## Standing Architectural Decisions
 - **Voice UI Grammar:** Follow `microsoft/voice-agent` minimal Foundry canvas + `TentacioPro/azure-voice-live-agent` `AcousticOrb` state machine; never render multi-field government form walls upfront.

@@ -23,6 +23,7 @@ def app_url(tmp_path_factory):
     """Serve the real app on an ephemeral port and shut it down after the browser tests."""
     logs = tmp_path_factory.mktemp("a11y")
     with pytest.MonkeyPatch.context() as patch:
+        patch.setenv("NK_LEGACY_INDEX", "1")
         patch.setattr(logger, "LOG_FILE", logs / "pipeline.jsonl")
         patch.setattr(logger, "CONV_FILE", logs / "turns.jsonl")
         patch.setattr(state, "_OTP_SESSIONS", {})

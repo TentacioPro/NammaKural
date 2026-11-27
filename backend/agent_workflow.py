@@ -20,6 +20,8 @@ from backend.llm_bridge import chat_backends, chat_message
 from backend.nlu import TN_FIXTURE_MAX_DISTANCE_SQUARED, extract_landmark_text, life_safety_helpline, resolve_gps_to_landmark
 from backend.logger import log_event
 from backend.nlu import analyze_turn, classify_conversational_chitchat, classify_semantic_vad, classify_sentiment_urgency
+from backend.portal_bridge import build_gcc_preview_packet
+from backend.session_store import STORE
 from backend.state import check_cooldown, has_dpdp_consent, record_dpdp_consent, scrub_pii_and_aadhaar, verify_hitl_seal
 from backend.state_packs import REGISTRY
 
@@ -45,6 +47,8 @@ def set_workflow_consent(session_id: str, consented: bool) -> dict[str, Any]:
             for key in list(_SESSIONS):
                 if key[0] == session_id:
                     del _SESSIONS[key]
+                    STORE.set_json(f"slots:{key[0]}:{key[1]}", {}, ttl_sec=1)
+            STORE.set_json(f"slots:{session_id}:tn", {}, ttl_sec=1)
         return record_dpdp_consent(session_id, consented)
 
 
@@ -595,9 +599,16 @@ def run_workflow_turn(
     key = (session_id, state_code) if session_id else None
     with _SLOT_LOCK:
         if not has_dpdp_consent(session_id):
+            if session_id:
+                STORE.set_json(f"slots:{session_id}:{state_code}", {}, ttl_sec=1)
             return _consent_blocked()
         entry = _SESSIONS.get(key) if key else None
         slots = entry[1].copy() if entry and time.monotonic() - entry[0] < _SESSION_TTL else {}
+        if not slots and key:
+            stored = STORE.get_json(f"slots:{session_id}:{state_code}")
+            if stored:
+                slots = stored
+        prev_lm, prev_issue = slots.get("landmark"), slots.get("issue")
         if not slots and clean_combined != clean_latest:
             _capture_slots(slots, _resolve_pack_turn(clean_combined, state_code), clean_combined)
         if (state_code == "tn" and slots.get("issue") and (not slots.get("landmark") or _CORRECTION.search(clean_latest)) and
@@ -610,9 +621,14 @@ def run_workflow_turn(
         if not latest_analysis["has_place"] and gps_lat is not None and gps_lon is not None:
             gps = _resolve_pack_turn("", state_code, gps_lat, gps_lon)
             _capture_slots(slots, gps, "")
+        ver = int(slots.get("complaint_version") or 1)
+        if (prev_lm and slots.get("landmark") != prev_lm) or (prev_issue and slots.get("issue") != prev_issue):
+            ver += 1
+        slots["complaint_version"] = ver
         snapshot = slots.copy()
         if key:
             _remember(key, snapshot)
+            STORE.set_json(f"slots:{session_id}:{state_code}", snapshot, ttl_sec=3600)
 
     ctx: dict[str, Any] = {
         "state_code": state_code,
@@ -767,6 +783,19 @@ def run_workflow_turn(
             "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
         },
     )
+    preview_packet = (
+        build_gcc_preview_packet(
+            service_id=analysis["service_id"],
+            landmark=lm,
+            summary_text=clean_combined or clean_latest,
+            urgency_tier=analysis["urgency"]["tier"],
+            complaint_version=int(slots.get("complaint_version") or 1),
+            otp_verified=otp_verified,
+            hitl_approved=(fsm_state == "DISPATCH"),
+        )
+        if fsm_state in ("HITL_SEAL", "DISPATCH")
+        else None
+    )
     return {
         "fsm_state": fsm_state,
         "state_code": state_code,
@@ -775,9 +804,12 @@ def run_workflow_turn(
         "vad": vad,
         "aadhaar_blocked": False,
         "pii_masked": scrub_latest["pii_masked"] or scrub_combined["pii_masked"],
+        "complaint_version": int(slots.get("complaint_version") or 1),
+        "text_contract": {"raw_asr": utterance, "normalized_text": clean_latest},
         "analysis": analysis,
         "slots": _public_slots(slots),
         "cooldown": ctx.get("cooldown"),
+        "preview_packet": preview_packet,
         **speech_fields(safe_reply, tts_out),
         "tool_trace": tool_trace,
     }

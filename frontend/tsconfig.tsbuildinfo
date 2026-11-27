@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/components/livewaveform.tsx","./src/components/riverorb.tsx","./src/pages/debugpage.tsx","./src/pages/telemetrypage.tsx","./src/pages/tracespage.tsx","./src/pages/voiceagentpage.tsx"],"version":"5.7.3"}

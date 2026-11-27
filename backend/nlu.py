@@ -366,12 +366,39 @@ _PLACE_WORD = re.compile(
 )
 
 
+def validate_phone_digits(text: str) -> dict[str, Any]:
+    """Venky B §3: Reject partial or letter-corrupted phone spans; accept only 10 valid Indian mobile digits."""
+    digits = re.sub(r"\D", "", text or "")
+    if digits.startswith("91") and len(digits) == 12:
+        digits = digits[2:]
+    has_letters = bool(re.search(r"[A-Za-z]", re.sub(r"\+?91|phone|mobile|number|call|en", "", text or "", flags=re.I)))
+    if len(digits) < 10:
+        return {"valid": False, "complete": False, "digits_count": len(digits), "reason": "incomplete_digits"}
+    if has_letters or not re.match(r"^[6-9]\d{9}$", digits):
+        return {"valid": False, "complete": True, "digits_count": len(digits), "reason": "invalid_indian_mobile"}
+    return {"valid": True, "complete": True, "digits_count": 10, "masked": f"+91 {digits[:2]}XXXXXX{digits[-2:]}"}
+
+
 def resolve_explicit_place(txt: str) -> dict[str, Any] | None:
     """Prefer the most recently named fixture landmark when handling a correction."""
     matches = [(m.start(), service, idx) for service, idx, pattern in _VERIFIED_PLACES for m in re.finditer(pattern, txt)]
     if matches:
         _, service, idx = max(matches)
         return SERVICE_CATALOG[service]["landmarks"][idx]
+
+    try:
+        from rapidfuzz import fuzz
+
+        rf_scores = [
+            (fuzz.token_set_ratio(alias, txt), service, idx)
+            for service, idx, alias in _FUZZY_PLACES
+        ]
+        rf_scores.sort(reverse=True)
+        if rf_scores and rf_scores[0][0] >= 86 and (len(rf_scores) == 1 or rf_scores[0][0] - rf_scores[1][0] >= 8):
+            _, service, idx = rf_scores[0]
+            return SERVICE_CATALOG[service]["landmarks"][idx]
+    except Exception:
+        pass
 
     words = re.findall(r"\b[a-z0-9]+\b", txt)
     scores = []

@@ -7,6 +7,7 @@ guarding so `en-IN-*` voices never receive raw Tamil Unicode (which triggers NoA
 
 from __future__ import annotations
 
+import os
 import re
 import time
 from collections import OrderedDict
@@ -109,6 +110,23 @@ async def synthesize_neural_mp3(
 
     voice = select_neural_voice(clean_text, preferred_voice, lang)
     tts_input = _normalize_tamil_tts(clean_text, voice)
+    # Venky B §4: Space out reference IDs (e.g. NK-PREVIEW-A1B2 -> N K A 1 B 2) for clear spoken readback
+    tts_input = re.sub(r"#?([A-Z]{2,5})-([A-Z0-9]{4,8})", lambda m: f"{' '.join(m.group(1))} {' '.join(m.group(2))}", tts_input)
+
+    # Prefer Sarvam Bulbul (~250-350ms, true code-mix) when SARVAM_API_KEY is configured
+    if os.getenv("SARVAM_API_KEY", "").strip() and (preferred_voice == "auto" or preferred_voice.startswith("sarvam")):
+        from backend.sarvam_realtime import synthesize_bulbul_sync
+
+        bulbul = synthesize_bulbul_sync(tts_input)
+        if bulbul.get("ok") and bulbul.get("audio"):
+            return {
+                "ok": True,
+                "voice": bulbul["voice"],
+                "audio": bulbul["audio"],
+                "media_type": bulbul.get("media_type", "audio/wav"),
+                "cached": False,
+            }
+
     cache_key = (voice, tts_input)
     if cache_key in _TTS_CACHE:
         _TTS_CACHE.move_to_end(cache_key)

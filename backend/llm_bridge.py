@@ -52,10 +52,14 @@ def _read_env_value(name: str, default: str = "") -> str:
 def _pick_chat_model(models: list[str], override: str = "") -> str:
     if override and override in models:
         return override
-    chat_candidates = [m for m in models if not any(tok in m.lower() for tok in ("asr", "whisper", "tts", "embed"))]
+    # Exclude STT/TTS/embed utilities and non-compliant model families (Bharat sovereign/open-weight policy)
+    disallowed = ("asr", "whisper", "tts", "embed", "qwen", "deepseek")
+    chat_candidates = [m for m in models if not any(tok in m.lower() for tok in disallowed)]
+    if not chat_candidates:
+        chat_candidates = [m for m in models if not any(tok in m.lower() for tok in ("asr", "whisper", "tts", "embed"))]
     if not chat_candidates:
         return models[0] if models else ""
-    for preferred in ("gemma-4", "nemotron", "phi-4", "qwen", "llama"):
+    for preferred in ("gemma-4", "nemotron", "phi-4", "sarvam", "llama"):
         for m in chat_candidates:
             if preferred in m.lower():
                 return m

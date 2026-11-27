@@ -64,8 +64,8 @@ Traditional unit tests check if `/api/turn` returns HTTP `200`. A **Golden Voice
 
 ## 5. Getting Native Tamil & Tanglish Dialogue Right (6 Tactical Rules)
 
-1. **Dynamic STT Lexicon Biasing:** Inject Chennai/Madurai/Coimbatore Ward landmarks and Tamil civic terms (`TANGEDCO`, `CMWSSB`, `saakkadai`, `kudineer`, `kuppai`, `pothole`) as hotwords into `Qwen3-ASR` / `Sarvam Saaras` / `Deepgram`.
-2. **Switch ASR Language Automatically or Use Code-Mix Models:** Never run pure `en-IN` WebSpeech when a citizen speaks Tamil script/heavy Tamil; prefer native code-mix models (`Sarvam Saaras`, `Qwen3-ASR-0.6B`, fine-tuned `Whisper-small`).
+1. **Dynamic STT Lexicon Biasing:** Inject Chennai/Madurai/Coimbatore Ward landmarks and Tamil civic terms (`TANGEDCO`, `CMWSSB`, `saakkadai`, `kudineer`, `kuppai`, `pothole`) as hotwords into `Sarvam Saaras` / `AI4Bharat IndicConformer` / `Deepgram`.
+2. **Switch ASR Language Automatically or Use Code-Mix Models:** Never run pure `en-IN` WebSpeech when a citizen speaks Tamil script/heavy Tamil; prefer Indic & Bharat-compliant models (`Sarvam Saaras`, `AI4Bharat IndicWhisper`, fine-tuned `Systran/faster-whisper-small`, `Wispr Flow`).
 3. **Always Mirror Citizen Register Respectfully:** Use *மரியாதை பன்மை* (`நீங்கள்`, *"சொல்லுங்கள்"*, *"புரிந்தது"* — never abrupt commands), keep sentences `< 18` words, and avoid robotic literal translations.
 4. **Never Speak Raw Symbols or Markdown Aloud:** Strip `#`, `*`, `_`, URLs, and long parentheses from TTS streams; speak *"Ticket GCC two-zero-four-nine-one"* instead of `"#GCC-20491"`.
 5. **Confirm Proper Nouns Phonically:** Read back ambiguous street names cleanly (*"வேளச்சேரி விஜயநகர் பேருந்து நிலையம் — சரியா?"*) before moving to OTP.

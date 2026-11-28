@@ -61,6 +61,8 @@ pytest -q
 
 ## Repository Structure (Spec-Driven MD System)
 - [`backend/`](backend/) — FastAPI Voice Agent gateway, Tanglish NLU, Semantic VAD, GPS/Landmark GIS resolver, 24h Ward/Agency Cooldown, Mobile OTP, Dual-Confirm HITL Seal & Redacted OTel Telemetry ([`main.py`](backend/main.py), [`nlu.py`](backend/nlu.py), [`state.py`](backend/state.py))
+- [`backend/voice_v1/`](backend/voice_v1/) — Isolated async session orchestration contracts, turn policy, media/speech/storage scaffolds, and telemetry; adapters are injected and realtime providers are not configured
+- [`VOICE_V1_SCAFFOLD.md`](VOICE_V1_SCAFFOLD.md) · [`VOICE_V1_REQUIREMENTS_STATUS.md`](VOICE_V1_REQUIREMENTS_STATUS.md) — Voice V1 startup, tests, coverage boundaries, and production acceptance gates
 - [`tests/test_api.py`](tests/test_api.py) — Automated API & gate verification tests (`pytest -q`)
 - [`Dockerfile`](Dockerfile) & [`docker-compose.yml`](docker-compose.yml) — One-command key-free startup (`port 8000`)
 - [`index.html`](index.html) — Self-contained Pure Voice Agent web frontend

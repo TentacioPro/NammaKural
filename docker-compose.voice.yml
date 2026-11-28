@@ -1,0 +1,66 @@
+services:
+  nammakural-voice:
+    build: .
+    container_name: nammakural-voice-scaffold
+    command: ["uvicorn", "backend.voice_v1.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+    ports:
+      - "8000:8000"
+    environment:
+      NK_VOICE_MODE: ${NK_VOICE_MODE:-test}
+      NK_TRANSPORT: ${NK_TRANSPORT:-not-configured}
+      NK_ASR_PROVIDER: ${NK_ASR_PROVIDER:-not-configured}
+      NK_LLM_PROVIDER: ${NK_LLM_PROVIDER:-deterministic-workflow}
+      NK_TTS_PROVIDER: ${NK_TTS_PROVIDER:-not-configured}
+      NK_AGENT_VERSION: ${NK_AGENT_VERSION:-voice-v1-dev}
+      OTEL_SERVICE_NAME: nammakural-voice
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    depends_on:
+      - jaeger
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: nammakural-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/prometheus.voice.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - nammakural-voice
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    container_name: nammakural-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    restart: unless-stopped
+
+  postgis:
+    image: postgis/postgis:16-3.5
+    container_name: nammakural-postgis
+    profiles: ["database"]
+    environment:
+      POSTGRES_DB: ${NK_PG_DATABASE:-nammakural}
+      POSTGRES_USER: ${NK_PG_USER:-nammakural}
+      # The postgres container refuses an empty password when the profile is enabled.
+      # Set NK_PG_PASSWORD in a local secret/env file before starting that profile.
+      POSTGRES_PASSWORD: ${NK_PG_PASSWORD:-}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - nk-postgis-data:/var/lib/postgresql/data
+      - ./ops/sql/voice_v1_init.sql:/docker-entrypoint-initdb.d/10-voice-v1.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+volumes:
+  nk-postgis-data:

@@ -27,3 +27,10 @@ Mission: Build **`NammaKural`** (*நம்ம குரல்* — "Our Voice")
 - [`docs/architecture/VOICE_AGENT_ARCHITECTURE.md`](docs/architecture/VOICE_AGENT_ARCHITECTURE.md) — Full Voice AI stack, Tanglish/accent NLU, VAD, telemetry & self-improvement research
 - [`docs/TN_CIVIC_PORTALS.md`](docs/TN_CIVIC_PORTALS.md) — Live DOM inspection & WhatsApp/OTP boundaries across 6 TN portals
 - [`docs/ROUND1_SUBMISSIONS.md`](docs/ROUND1_SUBMISSIONS.md) — Submitted Activity 01 & ready Activity 02 prompt (`689 words`)
+
+## Isolated Voice V1 Backend
+- `backend/voice_v1/` is an additive, provider-neutral backend scaffold; do not mistake contracts or pure policy for configured production integrations.
+- Start with [`VOICE_V1_SCAFFOLD.md`](VOICE_V1_SCAFFOLD.md) for run/test instructions and [`VOICE_V1_REQUIREMENTS_STATUS.md`](VOICE_V1_REQUIREMENTS_STATUS.md) for implementation boundaries and production gates.
+- `backend/voice_v1/session.py` composes injected streaming adapters and enforces per-session turn epochs/cancellation; it is not wired into `backend.main:app` or a LiveKit/browser media path.
+- Keep civic safety, consent, authorization, and verified submission outcomes in deterministic code. Never claim a complaint was submitted without a backend receipt/confirmed queued state; cancellation does not undo an external mutation.
+- Run `env -u OTEL_EXPORTER_OTLP_ENDPOINT pytest -q tests/test_voice_v1_*.py` for the isolated policy/session suite. Use fakes for orchestration tests; do not add credentials, private transcripts, or raw audio fixtures.

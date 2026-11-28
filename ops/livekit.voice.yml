@@ -1,0 +1,50 @@
+# Optional fragment: docker compose -f docker-compose.voice.yml -f ops/livekit.voice.yml up
+# Replace placeholders through a secret manager/environment; never commit credentials.
+# TURN needs a real public address, UDP/TCP port range, firewall/NAT rules and monitoring.
+services:
+  livekit:
+    image: livekit/livekit-server:v1.8.4
+    command: ["--dev=false", "--bind", "0.0.0.0"]
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:?set LIVEKIT_API_KEY}:${LIVEKIT_API_SECRET:?set LIVEKIT_API_SECRET}"
+    ports:
+      - "7880:7880/tcp"       # signaling; terminate TLS at trusted ingress in production
+      - "7881:7881/tcp"       # ICE/TCP fallback
+      - "50000-50100:50000-50100/udp" # narrow media range; align with server config/firewall
+    restart: unless-stopped
+    # Do not expose admin/debug ports publicly. Configure TLS, auth, room grants,
+    # egress policy, rate limits, logging retention, and network ACLs before deployment.
+
+  coturn:
+    image: coturn/coturn:4.6.2
+    command:
+      - "-n"
+      - "--log-file=stdout"
+      - "--fingerprint"
+      - "--lt-cred-mech"
+      - "--realm=${TURN_REALM:?set TURN_REALM}"
+      - "--user=${TURN_USERNAME:?set TURN_USERNAME}:${TURN_PASSWORD:?set TURN_PASSWORD}"
+      - "--listening-port=3478"
+      - "--min-port=49160"
+      - "--max-port=49200"
+      - "--external-ip=${TURN_PUBLIC_IP:?set TURN_PUBLIC_IP}"
+      - "--no-cli"
+      - "--no-tls"
+      - "--no-dtls"
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
+    restart: unless-stopped
+    # Static credentials here are placeholders only. Prefer short-lived TURN credentials;
+    # plain TURN is not confidentiality protection—use TURN over TLS at a secured edge.
+
+  voice-media-worker:
+    build: .
+    command: ["python", "-m", "backend.voice_v1.media.worker"]
+    environment:
+      NK_VOICE_WORKER_ADAPTERS: "not-configured"
+    profiles: ["media-worker"]
+    restart: "no"
+    # This deliberately exits non-zero until real LiveKit/decoder/resampler/VAD/ASR/TTS
+    # adapters are injected. Service declaration does not imply worker/provider readiness.

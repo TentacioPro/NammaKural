@@ -1,9 +1,9 @@
 # CONTEXT — NammaKural (*நம்ம குரல்*)
 
-Updated: `2026-11-27 21:40 IST` · Branch: `main` · Stack: FastAPI (`backend/` + `api/index.py` Vercel `bom1`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State FSM + RapidFuzz + Redis/Memory `SessionStore` + Sarvam `saaras:v4`/`bulbul:v2` & `edge-tts` + Vite/React/TS SPA (`frontend/`: `/`, `/debug`, `/traces`, `/telemetry`)
+Updated: `2026-11-28 15:05 IST` · Branch: `voice/grievance-e2e-flow-v1` · Stack: FastAPI (`backend/` + `api/index.py` Vercel `bom1`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State FSM + RapidFuzz + Redis/Memory `SessionStore` + Sarvam `saaras:v4`/`bulbul:v2` & `edge-tts` + Vite/React/TS SPA (`frontend/`: `/`, `/debug`, `/traces`, `/telemetry`)
 
 ## Now
-- Active branch: `voice/streaming-latency-v1`. Read the [28 November cloud handoff](research/civic/2026-11-28/README.md) for source evidence, telemetry, test limits and open decisions.
+- Active branch: `voice/grievance-e2e-flow-v1`, created from `voice/streaming-latency-v1` at `cffa1f3`. Read the [end-to-end flow/gap map](docs/architecture/END_TO_END_GRIEVANCE_FLOW_GAP_MAP.md) and [28 November cloud handoff](research/civic/2026-11-28/README.md) for scope, source evidence, telemetry, test limits and open decisions.
 - Product direction: Tamil/Tanglish grievance intake and channel-specific draft review. Voice, text and consented GPS share the draft. Mobile OTP requires the configured provider. Filing remains citizen-led.
 - First-pass [public source register](data/civic/tn_public_catalog.json): 16 routes or service families, 24 source pages and 38 district homepages. The [e-Sevai inventory](data/civic/tn_esevai_service_index.json) has 122 published codes. These are discovery and evidence records, not proof of statewide drafting coverage.
 - The public source audit is on demand. The immediate evaluation target is verified usable drafts and citizen effort against general assistants and text-first intake. Controlled tests have not established a winner.

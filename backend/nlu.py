@@ -331,11 +331,14 @@ _ISSUE_PATTERNS = {
     "garbage_1100": r"\b(?:garbage|kuppai|close[ds]?|20491|1100)\b|குப்பை|மூடிட்டாங்க",
     "ration_tnpds": r"\b(?:ration|arisi|fingerprint|tnpds)\b|ரே[ஷச]ன்|விரல்ரேகை",
     "sewage_pothole": r"\b(?:sewage|sa+kka?dai|sa?kaadai|sakadai|potholes?|drainage)\b|சாக்கட|போ[த்]*தோல்|பாட்ஹோல்",
+    "road_flooding": r"\b(?:water[ -]?logg(?:ing|ed)|street flooding|road flooding)\b|(?:\broads?\b|\bstreets?\b|சாலை|தெரு).{0,55}(?:\b(?:flood(?:ed|ing)?|standing water|under water|water (?:stagnation|accumulation))\b|தண்ண(?:ி|ீர்).{0,20}(?:நிரம்ப|தேங்))|(?:மழைத்?\s*தண்ணீர்|மழைநீர்).{0,20}தேங்",
     "water_pipe": r"\b(?:kudineer|water|pipes?|tha+nni|thanniir)\b|குடிநீர்|தண்ண[ீி]|தண்ணி|வாட்ட[ர்]+|பை[ப்]+|குழாய்",
     "streetlight_eb": r"\b(?:street\s*lights?|lights?|eriyal[ae]?|wire|transformer|spark|current|karant|kambam|theru\s*vilakku)\b|தெரு\s*விளக்கு|லை[ட்]+|கரண்[ட்]+|மின்\s*கம்பி|எரியல|பொடல|தீப்பொறி",
 }
 _ISSUES = [(service, re.compile(pattern)) for service, pattern in _ISSUE_PATTERNS.items()]
 _ROAD_DEFECT = re.compile(r"(?:ரோட|சாலை|\broad\b).{0,20}(?:குழி|உடை|மோசம்|gundu|kuzhi|damag)")
+ROAD_CONTEXT = re.compile(r"\b(?:roads?|streets?|water[ -]?logging)\b|சாலை|ரோ[ட்]+|தெரு")
+PIPE_FAILURE = re.compile(r"\b(?:pipes?|pipeline|water main)\b.{0,28}\b(?:burst|broke|broken|leak\w*)\b|(?:குழாய்|பைப்).{0,20}(?:உடை|கசிவ)")
 _VERIFIED_PLACES = [
     ("streetlight_eb", 0, r"\btower\s*(?:park|paark)\b|\b5th\s*ave|\bvth\s*ave|\b3rd\s*cross|டவர்\s*பார்க"),
     ("streetlight_eb", 1, r"\banna\s*(?:arch|aarch)\b|\biii(?:rd)?\s*ave|அண்ணா\s*(?:ஆர்ச்|ஆர்சு)"),
@@ -359,7 +362,7 @@ _VICINITY = re.compile(
     r"\b(?:near|opposite|by)\s+(?P<after>[^,;.!?]+)", re.I,
 )
 _PLACE_WORD = re.compile(
-    r"\b(?:mall|junction|market|school|temple|bridge|station|park|street|road|avenue|bus stand)\b|"
+    r"\b(?:mall|junction|market|school|temple|bridge|station|park|street|road|avenue|bus stand|company|office)\b|"
     r"மால்|சந்தை|பள்ளி|கோவில்|பாலம்|நிலையம்|மார்க்கெட்|பார்க்|தெரு|நகர்|சந்திப்பு",
     re.I,
 )
@@ -435,6 +438,8 @@ def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None)
     area = _area_name(txt)
     urgency = classify_sentiment_urgency(txt)
     issue = next((sid for sid, pattern in _ISSUES if pattern.search(txt)), None)
+    if issue == "road_flooding" and PIPE_FAILURE.search(txt):
+        issue = "water_pipe"
     if not issue and _ROAD_DEFECT.search(txt):
         issue = "sewage_pothole"
     if urgency.tier == "CRITICAL_SAFETY" and _ISSUES[-1][1].search(txt):
@@ -452,7 +457,7 @@ def analyze_turn(combined_text: str, gps_landmark: dict[str, Any] | None = None)
     ambiguous_area = {"Velachery": "velachery", "Anna Nagar": "anna_nagar"}.get(area) if not resolved else None
     lm = resolved or {"name": landmark_text, "district": "", "zone": "", "ward": "", "street": "", "road_id": ""}
     svc_id = issue or "streetlight_eb"
-    service_places = SERVICE_CATALOG[svc_id]["landmarks"]
+    service_places = SERVICE_CATALOG.get(svc_id, SERVICE_CATALOG["sewage_pothole"])["landmarks"]
 
     return {
         "has_place": bool(landmark_text),

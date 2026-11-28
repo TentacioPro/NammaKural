@@ -9,6 +9,13 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - UNSLOTH_API_KEY=${UNSLOTH_API_KEY:-}
       - TURN_SERVER_URL=${TURN_SERVER_URL:-turn:127.0.0.1:3478}
+      - NK_AUTH_REQUIRED=${NK_AUTH_REQUIRED:-0}
+      - NK_SUPABASE_URL=${NK_SUPABASE_URL:-}
+      - NK_SUPABASE_PUBLIC_KEY=${NK_SUPABASE_PUBLIC_KEY:-}
+      - NK_OPERATOR_IDS=${NK_OPERATOR_IDS:-}
+      - REDIS_URL=${REDIS_URL:-}
+    volumes:
+      - nammakural-logs:/app/logs
     restart: unless-stopped
 
   coturn:
@@ -19,3 +26,6 @@ services:
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
     restart: unless-stopped
+
+volumes:
+  nammakural-logs:

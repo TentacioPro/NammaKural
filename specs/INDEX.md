@@ -10,3 +10,6 @@
 | `006` | [3-Tier Auto-Detect Engine, Tamil TTS Split & P0/HITL](006-3tier-engine-and-tamil-tts/SPEC.md) | `done` | `backend/`, `README.md`, `tests/` |
 | `007` | [Universal WCAG 2.2 AA+ Civic Voice UI](007-universal-a11y-civic-ui/SPEC.md) | `done` | `index.html`, `DESIGN.md` |
 | `008` | [TDD Eval Gate, Playwright A11y & Log Analytics](008-tdd-eval-gate-and-analytics/SPEC.md) | `done` | `analytics/`, `tests/` |
+| `009` | [Grievance Intake and Call Telemetry](009-grievance-intake-and-call-telemetry/SPEC.md) | `done` | `backend/`, `frontend/`, `tests/` |
+| `010` | [Citizen OTP Access and Operator Review](010-citizen-access-and-operator-review/SPEC.md) | `done` | `backend/`, `frontend/`, `tests/` |
+| `011` | [Tamil Nadu Public Civic Register](011-public-civic-catalog/SPEC.md) | `done` | `data/civic/`, `ops/`, `tests/` |

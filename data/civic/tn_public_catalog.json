@@ -1,0 +1,1240 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-11-28",
+  "sources": {
+    "gcc-form": {
+      "url": "https://gccservices.in/pgr/registercomplaints",
+      "kind": "visible_form",
+      "expected_text": [
+        "complaint type",
+        "details of complaint"
+      ]
+    },
+    "gcc-erp": {
+      "url": "https://erp.chennaicorporation.gov.in/pgr/citizen/BeforeReg.do",
+      "kind": "visible_form",
+      "expected_text": [
+        "assessment number",
+        "complaint title"
+      ]
+    },
+    "gcc-contact": {
+      "url": "https://gccservices.in/pgr/",
+      "kind": "contacts",
+      "expected_text": [
+        "1913"
+      ]
+    },
+    "gcc-whatsapp": {
+      "url": "https://chennaicorporation.gov.in/gcc/complaints/index.htm",
+      "kind": "discovery",
+      "expected_text": [
+        "public grievance"
+      ]
+    },
+    "cams-form": {
+      "url": "https://cams.tn.gov.in/register-grievance",
+      "kind": "visible_form",
+      "expected_text": [
+        "grievance portal",
+        "description"
+      ]
+    },
+    "cm-faq": {
+      "url": "https://cmhelpline.tnega.org/portal/en/kb/articles/tamil-nadu-cm-helpline-faqs",
+      "kind": "contacts",
+      "expected_text": [
+        "grievance",
+        "1100"
+      ]
+    },
+    "cm-about": {
+      "url": "https://cmhelpline.tnega.org/portal/en/kb/articles/about-us",
+      "kind": "contacts",
+      "expected_text": [
+        "1100",
+        "cmhelpline@tn.gov.in"
+      ]
+    },
+    "cmwssb": {
+      "url": "https://cms-cmwssb.tn.gov.in/",
+      "kind": "app_shell",
+      "expected_text": []
+    },
+    "twad": {
+      "url": "https://www.punal.tn.gov.in/index.html",
+      "kind": "contacts",
+      "expected_text": [
+        "1916"
+      ]
+    },
+    "ccms": {
+      "url": "https://ccms.tangedco.org/tangedco-public/",
+      "kind": "gate",
+      "expected_text": [
+        "captcha",
+        "mobile number"
+      ]
+    },
+    "cgrf": {
+      "url": "https://www.tnebltd.gov.in/cgrfonline/guidelines.xhtml",
+      "kind": "guidance",
+      "expected_text": [
+        "grievance"
+      ]
+    },
+    "tnpds": {
+      "url": "https://www.nfsa.gov.in/State/TN",
+      "kind": "contacts",
+      "expected_text": [
+        "1967",
+        "tnpds"
+      ]
+    },
+    "tnpcb": {
+      "url": "https://www.tnpcb.gov.in/helpdesk.php",
+      "kind": "contacts",
+      "expected_text": [
+        "complaint@tnpcb.gov.in"
+      ]
+    },
+    "nugarvor": {
+      "url": "https://www.nugarvor.tn.gov.in/",
+      "kind": "discovery",
+      "expected_text": []
+    },
+    "tnstc": {
+      "url": "https://www.tnstc.in/inner_pages_2024/suggestions.html",
+      "kind": "contacts",
+      "expected_text": [
+        "commercial@tnstc.org"
+      ]
+    },
+    "esevai": {
+      "url": "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html",
+      "kind": "discovery",
+      "expected_text": [
+        "rev-101"
+      ]
+    },
+    "esevai-help": {
+      "url": "https://www.tnesevai.tn.gov.in/citizen/Complaints.html",
+      "kind": "contacts",
+      "expected_text": [
+        "tnesevaihelpdesk"
+      ]
+    },
+    "urban": {
+      "url": "https://tnurbanepay.tn.gov.in/LoginPage.aspx",
+      "kind": "app_shell",
+      "expected_text": []
+    },
+    "rural": {
+      "url": "https://tnrd.tn.gov.in/security-policy-ooragam-app.html",
+      "kind": "discovery",
+      "expected_text": [
+        "vptax"
+      ]
+    },
+    "lgd": {
+      "url": "https://panchayat.gov.in/lgd/",
+      "kind": "discovery",
+      "expected_text": [
+        "local government directory"
+      ]
+    },
+    "districts": {
+      "url": "https://lokbhavan.tn.gov.in/districts-of-tamil-nadu/",
+      "kind": "discovery",
+      "expected_text": [
+        "ariyalur",
+        "virudhunagar"
+      ]
+    },
+    "district-petition": {
+      "url": "https://kallakurichi.nic.in/service/public-grievance-processing-service/",
+      "kind": "guidance",
+      "expected_text": [
+        "mobile number",
+        "petition"
+      ]
+    },
+    "district-redirect": {
+      "url": "https://madurai.nic.in/service/how-to-lodge-a-grievance/",
+      "kind": "guidance",
+      "expected_text": [
+        "cmhelpline"
+      ]
+    },
+    "esevai-expanded": {
+      "url": "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx",
+      "kind": "discovery",
+      "expected_text": [
+        "rev-101"
+      ]
+    }
+  },
+  "routes": [
+    {
+      "id": "gcc_pgrs",
+      "label": "Greater Chennai Corporation PGRS",
+      "scope": "Greater Chennai civic infrastructure",
+      "coverage": "visible_controls",
+      "access": "Public wizard; OTP control is displayed for the mobile-sharing path. Anonymous progression and server validation were not exercised.",
+      "sources": [
+        "gcc-form",
+        "gcc-contact",
+        "gcc-whatsapp"
+      ],
+      "channels": {
+        "phone": "1913",
+        "whatsapp": "https://wa.me/919445061913"
+      },
+      "fields": [
+        {
+          "key": "share_mobile",
+          "label": "Share mobile number",
+          "type": "choice",
+          "required": null,
+          "handling": "citizen",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "html_name": "shareMobile"
+        },
+        {
+          "key": "mobile",
+          "label": "Mobile number",
+          "type": "telephone",
+          "required": null,
+          "handling": "citizen",
+          "depends_on": "share_mobile",
+          "html_id": "mobileNo",
+          "html_name": "mobileNo",
+          "min_characters": 10,
+          "max_characters": 10
+        },
+        {
+          "key": "mobile_otp",
+          "label": "Mobile OTP",
+          "type": "verification",
+          "required": null,
+          "handling": "portal",
+          "depends_on": "share_mobile",
+          "html_ids": [
+            "otp1",
+            "otp2",
+            "otp3",
+            "otp4",
+            "otp5"
+          ],
+          "ui_input_count": 5
+        },
+        {
+          "key": "share_email",
+          "label": "Share email",
+          "type": "choice",
+          "required": null,
+          "handling": "citizen",
+          "options": [
+            "Yes",
+            "No"
+          ],
+          "html_name": "shareEmail"
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "required": null,
+          "handling": "citizen",
+          "depends_on": "share_email",
+          "html_id": "email"
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": null,
+          "handling": "citizen",
+          "html_id": "name"
+        },
+        {
+          "key": "gender",
+          "label": "Gender",
+          "type": "choice",
+          "required": true,
+          "handling": "citizen",
+          "options": [
+            "Male",
+            "Female",
+            "Transgender"
+          ],
+          "html_name": "gender"
+        },
+        {
+          "key": "location_search",
+          "label": "Search location",
+          "type": "text",
+          "required": null,
+          "handling": "agent",
+          "min_characters": 5,
+          "validation_evidence": "placeholder",
+          "html_id": "pac-input"
+        },
+        {
+          "key": "street",
+          "label": "Street",
+          "type": "dynamic_choice",
+          "required": null,
+          "handling": "agent",
+          "html_id": "streetName",
+          "html_name": "streetName"
+        },
+        {
+          "key": "longitude",
+          "label": "Longitude",
+          "type": "coordinate",
+          "required": null,
+          "handling": "derived",
+          "html_id": "longitude_field"
+        },
+        {
+          "key": "latitude",
+          "label": "Latitude",
+          "type": "coordinate",
+          "required": null,
+          "handling": "derived",
+          "html_id": "latitude_field"
+        },
+        {
+          "key": "landmark",
+          "label": "Landmark",
+          "type": "text",
+          "required": null,
+          "handling": "agent",
+          "html_id": "landmark"
+        },
+        {
+          "key": "category",
+          "label": "Complaint type",
+          "type": "dynamic_choice",
+          "required": null,
+          "handling": "agent",
+          "html_id": "specificComplaintType"
+        },
+        {
+          "key": "subcategory",
+          "label": "Complaint sub-type",
+          "type": "dynamic_choice",
+          "required": null,
+          "handling": "agent",
+          "depends_on": "category",
+          "html_id": "specificComplaintSubType"
+        },
+        {
+          "key": "description",
+          "label": "Complaint details",
+          "type": "multiline",
+          "required": null,
+          "handling": "agent",
+          "html_id": "specificComplaintDetails",
+          "max_characters": 400,
+          "validation_evidence": "HTML maxlength"
+        },
+        {
+          "key": "photo",
+          "label": "Photo",
+          "type": "file",
+          "required": null,
+          "handling": "citizen",
+          "limit_text": "Less than 1 MB",
+          "html_id": "specificComplaintImage",
+          "html_name": "Comp_Image",
+          "html_accept": "image/*"
+        }
+      ],
+      "unknown": [
+        "Live street and complaint dropdown values and codes",
+        "All requiredness and server-side validation rules",
+        "Whether the no-mobile choice works through submission",
+        "When the alternate complaint controls are activated"
+      ],
+      "channel_evidence": {
+        "phone": "https://gccservices.in/pgr/",
+        "whatsapp": "https://chennaicorporation.gov.in/gcc/pdf/CDMP%20DIRECTORY%202026.pdf"
+      },
+      "alternate_controls": [
+        {
+          "label": "Alternate complaint type",
+          "html_id": "otherComplaintType",
+          "type": "dynamic_choice"
+        },
+        {
+          "label": "Alternate complaint sub-type",
+          "html_id": "otherComplaintSubType",
+          "type": "dynamic_choice"
+        },
+        {
+          "label": "Alternate complaint details",
+          "html_id": "othercomplaintdetailsss",
+          "type": "multiline",
+          "max_characters": 400
+        },
+        {
+          "label": "Alternate photo",
+          "html_id": "uploadothers",
+          "type": "file",
+          "html_accept": "image/*",
+          "limit_text": "Less than 1 MB"
+        }
+      ]
+    },
+    {
+      "id": "gcc_erp_legacy",
+      "label": "GCC legacy ERP grievance form",
+      "scope": "Legacy Greater Chennai citizen portal",
+      "coverage": "visible_controls",
+      "access": "Publicly visible form; mobile OTP is required before registration proceeds.",
+      "sources": [
+        "gcc-erp"
+      ],
+      "fields": [
+        {
+          "key": "mobile",
+          "label": "Mobile Number",
+          "type": "telephone",
+          "required": true,
+          "handling": "citizen"
+        },
+        {
+          "key": "otp",
+          "label": "OTP",
+          "type": "verification",
+          "required": true,
+          "handling": "portal"
+        },
+        {
+          "key": "initials",
+          "label": "Initials",
+          "type": "text",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true,
+          "handling": "citizen"
+        },
+        {
+          "key": "last_name",
+          "label": "Last Name",
+          "type": "text",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "gender",
+          "label": "Gender",
+          "type": "choice",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "street_address",
+          "label": "Street Address",
+          "type": "text",
+          "required": true,
+          "handling": "citizen"
+        },
+        {
+          "key": "pin_code",
+          "label": "Pin Code",
+          "type": "text",
+          "required": true,
+          "handling": "citizen"
+        },
+        {
+          "key": "phone",
+          "label": "Phone Number",
+          "type": "telephone",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "email",
+          "label": "Email Address",
+          "type": "email",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "area",
+          "label": "Area",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent"
+        },
+        {
+          "key": "locality",
+          "label": "Locality",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "depends_on": "area"
+        },
+        {
+          "key": "street",
+          "label": "Street",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "depends_on": "locality"
+        },
+        {
+          "key": "specific_location",
+          "label": "Specific Location",
+          "type": "text",
+          "required": null,
+          "handling": "agent"
+        },
+        {
+          "key": "complaint_types",
+          "label": "Complaint Types",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent"
+        },
+        {
+          "key": "title",
+          "label": "Complaint Title",
+          "type": "text",
+          "required": true,
+          "handling": "agent"
+        },
+        {
+          "key": "assessment_number",
+          "label": "Assessment Number",
+          "type": "text",
+          "required": true,
+          "handling": "citizen",
+          "validation_evidence": "Visible marker only; category-dependent applicability untested"
+        },
+        {
+          "key": "description",
+          "label": "Details of Complaint",
+          "type": "multiline",
+          "required": true,
+          "handling": "agent",
+          "max_characters": 400
+        },
+        {
+          "key": "social_link",
+          "label": "Social Media Link",
+          "type": "url",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "file",
+          "label": "Photograph / video",
+          "type": "file",
+          "required": null,
+          "handling": "citizen"
+        },
+        {
+          "key": "anonymous",
+          "label": "Anonymous registration",
+          "type": "choice",
+          "required": true,
+          "handling": "citizen"
+        }
+      ],
+      "unknown": [
+        "Category-dependent assessment-number rules",
+        "Live dropdown codes",
+        "Submission acceptance"
+      ]
+    },
+    {
+      "id": "cams_audit",
+      "label": "CAMS audit grievance",
+      "scope": "Audit departments listed by the Director General of Audit",
+      "coverage": "visible_controls",
+      "access": "Publicly visible citizen form with mobile OTP and CAPTCHA. Department restrictions are shown in the public guidance.",
+      "sources": [
+        "cams-form"
+      ],
+      "fields": [
+        {
+          "key": "mobile",
+          "label": "Mobile Number",
+          "type": "telephone",
+          "required": true,
+          "handling": "citizen",
+          "digits": 10,
+          "html_id": "grievanceMobileNumber",
+          "html_name": "mobilenumber",
+          "max_characters": 10
+        },
+        {
+          "key": "otp",
+          "label": "Mobile verification",
+          "type": "verification",
+          "required": true,
+          "handling": "portal",
+          "html_id": "grievanceOtp",
+          "max_characters": 6
+        },
+        {
+          "key": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true,
+          "handling": "citizen",
+          "html_id": "name",
+          "html_name": "name",
+          "max_characters": 70
+        },
+        {
+          "key": "gender",
+          "label": "Gender",
+          "type": "choice",
+          "required": true,
+          "handling": "citizen",
+          "html_id": "gender",
+          "html_name": "gender"
+        },
+        {
+          "key": "email",
+          "label": "Email",
+          "type": "email",
+          "required": false,
+          "handling": "citizen",
+          "html_id": "email",
+          "html_name": "email",
+          "max_characters": 30
+        },
+        {
+          "key": "address",
+          "label": "Address (door number and street)",
+          "type": "text",
+          "required": true,
+          "handling": "citizen",
+          "html_id": "address1",
+          "html_name": "address1",
+          "max_characters": 100
+        },
+        {
+          "key": "locality",
+          "label": "Area / Village",
+          "type": "text",
+          "required": true,
+          "handling": "agent",
+          "html_id": "address2",
+          "html_name": "address2",
+          "max_characters": 100
+        },
+        {
+          "key": "district",
+          "label": "District",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "html_id": "revenuedistrict",
+          "html_name": "revenuedistrict"
+        },
+        {
+          "key": "department",
+          "label": "Complaint/Suggestion Department",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "html_name": "deptcode"
+        },
+        {
+          "key": "category",
+          "label": "Complaint/Suggestion Category",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "depends_on": "department",
+          "html_id": "category",
+          "html_name": "category"
+        },
+        {
+          "key": "subcategory",
+          "label": "Complaint/Suggestion Sub Category",
+          "type": "dynamic_choice",
+          "required": true,
+          "handling": "agent",
+          "depends_on": "category",
+          "html_id": "subcatid",
+          "html_name": "subcatid"
+        },
+        {
+          "key": "attachment",
+          "label": "Upload File",
+          "type": "file",
+          "required": false,
+          "handling": "citizen",
+          "formats": [
+            "JPG",
+            "PDF"
+          ],
+          "limit_text": "Maximum 200 KB",
+          "html_id": "file",
+          "html_name": "file"
+        },
+        {
+          "key": "description",
+          "label": "Description",
+          "type": "multiline",
+          "required": true,
+          "handling": "agent",
+          "max_characters": 750,
+          "validation_evidence": "HTML maxlength and visible counter",
+          "html_id": "description",
+          "html_name": "description"
+        },
+        {
+          "key": "captcha",
+          "label": "Captcha",
+          "type": "verification",
+          "required": true,
+          "handling": "portal",
+          "html_id": "captcha",
+          "html_name": "captcha",
+          "max_characters": 6
+        }
+      ],
+      "unknown": [
+        "Live department and category IDs, option dependencies",
+        "Server-side validation beyond visible labels and hints"
+      ]
+    },
+    {
+      "id": "cm_helpline",
+      "label": "Tamil Nadu CM Helpline",
+      "scope": "Statewide grievances and agency referral",
+      "coverage": "channel_documented",
+      "access": "Citizen login for web filing; public phone and email available.",
+      "sources": [
+        "cm-faq",
+        "cm-about"
+      ],
+      "channels": {
+        "phone": "1100",
+        "email": "cmhelpline@tn.gov.in"
+      },
+      "draft_suggestions": [
+        "Incident location and local body if known",
+        "Department if known",
+        "What happened and what resolution is requested",
+        "Previous reference for escalation"
+      ],
+      "unknown": [
+        "Authenticated form fields and codes",
+        "Required and conditional fields by department",
+        "Attachment and description limits"
+      ]
+    },
+    {
+      "id": "cmwssb_gms",
+      "label": "Chennai Metro Water",
+      "scope": "Water supply and sewerage within CMWSSB jurisdiction",
+      "coverage": "previous_inspection_unrevalidated",
+      "access": "Current public fetch exposed an app shell. This pass did not revalidate the earlier project inspection.",
+      "sources": [
+        "cmwssb"
+      ],
+      "previous_note": "docs/TN_CIVIC_PORTALS.md#1-department-wise-portal-matrix",
+      "draft_suggestions": [
+        "Public vs consumer issue",
+        "Area, depot, locality and incident street",
+        "Problem duration",
+        "Category, subtype and remarks"
+      ],
+      "unknown": [
+        "Current requiredness, exact codes and server limits",
+        "Confirmation of contact channels from an official static source"
+      ]
+    },
+    {
+      "id": "twad_punal",
+      "label": "TWAD PUNAL",
+      "scope": "Drinking-water grievances covered by PUNAL and participating water authorities",
+      "coverage": "channel_documented",
+      "access": "Citizen web OTP and public phone or WhatsApp according to PUNAL.",
+      "sources": [
+        "twad"
+      ],
+      "channels": {
+        "phone": "1916",
+        "whatsapp": "https://wa.me/919499991916"
+      },
+      "draft_suggestions": [
+        "District and local body",
+        "Street, ward, block or habitation as applicable",
+        "Problem and public landmark"
+      ],
+      "unknown": [
+        "Authenticated form, required fields and branching",
+        "Responsible water authority at local boundary"
+      ]
+    },
+    {
+      "id": "tnpdcl_ccms",
+      "label": "TNPDCL CCMS",
+      "scope": "Routine or dangerous electricity faults and retail electricity service complaints",
+      "coverage": "gate_only",
+      "access": "Public login shows mobile, CAPTCHA and OTP. Minnagam is a separate public phone channel.",
+      "sources": [
+        "ccms"
+      ],
+      "channels": {
+        "phone": "9498794987"
+      },
+      "fields": [
+        {
+          "key": "mobile",
+          "label": "Mobile Number",
+          "type": "telephone",
+          "required": null,
+          "handling": "citizen",
+          "html_id": "inputForm:username",
+          "html_name": "inputForm:username",
+          "max_characters": 10
+        },
+        {
+          "key": "captcha",
+          "label": "Enter Captcha",
+          "type": "verification",
+          "required": null,
+          "handling": "portal",
+          "html_id": "inputForm:captchaInput",
+          "html_name": "inputForm:captchaInput"
+        },
+        {
+          "key": "otp",
+          "label": "OTP",
+          "type": "verification",
+          "required": null,
+          "handling": "portal",
+          "html_id": "inputForm:mobile_OTP",
+          "html_name": "inputForm:mobile_OTP",
+          "max_characters": 6
+        }
+      ],
+      "draft_suggestions": [
+        "Service-oriented or general complaint",
+        "Public pole or incident landmark and fault description"
+      ],
+      "unknown": [
+        "Post-login fields, category codes and limits",
+        "Exact emergency escalation and IVR routing for each issue"
+      ],
+      "account_controls": [
+        {
+          "html_id": "inputForm:first_name",
+          "scope": "signup",
+          "handling": "citizen",
+          "max_characters": 30
+        },
+        {
+          "html_id": "inputForm:last_name",
+          "scope": "signup",
+          "handling": "citizen",
+          "max_characters": 30
+        },
+        {
+          "html_id": "inputForm:mobile",
+          "scope": "signup",
+          "handling": "citizen",
+          "max_characters": 10
+        },
+        {
+          "html_id": "inputForm:email",
+          "scope": "signup",
+          "handling": "citizen",
+          "max_characters": 70
+        },
+        {
+          "html_id": "inputForm:reg_password",
+          "scope": "signup",
+          "handling": "portal",
+          "max_characters": 20
+        },
+        {
+          "html_id": "inputForm:conf_password",
+          "scope": "signup",
+          "handling": "portal",
+          "max_characters": 20
+        },
+        {
+          "html_id": "inputForm:mobile_Forgot",
+          "scope": "recovery",
+          "handling": "citizen",
+          "max_characters": 10
+        },
+        {
+          "html_id": "inputForm:mobile_OTP_Forgot",
+          "scope": "recovery",
+          "handling": "portal",
+          "max_characters": 6
+        },
+        {
+          "html_id": "inputForm:reg_password_forgot",
+          "scope": "recovery",
+          "handling": "portal",
+          "max_characters": 20
+        },
+        {
+          "html_id": "inputForm:conf_password_forgot",
+          "scope": "recovery",
+          "handling": "portal",
+          "max_characters": 20
+        }
+      ]
+    },
+    {
+      "id": "tnpdcl_cgrf",
+      "label": "TNPDCL Consumer Grievance Redressal Forum",
+      "scope": "Electricity consumer grievances and forum petitions",
+      "coverage": "channel_documented",
+      "access": "Official public guidance for a separate petition route. Eligibility and fields require review before drafting.",
+      "sources": [
+        "cgrf"
+      ],
+      "unknown": [
+        "Filing eligibility details by case and exact fields",
+        "Required documents and current access gate"
+      ]
+    },
+    {
+      "id": "tnpds",
+      "label": "Tamil Nadu Public Distribution System",
+      "scope": "Ration shop and food distribution grievances",
+      "coverage": "channel_documented",
+      "access": "NFSA lists the TN portal and helpline. Live grievance and feedback fields were not verified in this pass.",
+      "sources": [
+        "tnpds"
+      ],
+      "channels": {
+        "phone": "1967"
+      },
+      "draft_suggestions": [
+        "Fair-price shop and public locality",
+        "Category and problem description"
+      ],
+      "unknown": [
+        "Current accessibility and exact fields of the feedback route",
+        "Post-login complaint form, limits and document requirements"
+      ]
+    },
+    {
+      "id": "tnpcb_olgprs",
+      "label": "Tamil Nadu Pollution Control Board complaints",
+      "scope": "Environmental pollution complaints",
+      "coverage": "channel_documented",
+      "access": "Public helpdesk advertises online route, email and phone. The linked complaint form was not readable during this pass.",
+      "sources": [
+        "tnpcb"
+      ],
+      "channels": {
+        "phone": "18004256750",
+        "email": "complaint@tnpcb.gov.in"
+      },
+      "draft_suggestions": [
+        "Air, water, or noise issue",
+        "Public location and times observed",
+        "Description and optional safe evidence"
+      ],
+      "unknown": [
+        "Exact complaint form and categories",
+        "Login and attachment requirements"
+      ]
+    },
+    {
+      "id": "nugarvor",
+      "label": "Tamil Nadu consumer grievance portal",
+      "scope": "State consumer complaints",
+      "coverage": "discovered",
+      "access": "Official public landing page surfaced; a direct fetch was unreliable.",
+      "sources": [
+        "nugarvor"
+      ],
+      "unknown": [
+        "Current filing form, login, accepted complaint categories",
+        "Evidence requirements and limits"
+      ]
+    },
+    {
+      "id": "tnstc_complaints",
+      "label": "TNSTC complaints and suggestions",
+      "scope": "TNSTC bus service",
+      "coverage": "channel_documented",
+      "access": "Public agency page explicitly offers an email channel.",
+      "sources": [
+        "tnstc"
+      ],
+      "channels": {
+        "email": "commercial@tnstc.org"
+      },
+      "draft_suggestions": [
+        "Bus route or trip, stop and time",
+        "Issue and requested resolution"
+      ],
+      "unknown": [
+        "Structured complaint schema or mandatory email template",
+        "Distinction between regional operators and reserved SETC trips"
+      ]
+    },
+    {
+      "id": "district_petitions",
+      "label": "District petitions",
+      "scope": "Collectorate and district grievance cells",
+      "coverage": "channel_documented",
+      "access": "District pages point to different destinations. Kallakurichi lists GDP and Madurai points to CM Helpline. A mobile number is mentioned in public guidance.",
+      "sources": [
+        "district-petition",
+        "district-redirect"
+      ],
+      "unknown": [
+        "Working submission URL per district",
+        "Exact form and gate on GDP",
+        "Cross-district responsibility and duplicate guidance"
+      ]
+    },
+    {
+      "id": "esevai_services",
+      "label": "e-Sevai service discovery and complaint help",
+      "scope": "Citizen applications and e-Sevai service-access grievances",
+      "coverage": "inventory_only",
+      "access": "Official public service-code lists provide a discovery layer. A service application is a separate workflow from a complaint about that service.",
+      "sources": [
+        "esevai",
+        "esevai-help",
+        "esevai-expanded"
+      ],
+      "unknown": [
+        "Current per-service applicant fields and evidence",
+        "Applicability and freshness of each catalogue entry"
+      ],
+      "published_inventory": "data/civic/tn_esevai_service_index.json"
+    },
+    {
+      "id": "urban_services",
+      "label": "Tamil Nadu urban local body services",
+      "scope": "Urban municipal services beyond GCC",
+      "coverage": "inventory_only",
+      "access": "Official manuals document a citizen portal; the landing page timed out in this audit.",
+      "sources": [
+        "urban"
+      ],
+      "manual": "https://tnurbanepay.tn.gov.in/UserManual-converted.pdf",
+      "unknown": [
+        "Which ULBs share which services",
+        "Public grievance availability, public schemas and exact validation"
+      ]
+    },
+    {
+      "id": "rural_services",
+      "label": "Rural village panchayat services",
+      "scope": "Village panchayat services and complaints",
+      "coverage": "inventory_only",
+      "access": "RDPR documentation describes rural payment services. Local grievance routes and forms need district or local-body evidence.",
+      "sources": [
+        "rural",
+        "lgd"
+      ],
+      "unknown": [
+        "Local body capabilities, current addresses and subject routing",
+        "Which online functions are payments vs grievance submission"
+      ]
+    }
+  ],
+  "districts": [
+    {
+      "name": "Ariyalur",
+      "website": "https://ariyalur.nic.in/"
+    },
+    {
+      "name": "Chengalpattu",
+      "website": "https://chengalpattu.nic.in/"
+    },
+    {
+      "name": "Chennai",
+      "website": "https://chennai.nic.in/"
+    },
+    {
+      "name": "Coimbatore",
+      "website": "https://coimbatore.nic.in/"
+    },
+    {
+      "name": "Cuddalore",
+      "website": "https://cuddalore.nic.in/"
+    },
+    {
+      "name": "Dharmapuri",
+      "website": "https://dharmapuri.nic.in/"
+    },
+    {
+      "name": "Dindigul",
+      "website": "https://dindigul.nic.in/"
+    },
+    {
+      "name": "Erode",
+      "website": "https://erode.nic.in/"
+    },
+    {
+      "name": "Kallakurichi",
+      "website": "https://kallakurichi.nic.in/",
+      "public_grievance_page": "https://kallakurichi.nic.in/service/public-grievance-processing-service/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Kancheepuram",
+      "website": "https://kancheepuram.nic.in/"
+    },
+    {
+      "name": "Karur",
+      "website": "https://karur.nic.in/"
+    },
+    {
+      "name": "Krishnagiri",
+      "website": "https://krishnagiri.nic.in/",
+      "public_grievance_page": "https://krishnagiri.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "CM Helpline"
+    },
+    {
+      "name": "Madurai",
+      "website": "https://madurai.nic.in/",
+      "public_grievance_page": "https://madurai.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "CM Helpline"
+    },
+    {
+      "name": "Mayiladuthurai",
+      "website": "https://mayiladuthurai.nic.in/"
+    },
+    {
+      "name": "Nagapattinam",
+      "website": "https://nagapattinam.nic.in/",
+      "public_grievance_page": "https://nagapattinam.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "GDP status link"
+    },
+    {
+      "name": "Kanyakumari",
+      "website": "https://kanniyakumari.nic.in/",
+      "public_grievance_page": "https://kanniyakumari.nic.in/service/register-a-grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Namakkal",
+      "website": "https://namakkal.nic.in/",
+      "public_grievance_page": "https://namakkal.nic.in/service/grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Perambalur",
+      "website": "https://perambalur.nic.in/"
+    },
+    {
+      "name": "Pudukkottai",
+      "website": "https://pudukkottai.nic.in/"
+    },
+    {
+      "name": "Ramanathapuram",
+      "website": "https://ramanathapuram.nic.in/",
+      "public_grievance_page": "https://ramanathapuram.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "CM Helpline"
+    },
+    {
+      "name": "Ranipet",
+      "website": "https://ranipet.nic.in/"
+    },
+    {
+      "name": "Salem",
+      "website": "https://salem.nic.in/",
+      "public_grievance_page": "https://salem.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Sivaganga",
+      "website": "https://sivaganga.nic.in/"
+    },
+    {
+      "name": "Tenkasi",
+      "website": "https://tenkasi.nic.in/",
+      "public_grievance_page": "https://tenkasi.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Thanjavur",
+      "website": "https://thanjavur.nic.in/",
+      "public_grievance_page": "https://thanjavur.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Theni",
+      "website": "https://theni.nic.in/"
+    },
+    {
+      "name": "Tiruvallur",
+      "website": "https://tiruvallur.nic.in/"
+    },
+    {
+      "name": "Tiruvarur",
+      "website": "https://tiruvarur.nic.in/"
+    },
+    {
+      "name": "Thoothukudi",
+      "website": "https://thoothukudi.nic.in/"
+    },
+    {
+      "name": "Tiruchirappalli",
+      "website": "https://tiruchirappalli.nic.in/",
+      "public_grievance_page": "https://tiruchirappalli.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "CM Helpline"
+    },
+    {
+      "name": "Tirunelveli",
+      "website": "https://tirunelveli.nic.in/"
+    },
+    {
+      "name": "Tirupathur",
+      "website": "https://tirupathur.nic.in/"
+    },
+    {
+      "name": "Tiruppur",
+      "website": "https://tiruppur.nic.in/"
+    },
+    {
+      "name": "Tiruvannamalai",
+      "website": "https://tiruvannamalai.nic.in/"
+    },
+    {
+      "name": "The Nilgiris",
+      "website": "https://nilgiris.nic.in/",
+      "public_grievance_page": "https://nilgiris.nic.in/service/how-to-lodge-a-grievance/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Vellore",
+      "website": "https://vellore.nic.in/"
+    },
+    {
+      "name": "Viluppuram",
+      "website": "https://viluppuram.nic.in/",
+      "public_grievance_page": "https://viluppuram.nic.in/service/public-grievance-processing-service/",
+      "destination_named": "GDP"
+    },
+    {
+      "name": "Virudhunagar",
+      "website": "https://virudhunagar.nic.in/"
+    }
+  ]
+}

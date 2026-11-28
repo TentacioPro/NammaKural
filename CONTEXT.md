@@ -3,9 +3,11 @@
 Updated: `2026-11-27 21:40 IST` · Branch: `main` · Stack: FastAPI (`backend/` + `api/index.py` Vercel `bom1`) + Pluggable Bharat State Packs (`state_packs/`) + 6-State FSM + RapidFuzz + Redis/Memory `SessionStore` + Sarvam `saaras:v4`/`bulbul:v2` & `edge-tts` + Vite/React/TS SPA (`frontend/`: `/`, `/debug`, `/traces`, `/telemetry`)
 
 ## Now
-- **Round 2 Architecture & React SPA Shipped (`main`):** Merged `feat/v4-specs-003-004-memory`, decluttered scratch/zip files, added `backend/session_store.py` (Redis + TTL memory + HMAC tokens), `backend/sarvam_realtime.py`, `backend/portal_bridge.py` (`NK-PREVIEW-*` GCC dry-run validator, zero outbound gov requests), `api/index.py` + `vercel.json` (`bom1`), `RapidFuzz` landmark ranking, and Vite/React/TS frontend (`/` Voice Agent, `/debug`, `/traces`, `/telemetry`).
-- **Verified Main Baseline (`21:40 IST`):** `npm run build` (`frontend/`) -> `0` TS/Vite errors; `pytest -v` -> `83 passed`; `analytics/eval_gate.py` -> `31/31 passed (100%)`; `analytics/analyze_logs.py` -> `0 PII leaks across 1054 records`; `impeccable detect --json index.html` -> `[]`.
-- **Remaining for Final Submit (`30 Nov`):** (1) Set `SARVAM_API_KEY` + `REDIS_URL` in Vercel env & deploy, (2) Live Tamil Nadu handset TTFA & SMS OTP verification, (3) `<=3m` YouTube demo video, (4) 4-section PDF Pitch Deck, (5) Scaler Round 2 submission.
+- Active branch: `voice/streaming-latency-v1`. Read the [28 November cloud handoff](research/civic/2026-11-28/README.md) for source evidence, telemetry, test limits and open decisions.
+- Product direction: Tamil/Tanglish grievance intake and channel-specific draft review. Voice, text and consented GPS share the draft. Mobile OTP requires the configured provider. Filing remains citizen-led.
+- First-pass [public source register](data/civic/tn_public_catalog.json): 16 routes or service families, 24 source pages and 38 district homepages. The [e-Sevai inventory](data/civic/tn_esevai_service_index.json) has 122 published codes. These are discovery and evidence records, not proof of statewide drafting coverage.
+- The public source audit is on demand. The immediate evaluation target is verified usable drafts and citizen effort against general assistants and text-first intake. Controlled tests have not established a winner.
+- Runtime checks before the archive: 134 pytest tests, 33 golden cases, responsive Chromium checks and Compose configuration validation. Raw citizen conversations and credentials are local only.
 
 ## Standing Architectural Decisions
 - **Voice UI Grammar:** Follow `microsoft/voice-agent` minimal Foundry canvas + `TentacioPro/azure-voice-live-agent` `AcousticOrb` state machine; never render multi-field government form walls upfront.

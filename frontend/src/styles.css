@@ -74,6 +74,19 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   display: flex;
   align-items: baseline;
   gap: 10px;
+  min-width: 0;
+}
+
+.nk-brand-title {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.nk-brand-sub {
+  font-size: 0.78rem;
+  color: var(--ink-3);
+  white-space: nowrap;
 }
 
 .nk-brand-dot { display: none; }
@@ -83,6 +96,7 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
+  max-width: 100%;
 }
 
 .nk-tab {
@@ -142,15 +156,23 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
 .nk-open-composer {
   width: 100%;
   display: flex;
-  gap: 8px;
-  padding: 6px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px 5px 8px;
   border-radius: 999px;
   border: 1px solid var(--border-strong);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.nk-open-composer input {
+.nk-open-composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.nk-open-composer input[type="text"],
+.nk-open-composer input:not([type="file"]) {
   flex: 1;
   min-width: 0;
   border: 0;
@@ -158,11 +180,49 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   color: var(--ink-1);
   font: inherit;
   font-size: 0.94rem;
-  padding: 8px 14px;
+  padding: 8px 10px;
 }
 
 .nk-open-composer input:focus-visible {
   outline: none;
+}
+
+.nk-attach-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nk-attach-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.nk-attach-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.nk-attachment-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 0.82rem;
 }
 
 .nk-card {
@@ -199,14 +259,21 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   font: inherit;
   font-size: 0.87rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
-  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%), inset 0 1px 0 rgb(255 255 255 / 12%);
+  transition: transform 0.12s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nk-btn:hover:not(:disabled) { transform: translateY(-1px); border-color: var(--border-strong); background: var(--surface-2); }
+.nk-btn:active:not(:disabled) { transform: translateY(0); }
 .nk-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.nk-btn.primary { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+.nk-btn.primary {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px -2px rgb(30 58 138 / 35%);
+}
 .nk-btn.primary:hover:not(:disabled) { background: #172d6b; border-color: #172d6b; }
 [data-theme="dark"] .nk-btn.primary { color: #080d1a; }
 [data-theme="dark"] .nk-btn.primary:hover:not(:disabled) { background: #93c5fd; border-color: #93c5fd; }
@@ -240,10 +307,11 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
 .nk-voice-strip {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   max-width: 100%;
   overflow-x: auto;
-  padding: 4px 2px;
+  scroll-snap-type: x proximity;
+  padding: 4px 4px;
   scrollbar-width: none;
 }
 
@@ -254,17 +322,20 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   align-items: center;
   gap: 7px;
   min-height: 44px;
-  padding: 6px 13px;
+  padding: 7px 14px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.81rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   white-space: nowrap;
+  scroll-snap-align: center;
   cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .nk-voice-chip:hover { background: var(--surface-2); border-color: var(--border-strong); }
@@ -273,6 +344,7 @@ code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-v
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .nk-voice-dot {
@@ -325,12 +397,18 @@ button.nk-pill {
 }
 
 .nk-chat-stream {
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 360px;
+  gap: 12px;
+  min-height: 240px;
+  max-height: min(56vh, 520px);
   overflow-y: auto;
-  padding: 4px 2px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .nk-bubble {
@@ -411,9 +489,199 @@ button.nk-pill {
   vertical-align: top;
 }
 
+.nk-grievance {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.nk-grievance h2, .nk-telemetry-panel h2 {
+  margin: 0 0 .45rem;
+  font-size: 1.08rem;
+}
+
+.nk-grievance strong span {
+  display: inline-block;
+  margin-inline-start: .35rem;
+}
+
+.nk-grievance dl, .nk-grievance-actions, .nk-telemetry-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .65rem 1.5rem;
+}
+
+.nk-grievance dt {
+  color: var(--ink-2);
+  font-size: .85rem;
+}
+
+.nk-grievance dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.nk-grievance-actions .nk-btn, .nk-telemetry-controls .nk-btn {
+  min-height: 44px;
+}
+
+.nk-grievance-actions p {
+  margin: 0;
+}
+
+.nk-telemetry {
+  display: grid;
+  gap: 1.15rem;
+  min-width: 0;
+}
+
+.nk-telemetry-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .85rem 1.5rem;
+}
+
+.nk-telemetry h1 {
+  margin: 0;
+  font-size: 1.55rem;
+}
+
+.nk-telemetry p {
+  margin: .4rem 0;
+  color: var(--ink-2);
+}
+
+.nk-telemetry-panel {
+  min-width: 0;
+  padding: 1rem;
+}
+
+.nk-telemetry-panel select {
+  max-width: 100%;
+}
+
+.nk-telemetry-table {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-block: .75rem;
+}
+
+.nk-telemetry-table table {
+  font-variant-numeric: tabular-nums;
+  min-width: 36rem;
+}
+
+.nk-signin {
+  width: min(100%, 30rem);
+  margin: 2rem auto 0;
+}
+
+.nk-signin form, .nk-signin label {
+  display: grid;
+  gap: .45rem;
+}
+
+.nk-signin form {
+  gap: 1rem;
+}
+
+.nk-signin .nk-btn {
+  min-height: 44px;
+}
+
+.nk-intake-checks {
+  display: grid;
+  gap: .35rem;
+  padding-inline-start: 1.2rem;
+}
+
+.nk-request-counts, .nk-outcome-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .8rem 2rem;
+}
+
+.nk-outcome-list dd {
+  margin: .2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
 .nk-table th {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-3);
+}
+
+@media (max-width: 640px) {
+  .nk-nav {
+    padding: 10px 14px 4px;
+    gap: 8px;
+  }
+
+  .nk-brand-sub {
+    display: none;
+  }
+
+  .nk-nav-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 2px;
+    width: 100%;
+    padding-bottom: 2px;
+  }
+
+  .nk-nav-links::-webkit-scrollbar { display: none; }
+
+  .nk-tab {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .nk-main {
+    padding: 10px 12px 48px;
+  }
+
+  .nk-open-canvas {
+    gap: 12px;
+  }
+
+  .nk-open-top {
+    gap: 6px;
+  }
+
+  .orb-wrap {
+    width: 204px;
+    height: 204px;
+  }
+
+  .orb-btn {
+    width: 124px;
+    height: 124px;
+  }
+
+  .nk-dock {
+    gap: 8px;
+  }
+
+  .nk-dock .nk-btn {
+    min-height: 46px;
+    font-size: 0.82rem;
+  }
+
+  .nk-chat-stream {
+    min-height: 200px;
+    max-height: 48vh;
+    padding: 12px;
+  }
+
+  .nk-bubble {
+    max-width: 92%;
+  }
 }

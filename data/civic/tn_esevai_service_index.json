@@ -1,0 +1,778 @@
+{
+  "reviewed_on": "2026-11-28",
+  "scope": "Published service-code inventory. Live service availability, charges, eligibility, and application fields were not verified.",
+  "source_code_counts": {
+    "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": 66,
+    "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": 92
+  },
+  "services": [
+    {
+      "code": "ADF-203",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Relief Assistance to marine Fishermen families during Fishing Ban period"
+      }
+    },
+    {
+      "code": "ADF-204",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Special Allowance to marine Fishermen families during Fishing lean period"
+      }
+    },
+    {
+      "code": "CMA-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of Non Tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of Non Tax"
+      }
+    },
+    {
+      "code": "CMA-602",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of Professional Tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of Professional Tax"
+      }
+    },
+    {
+      "code": "CMA-603",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of Property tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of Property tax"
+      }
+    },
+    {
+      "code": "CMA-604",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of Underground Drainage Charge",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of Underground Drainage Charge"
+      }
+    },
+    {
+      "code": "CMA-605",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of Water Charges",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of Water Charges"
+      }
+    },
+    {
+      "code": "CMW-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Water and Sewerage Tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Water and Sewerage Tax"
+      }
+    },
+    {
+      "code": "COC-101",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Printing of Birth Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of Birth Certificate"
+      }
+    },
+    {
+      "code": "COC-102",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Printing of Death Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of Death Certificate"
+      }
+    },
+    {
+      "code": "COC-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Renewal of trade license",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Renewal of trade license"
+      }
+    },
+    {
+      "code": "COC-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of company tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of company tax"
+      }
+    },
+    {
+      "code": "COC-602",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of professional tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of professional tax"
+      }
+    },
+    {
+      "code": "COC-603",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Collection of property tax",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Collection of property tax"
+      }
+    },
+    {
+      "code": "CSC-024",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "PDS Aadhaar Enrollment"
+      }
+    },
+    {
+      "code": "CSD-701",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Consumer complaint other than PDS"
+      }
+    },
+    {
+      "code": "CSD-702",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Consumer complaint related to PDS"
+      }
+    },
+    {
+      "code": "CTP-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Challan Payment"
+      }
+    },
+    {
+      "code": "DBL-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Registration of License under boilers act",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Registration of License under boilers act"
+      }
+    },
+    {
+      "code": "DBL-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Renewal of License under boilers act",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Renewal of License under boilers act"
+      }
+    },
+    {
+      "code": "DBL-403",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for Approval of Manufacturer/Erector of Boilers"
+      }
+    },
+    {
+      "code": "DBL-404",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for Renewal of Manufacturer/Erector of Boilers"
+      }
+    },
+    {
+      "code": "DBL-405",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Steam test for Boilers"
+      }
+    },
+    {
+      "code": "DCA-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for licence to grant or renewal allopathic drugs"
+      }
+    },
+    {
+      "code": "DCA-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for licence to grant or renewal Homoeopathic Medicines"
+      }
+    },
+    {
+      "code": "DCA-403",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for licence to grant or renewal restricted licence (allopathic drugs)"
+      }
+    },
+    {
+      "code": "DCA-404",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for licence to grant or renewal specified in Schedule X drugs"
+      }
+    },
+    {
+      "code": "DCA-405",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application to obtain duplicate license"
+      }
+    },
+    {
+      "code": "DCA-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention for Allopathic Drugs licence Sales"
+      }
+    },
+    {
+      "code": "DCA-602",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention for Restricted licence (allopathic drugs)"
+      }
+    },
+    {
+      "code": "DCA-603",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention for Schedule X drugs"
+      }
+    },
+    {
+      "code": "DCA-604",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention for Allopathic Drugs Manufacture for sale"
+      }
+    },
+    {
+      "code": "DCA-605",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention of Loan License for Manufacture of Drugs for sale Allopathic Drugs"
+      }
+    },
+    {
+      "code": "DCA-606",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Retention of Repackaging License for Allopathic Drugs"
+      }
+    },
+    {
+      "code": "DFR-101",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "NOC for MSB Compliance"
+      }
+    },
+    {
+      "code": "DFR-102",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "NOC for MSB Planning Permission"
+      }
+    },
+    {
+      "code": "DFR-103",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "NOC for Non - MSB Planning Permission"
+      }
+    },
+    {
+      "code": "DFR-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "MSB Fire License Registration and Renewal"
+      }
+    },
+    {
+      "code": "DFR-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Non - MSB Fire License Registration and Renewal"
+      }
+    },
+    {
+      "code": "DPH-101",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "CRS-Death Registration"
+      }
+    },
+    {
+      "code": "DPH-102",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of Birth Certificate"
+      }
+    },
+    {
+      "code": "DPH-103",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of Death Certificate"
+      }
+    },
+    {
+      "code": "EMP-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for profile updation"
+      }
+    },
+    {
+      "code": "EMP-502",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Printing of registration ID",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of registration ID"
+      }
+    },
+    {
+      "code": "EMP-503",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for Registration"
+      }
+    },
+    {
+      "code": "EMP-504",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Application for Renewal",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Application for Renewal"
+      }
+    },
+    {
+      "code": "IFH-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Generation of Challan with Online payment"
+      }
+    },
+    {
+      "code": "IGR-301",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Online appointment for Marriage/ Document registration"
+      }
+    },
+    {
+      "code": "IGR-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issue of Encumbrance Certificate"
+      }
+    },
+    {
+      "code": "IGR-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issue of Certified Copies"
+      }
+    },
+    {
+      "code": "IGR-403",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "EC Download"
+      }
+    },
+    {
+      "code": "IGR-404",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "CC Download"
+      }
+    },
+    {
+      "code": "IGR-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Application through offline Payment"
+      }
+    },
+    {
+      "code": "IGR-701",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Print Challan for offline Payment"
+      }
+    },
+    {
+      "code": "IGR-702",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Printing Acknowledgement for Appointment"
+      }
+    },
+    {
+      "code": "PDS-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Apply for New Card"
+      }
+    },
+    {
+      "code": "PDS-502",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Card Mutation"
+      }
+    },
+    {
+      "code": "PDS-504",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Printing of Smart Card"
+      }
+    },
+    {
+      "code": "REV-101",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Community Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Community Certificate"
+      }
+    },
+    {
+      "code": "REV-102",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Nativity Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Nativity Certificate"
+      }
+    },
+    {
+      "code": "REV-103",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Income Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Income Certificate"
+      }
+    },
+    {
+      "code": "REV-104",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "No Graduate Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "First Graduate Certificate"
+      }
+    },
+    {
+      "code": "REV-105",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Deserted Woman Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Deserted Woman Certificate"
+      }
+    },
+    {
+      "code": "REV-106",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Agricultural Income Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Agricultural Income Certificate"
+      }
+    },
+    {
+      "code": "REV-107",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Family Migration Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Family Migration Certificate"
+      }
+    },
+    {
+      "code": "REV-108",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Unemployment Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Unemployment Certificate"
+      }
+    },
+    {
+      "code": "REV-109",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Widow Certificate",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Widow Certificate"
+      }
+    },
+    {
+      "code": "REV-110",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Print out of Birth Certificate for Revenue Villages"
+      }
+    },
+    {
+      "code": "REV-111",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Certificate for Loss of Educational Records due to Natural Disaster"
+      }
+    },
+    {
+      "code": "REV-112",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Print out of Death Certificate for Revenue Villages"
+      }
+    },
+    {
+      "code": "REV-113",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Inter-caste Marriage certificate"
+      }
+    },
+    {
+      "code": "REV-114",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Legal Heir Certificate"
+      }
+    },
+    {
+      "code": "REV-115",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Other Backward Class (OBC) Certificate"
+      }
+    },
+    {
+      "code": "REV-116",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Residence Certificate"
+      }
+    },
+    {
+      "code": "REV-117",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Small / Marginal Farmer Certificate"
+      }
+    },
+    {
+      "code": "REV-118",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Solvency Certificate"
+      }
+    },
+    {
+      "code": "REV-119",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "No Male Child Certificate"
+      }
+    },
+    {
+      "code": "REV-120",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Unmarried Certificate"
+      }
+    },
+    {
+      "code": "REV-121",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issuance of Jain Religious Minority Certificate"
+      }
+    },
+    {
+      "code": "REV-123",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Destitute Widow Certificate"
+      }
+    },
+    {
+      "code": "REV-125",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Appropriate Official Document for COVID-19 Death",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Appropriate Official Document for COVID-19 Death"
+      }
+    },
+    {
+      "code": "REV-201",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Indira Gandhi National Old Age Pension Scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Indira Gandhi National Old Age Pension Scheme (IGNOPS)"
+      }
+    },
+    {
+      "code": "REV-202",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Indira Gandhi National Widow Pension Scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Destitute Widow Pension Scheme (DWPS)"
+      }
+    },
+    {
+      "code": "REV-203",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Indira Gandhi National Disability Pension Scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Destitute Deserted Woman Pension Scheme (DDWPS)"
+      }
+    },
+    {
+      "code": "REV-204",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Physically Handicapped Pension scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Unmarried Women Pension Scheme (UWPS)"
+      }
+    },
+    {
+      "code": "REV-205",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Destitute Deserted Wives Pension Scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Chief Minister Uzhavar Pathukapu Thittam (CMUPT)"
+      }
+    },
+    {
+      "code": "REV-206",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Unmarried Women Pension Scheme",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Differently Abled Pension Scheme(DAPS)"
+      }
+    },
+    {
+      "code": "REV-207",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Destitute Widow Pension Scheme"
+      }
+    },
+    {
+      "code": "REV-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "License under Pawn Broker Act"
+      }
+    },
+    {
+      "code": "REV-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Money Lender's License"
+      }
+    },
+    {
+      "code": "REV-404",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issuance of Public Building Licence"
+      }
+    },
+    {
+      "code": "REV-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nilam – Full Field Patta Transfer"
+      }
+    },
+    {
+      "code": "REV-502",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nilam – Joint Patta Transfer"
+      }
+    },
+    {
+      "code": "REV-503",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nilam – Subdivision"
+      }
+    },
+    {
+      "code": "REV-701",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Grievance Day Petition"
+      }
+    },
+    {
+      "code": "REV-702",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nilam - Extract of Areg"
+      }
+    },
+    {
+      "code": "REV-703",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nilam – Extract of Chitta"
+      }
+    },
+    {
+      "code": "STA-301",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Booking Appointment for Driving license"
+      }
+    },
+    {
+      "code": "STA-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Learner's licence Online application"
+      }
+    },
+    {
+      "code": "STA-701",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Reprint Leaner's licence Online application"
+      }
+    },
+    {
+      "code": "SWN-201",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Annai Terasa Ammaiyar Ninaivu Orphan Girl Marriage Assistance scheme"
+      }
+    },
+    {
+      "code": "SWN-202",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Girl Child Protection Scheme- I"
+      }
+    },
+    {
+      "code": "SWN-203",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Girl Child Protection Scheme- II"
+      }
+    },
+    {
+      "code": "SWN-204",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Dharmambal Ammaiyar Ninaivu Widow Re-marriage Assistance scheme"
+      }
+    },
+    {
+      "code": "SWN-205",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Dr. Muthulakshmi Reddy Ninaivu Intercaste Marriage Assistance scheme"
+      }
+    },
+    {
+      "code": "SWN-206",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "EVR Maniammaiyar Ninaivu Widow Daughter Marriage Assistance scheme"
+      }
+    },
+    {
+      "code": "SWN-207",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Moovalur Ramamirtham Ammaiyar Ninaivu Marriage Assistance scheme"
+      }
+    },
+    {
+      "code": "TEB-601",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Electricity Bill Payment",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Electricity Bill Payment"
+      }
+    },
+    {
+      "code": "TEI-401",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issuance of Drawing Approval"
+      }
+    },
+    {
+      "code": "TEI-402",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Issuance of Safety Certificate"
+      }
+    },
+    {
+      "code": "TNE-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Tamil Nadu Engineering Admission 2016 B.E. / B.Tech Online Registration",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Tamil Nadu Engineering Admission 2016 B.E. / B.Tech Online Registration"
+      }
+    },
+    {
+      "code": "TNP-701",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "CSR Status"
+      }
+    },
+    {
+      "code": "TNP-702",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "FIR Status"
+      }
+    },
+    {
+      "code": "TNP-703",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Online Complaint Registration"
+      }
+    },
+    {
+      "code": "TNP-704",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Status Viewing"
+      }
+    },
+    {
+      "code": "TNP-705",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Vehicle Search"
+      }
+    },
+    {
+      "code": "TNS-501",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "Farmer Registration Form",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Farmer Registration Form"
+      }
+    },
+    {
+      "code": "WDA-201",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Marriage Assistance"
+      }
+    },
+    {
+      "code": "WDA-202",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Maintenance Support"
+      }
+    },
+    {
+      "code": "WDA-801",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Loan Assistance"
+      }
+    },
+    {
+      "code": "WQA-201",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "Ulema Pension Scheme"
+      }
+    },
+    {
+      "code": "WRD-101",
+      "labels_by_source": {
+        "https://www.tnesevai.tn.gov.in/citizen/EsevaiServiceList.html": "No Objection certificate for ground water extract",
+        "https://www.tnesevai.tn.gov.in/Pages/EsevaiServiceList.aspx": "No Objection certificate for ground water extract"
+      }
+    }
+  ]
+}

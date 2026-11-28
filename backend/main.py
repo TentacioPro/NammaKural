@@ -6,15 +6,22 @@ import json
 import os
 import uuid
 import re
+import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
-from fastapi import FastAPI, File, Response, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi import FastAPI, File, Query, Request, Response, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from backend.agent_workflow import run_workflow_turn, set_workflow_consent, split_tts_clauses
+from backend.agent_workflow import get_grievance_draft, run_workflow_turn, set_workflow_consent, split_tts_clauses
+from backend.call_telemetry import router as call_telemetry_router, turn_context
+from backend.citizen_accounts import (
+    COOKIE, OPERATOR_PATHS, auth_required, current_citizen, operator_allowed,
+    router as citizen_router, scoped_session,
+)
+from backend.civic_channels import CHANNELS
 from backend.llm_bridge import _read_env_value, cloud_llm, generate_civic_turn, probe_local_llm
 from backend.logger import LOG_FILE, clear_logs, get_conversations, get_logs, log_event, observability_status, save_conversation_turn
 from backend.tts_service import VOICE_CATALOG, stream_neural_mp3, synthesize_neural_mp3
@@ -32,6 +39,7 @@ from backend.session_store import STORE
 from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION
 from backend.state import (
     check_cooldown,
+    has_dpdp_consent,
     issue_mobile_otp,
     list_request_history,
     list_telemetry_spans,
@@ -49,6 +57,35 @@ app = FastAPI(
     version="0.2.0",
     description="Zero-key offline-ready Tamil/Tanglish Voice Agent, GIS resolver, Cooldown & HITL router.",
 )
+app.include_router(call_telemetry_router)
+app.include_router(citizen_router)
+
+
+@app.middleware("http")
+async def correlate_voice_turn(request: Request, call_next):
+    path = request.url.path
+    if auth_required() and path.startswith("/api/") and not path.startswith("/api/auth/") and path != "/api/health":
+        if not current_citizen(request):
+            return JSONResponse({"detail": "Sign in to continue."}, status_code=401)
+        if path.startswith("/api/otp/"):
+            return JSONResponse({"detail": "The signed-in session already verified your mobile."}, status_code=403)
+        if path in {"/api/conversations", "/api/logs"}:
+            return JSONResponse({"detail": "Use the redacted turn trace view."}, status_code=404)
+        if ((path.startswith(OPERATOR_PATHS) and path != "/api/telemetry/browser") or path.startswith("/api/ops/")):
+            if not operator_allowed(request):
+                return JSONResponse({"detail": "Operator access required."}, status_code=403)
+    if request.url.path not in {"/api/stt", "/api/workflow/turn", "/api/tts", "/api/tts/stream", "/api/hitl/seal"}:
+        return await call_next(request)
+    try:
+        call_id = uuid.UUID(request.headers.get("X-NK-Call-ID", ""))
+        turn_id = uuid.UUID(request.headers.get("X-NK-Turn-ID", ""))
+    except ValueError:
+        return await call_next(request)
+    token = turn_context.set((str(call_id), str(turn_id)))
+    try:
+        return await call_next(request)
+    finally:
+        turn_context.reset(token)
 
 app.mount("/assets", StaticFiles(directory=str(ROOT_DIR / "assets")), name="assets")
 _spa_assets = ROOT_DIR / "frontend" / "dist" / "spa-assets"
@@ -86,6 +123,7 @@ class HitlSealRequest(BaseModel):
     spoken_phrase: str = ""
     modal_ok: bool = False
     otp_session_id: str = ""
+    session_id: str | None = Field(default=None, min_length=1, max_length=128)
     ward: str
     service_id: str
     urgency_tier: str = "STANDARD"
@@ -103,14 +141,19 @@ class TelemetryRequest(BaseModel):
 
 
 @app.get("/")
+@app.get("/channels")
+@app.get("/requests")
 @app.get("/debug")
 @app.get("/traces")
 @app.get("/telemetry")
-def serve_home() -> FileResponse:
+def serve_home() -> Response:
     """Serve the built React SPA if present, else fall back to index.html."""
     spa_index = ROOT_DIR / "frontend" / "dist" / "index.html"
-    if spa_index.is_file() and os.getenv("NK_LEGACY_INDEX", "") != "1":
+    if spa_index.is_file() and (auth_required() or os.getenv("NK_LEGACY_INDEX", "") != "1"):
         return FileResponse(str(spa_index))
+    if auth_required():
+        return HTMLResponse("<h1>Sign-in app unavailable</h1><p>Build the React frontend and restart the service.</p>",
+                            status_code=503)
     return FileResponse(str(ROOT_DIR / "index.html"))
 
 
@@ -207,6 +250,9 @@ def process_agent_turn(req: TurnRequest) -> dict[str, Any]:
 
 @app.websocket("/ws/voice")
 async def voice_live_ws(websocket: WebSocket) -> None:
+    if auth_required() and not current_citizen(websocket):
+        await websocket.close(code=4401)
+        return
     """Real-time bidirectional JSON stream for live interim transcripts and instant state transitions."""
     await websocket.accept()
     try:
@@ -279,22 +325,45 @@ def check_otp(req: OtpVerifyRequest) -> dict[str, Any]:
 
 
 @app.post("/api/hitl/seal")
-def seal_hitl(req: HitlSealRequest) -> dict[str, Any]:
+def seal_hitl(req: HitlSealRequest, request: Request) -> dict[str, Any]:
     """Enforce Dual-Confirm Tamil HITL seal & 24h cooldown before unlocking dispatch."""
+    signed_in = auth_required() and bool(current_citizen(request))
+    session_id = scoped_session(request, req.session_id)
+    if signed_in and not session_id:
+        return {"approved": False, "reason": "A current grievance draft is required."}
+    if session_id:
+        draft = get_grievance_draft(session_id)
+        if not draft or draft["status"] != "needs_confirmation":
+            return {"approved": False, "reason": "Complete the current complaint details before confirming."}
+        expected = (
+            draft["location"]["ward"], draft["intent"], draft["urgency_tier"], str(draft["revision"]),
+        )
+        if (not has_dpdp_consent(session_id) or not req.turn_id or not expected[0] or not expected[1]
+                or expected != (req.ward, req.service_id, req.urgency_tier, req.complaint_revision)):
+            return {"approved": False, "reason": "Review the current verified complaint before confirming."}
+        if signed_in:
+            proof = f"{current_citizen(request)}:{req.turn_id}"
+            if (not STORE.get_json(f"spoken-confirm:{proof}")
+                    or not STORE.consume_once(f"spoken-confirm-used:{proof}", ttl_sec=120)):
+                return {"approved": False, "reason": "Say Confirm through the microphone. This step requires server transcription."}
     res = seal_verified_turn(
-        otp_session_id=req.otp_session_id,
+        otp_session_id=request.cookies[COOKIE] if signed_in else req.otp_session_id,
         mode=req.mode,
         spoken_phrase=req.spoken_phrase,
         modal_ok=req.modal_ok,
         ward=req.ward,
         service_id=req.service_id,
         urgency_tier=req.urgency_tier,
-        complaint_revision=req.complaint_revision,
+        complaint_revision=f"{session_id}:{req.complaint_revision}" if session_id else req.complaint_revision,
         turn_id=req.turn_id,
+        record_ticket=req.session_id is None,
     )
+    if session_id:
+        res = {**res, "identity_mode": "mobile_otp" if signed_in else "demo",
+               "handoff_authorized": signed_in and bool(res.get("approved"))}
     record_telemetry_span(
         {
-            "phase": "approved_dispatch" if res.get("approved") else "hitl_blocked",
+            "phase": ("review_sealed" if session_id else "approved_dispatch") if res.get("approved") else "hitl_blocked",
             "urgency_tier": req.urgency_tier,
             "ward": req.ward,
             "note": res.get("reason", "sealed"),
@@ -323,8 +392,10 @@ class WorkflowTurnRequest(BaseModel):
     lang: str = "tanglish"
     llm_mode: str = "auto"
     history: list[dict[str, str]] = Field(default_factory=list)
-    gps_lat: float | None = None
-    gps_lon: float | None = None
+    gps_lat: float | None = Field(default=None, ge=-90, le=90)
+    gps_lon: float | None = Field(default=None, ge=-180, le=180)
+    gps_accuracy_m: float | None = Field(default=None, ge=0, le=100_000)
+    input_mode: Literal["voice", "text", "gps"] | None = None
     otp_verified: bool = False
     dpdp_consented: bool = True
     assistant_speaking: bool = False
@@ -349,8 +420,9 @@ def list_state_packs() -> dict[str, Any]:
 
 
 @app.post("/api/workflow/turn")
-def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
+def run_workflow(req: WorkflowTurnRequest, request: Request) -> dict[str, Any]:
     """Run stateful 6-state Tool-Calling Workflow FSM with Pre-LLM Aadhaar/PII guardrails."""
+    started = time.perf_counter()
     res = run_workflow_turn(
         utterance=req.utterance,
         combined_text=req.combined_text,
@@ -360,12 +432,22 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         history=req.history,
         gps_lat=req.gps_lat,
         gps_lon=req.gps_lon,
+        gps_accuracy_m=req.gps_accuracy_m,
         otp_verified=req.otp_verified,
         dpdp_consented=req.dpdp_consented,
         assistant_speaking=req.assistant_speaking,
         persona_name=req.persona_name,
-        session_id=req.session_id,
+        session_id=scoped_session(request, req.session_id),
+        grievance_only=auth_required(),
     )
+    if turn_context.get():
+        draft = res.get("grievance_draft") or {}
+        log_event("call.workflow", data={"latency_ms": round((time.perf_counter() - started) * 1000, 1),
+                                         "modality": req.input_mode, "fsm_state": res.get("fsm_state"),
+                                         "intent": draft.get("intent"), "destination": (draft.get("destination") or {}).get("id"),
+                                         "draft_status": draft.get("status"),
+                                         "checks_remaining": sum(not c["complete"] for c in (draft.get("checklist") or {}).get("checks", [])),
+                                         "location_source": (draft.get("location") or {}).get("source")})
     record_telemetry_span(
         {
             "phase": res.get("fsm_state", "unknown"),
@@ -375,7 +457,7 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
         }
     )
     ward_lbl = res.get("analysis", {}).get("landmark", {}).get("ward", "")
-    if req.dpdp_consented and not res.get("blocked_reason") and res.get("fsm_state") != "LIFE_SAFETY":
+    if req.utterance.strip() and req.dpdp_consented and not res.get("blocked_reason") and res.get("fsm_state") != "LIFE_SAFETY":
         save_conversation_turn("browser", "user", scrub_pii_and_aadhaar(req.utterance)["clean_text"],
                                fsm_state=res.get("fsm_state", ""), ward=ward_lbl, persona=scrub_pii_and_aadhaar(req.persona_name)["clean_text"])
         save_conversation_turn("browser", "agent", res.get("reply", ""),
@@ -384,9 +466,36 @@ def run_workflow(req: WorkflowTurnRequest) -> dict[str, Any]:
 
 
 @app.post("/api/dpdp/consent")
-def update_dpdp_consent(req: DpdpConsentRequest) -> dict[str, Any]:
+def update_dpdp_consent(req: DpdpConsentRequest, request: Request) -> dict[str, Any]:
     """Record DPDP Act 2023 explicit notice consent or withdrawal."""
-    return set_workflow_consent(req.session_id, req.consented)
+    return set_workflow_consent(scoped_session(request, req.session_id), req.consented)
+
+
+@app.get("/api/workflow/draft")
+def read_grievance_draft(request: Request, session_id: str = Query(min_length=1, max_length=128)) -> JSONResponse:
+    return JSONResponse({"grievance_draft": get_grievance_draft(scoped_session(request, session_id))}, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/civic/channels")
+def public_channels() -> dict:
+    return {"channels": CHANNELS}
+
+
+@app.post("/api/ops/evaluate")
+def evaluate_civic_workflow() -> dict:
+    from backend.call_telemetry import BUILD_SHA
+
+    try:
+        from analytics.eval_gate import load_cases, replay_case
+        cases = load_cases(ROOT_DIR / "analytics" / "golden_cases.jsonl")
+    except (ImportError, OSError):
+        return {"available": False}
+    start = time.perf_counter()
+    failures = [{"id": case["id"], "issues": errors}
+                for case in cases if (errors := replay_case(case))]
+    return {"available": True, "build": BUILD_SHA, "total": len(cases),
+            "pass_count": len(cases) - len(failures), "failures": failures,
+            "elapsed_ms": round((time.perf_counter() - start) * 1000)}
 
 
 @app.get("/api/rtc/config")
@@ -661,7 +770,7 @@ def telemetry_summary(version: str = "all") -> dict[str, Any]:
 
 
 @app.post("/api/stt")
-async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-IN") -> JSONResponse:
+async def transcribe_audio_clip(request: Request, audio: UploadFile = File(...), lang: str = "ta-IN") -> JSONResponse:
     """Optional backend STT endpoint routing recorded WebM/WAV clips to Sarvam Saaras or local whisper-server."""
     raw = await audio.read()
     size_kb = round(len(raw) / 1024, 1)
@@ -687,6 +796,7 @@ async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-I
             f"Content-Type: {mime}\r\n\r\n"
         ).encode("utf-8") + raw + f"\r\n--{boundary}--\r\n".encode("utf-8")
         try:
+            started = time.perf_counter()
             req = urllib.request.Request(
                 "https://api.sarvam.ai/speech-to-text",
                 data=body,
@@ -698,7 +808,15 @@ async def transcribe_audio_clip(audio: UploadFile = File(...), lang: str = "ta-I
             with urllib.request.urlopen(req, timeout=10) as resp:
                 parsed = json.loads(resp.read().decode("utf-8"))
                 txt = str(parsed.get("transcript", "")).strip()
-                log_event("stt.sarvam_saaras", "Transcribed audio clip", {"size_kb": size_kb, "lang": lang})
+                if auth_required() and re.fullmatch(r"(?:confirm|உறுதி|urudhi|uruthi)[\s.!?,]*", txt, re.I):
+                    turn = turn_context.get()
+                    citizen = current_citizen(request)
+                    if citizen and turn:
+                        STORE.set_json(f"spoken-confirm:{citizen}:{turn[1]}", {"heard": True}, ttl_sec=90)
+                log_event("stt.sarvam_saaras", "Transcribed audio clip", {
+                    "size_kb": size_kb, "lang": lang,
+                    "latency_ms": round((time.perf_counter() - started) * 1000, 1),
+                })
                 return JSONResponse({"ok": True, "provider": "sarvam-saaras", "transcript": txt})
         except Exception as exc:
             log_event("stt.sarvam_error", type(exc).__name__, {"size_kb": size_kb}, level="WARN")

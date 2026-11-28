@@ -137,6 +137,17 @@ def chat_message(backend: dict[str, str], messages: list[dict[str, Any]], **opti
     req = urllib.request.Request(backend["url"], data=payload, headers=headers)
     with urllib.request.urlopen(req, timeout=5.0) as resp:
         data = json.loads(resp.read().decode("utf-8"))
+        usage = data.get("usage")
+        if isinstance(usage, dict):
+            from backend.call_telemetry import turn_context
+
+            if turn_context.get():
+                detail = usage.get("prompt_tokens_details")
+                fields = {key: usage.get(key) for key in ("prompt_tokens", "completion_tokens")}
+                if isinstance(detail, dict):
+                    fields["cached_tokens"] = detail.get("cached_tokens")
+                log_event("llm.usage", data={key: value for key, value in fields.items()
+                                           if type(value) is int and value >= 0})
         return data["choices"][0]["message"]
 
 

@@ -214,7 +214,7 @@ def _record_sealed_ticket(ticket_id: str, ward: str, service_id: str, urgency_ti
         "ticket_id": ticket_id,
         "ward": ward,
         "service_id": service_id,
-        "agency": "Dispatched via NammaKural",
+        "agency": "NammaKural local review",
         "summary": f"{ward} ({urgency_tier}) {label}",
         "hours_ago": 0,
         "status": "HITL_SEALED",
@@ -233,6 +233,7 @@ def verify_hitl_seal(
     service_id: str,
     urgency_tier: str,
     distinct_turns: int = 0,
+    record_ticket: bool = True,
 ) -> dict[str, Any]:
     """Enforce mandatory anti-spam + Dual-Confirm Tamil HITL Gate before unlocking dispatch tools (I2)."""
     cooldown = check_cooldown(ward, service_id, urgency_tier)
@@ -257,7 +258,8 @@ def verify_hitl_seal(
     if mode == "voice_double":
         if distinct_turns >= 2 and confirm_hits >= 1:
             ticket_id = f"#NK-{uuid.uuid4().hex[:5].upper()}"
-            _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "voice-sealed twice")
+            if record_ticket:
+                _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "voice-sealed twice")
             return {"approved": True, "seal_method": "voice_double_affirmation", "ticket_id": ticket_id}
         return {
             "approved": False,
@@ -267,7 +269,8 @@ def verify_hitl_seal(
     if mode == "modal_plus_voice":
         if modal_ok and confirm_hits >= 1:
             ticket_id = f"#NK-{uuid.uuid4().hex[:5].upper()}"
-            _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "modal+voice sealed")
+            if record_ticket:
+                _record_sealed_ticket(ticket_id, ward, service_id, urgency_tier, "modal+voice sealed")
             return {"approved": True, "seal_method": "modal_ok_plus_native_voice", "ticket_id": ticket_id}
         return {
             "approved": False,
@@ -285,6 +288,7 @@ def seal_verified_turn(
     ward: str, service_id: str, urgency_tier: str,
     complaint_revision: str = "",
     turn_id: str = "",
+    record_ticket: bool = True,
 ) -> dict[str, Any]:
     """Track each confirmation server-side against the verified OTP and complaint."""
     with _HITL_LOCK:
@@ -303,7 +307,7 @@ def seal_verified_turn(
         previous = session.pop("pending_confirmation", None)
         distinct_turns = 1 + int(list(previous) == complaint if previous else False)
         result = verify_hitl_seal(mode, spoken_phrase, modal_ok, True,
-                                  ward, service_id, urgency_tier, distinct_turns)
+                                  ward, service_id, urgency_tier, distinct_turns, record_ticket)
         if mode == "voice_double" and distinct_turns == 1 and "cooldown" not in result:
             session["pending_confirmation"] = complaint
             _OTP_SESSIONS[otp_session_id] = session

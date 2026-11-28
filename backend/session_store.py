@@ -105,6 +105,12 @@ class SessionStore:
             self._mem[key] = ("1", time.time() + ttl_sec if ttl_sec > 0 else 0.0)
             return True
 
+    def delete(self, key: str) -> None:
+        if self._redis is not None:
+            self._redis.delete(key)
+        with self._lock:
+            self._mem.pop(key, None)
+
 
 STORE = SessionStore()
 

@@ -11,6 +11,7 @@ from collections import deque
 from pathlib import Path
 from typing import Any
 
+from backend.call_telemetry import BUILD_HAS_LOCAL_CHANGES, BUILD_SHA, turn_context
 from backend.state import scrub_pii_and_aadhaar
 from backend.telemetry import AGENT_VERSION, TELEMETRY_SCHEMA_VERSION, emit_otlp_span
 
@@ -85,6 +86,10 @@ def log_event(
         "message": safe_msg,
         "data": safe_data,
     }
+    context = turn_context.get()
+    if context:
+        entry.update(call_id=context[0], turn_id=context[1], build_sha=BUILD_SHA,
+                     build_has_local_changes=BUILD_HAS_LOCAL_CHANGES)
     with _LOCK:
         _RING.append(entry)
         try:

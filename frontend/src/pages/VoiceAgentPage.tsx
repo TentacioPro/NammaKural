@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Volume2, ShieldCheck, Send, CheckCircle2, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mic, MicOff, Volume2, ShieldCheck, Send, MapPin, RotateCcw, ChevronLeft, ChevronRight, Paperclip, X, FileText, Image as ImageIcon } from "lucide-react";
 import { RiverOrb, type OrbState, type OrbVoiceTheme } from "../components/RiverOrb";
 import { LiveWaveform } from "../components/LiveWaveform";
+import { recordBrowserMeasurement, turnHeaders, type TurnMeasurement } from "../callTelemetry";
 
 interface HealthInfo {
   status: string;
@@ -35,11 +36,28 @@ interface TurnResponse {
   slots?: Record<string, unknown>;
   cooldown?: Record<string, unknown>;
   preview_packet?: PreviewPacket | null;
+  grievance_draft?: GrievanceDraft | null;
   reply?: string;
   display_text?: string;
   tts_text?: string;
   clauses?: string[];
   tool_trace?: Array<Record<string, unknown>>;
+}
+
+interface GrievanceDraft {
+  status: "needs_location" | "needs_details" | "needs_confirmation" | "cooldown";
+  intent: string;
+  label: string;
+  label_ta: string;
+  summary: string;
+  revision: number;
+  urgency_tier: string;
+  duration_days: number | null;
+  impact: string | null;
+  next_field: "duration" | "impact" | null;
+  checklist: { checks: { label: string; complete: boolean }[]; email?: string; whatsapp?: string; web: string; citizen_enters: string[] };
+  location: { landmark: string; ward: string; area: string; street: string; source?: string };
+  destination: { id: string; name: string; url: string; helpline: string };
 }
 
 interface PreviewPacket {
@@ -52,6 +70,14 @@ interface PreviewPacket {
   notice_en: string;
   notice_ta: string;
   fields: Record<string, unknown>;
+}
+
+interface AttachmentInfo {
+  filename: string;
+  size_kb: number;
+  within_gcc_1mb_limit: boolean;
+  type: "document_pdf" | "street_photo" | string;
+  extracted_ticket: string | null;
 }
 
 const VOICE_THEMES: Record<string, OrbVoiceTheme> = {
@@ -82,10 +108,13 @@ const SAMPLE_PROMPTS = [
   "உறுதி / Confirm",
 ];
 
-export default function VoiceAgentPage() {
+const SESSION_KEY = "nammakural.complaint";
+const CONSENT_KEY = "nammakural.consent";
+
+export default function VoiceAgentPage({ signedIn = false }: { signedIn?: boolean }) {
   const [health, setHealth] = useState<HealthInfo | null>(null);
-  const [consentGranted, setConsentGranted] = useState<boolean>(true);
-  const [sessionId, setSessionId] = useState<string>(() => `nk-${Date.now().toString(36)}`);
+  const [consentGranted, setConsentGranted] = useState(() => sessionStorage.getItem(CONSENT_KEY) !== "denied");
+  const [sessionId, setSessionId] = useState(() => sessionStorage.getItem(SESSION_KEY) || crypto.randomUUID());
   const [orbState, setOrbState] = useState<OrbState>("idle");
   const [callActive, setCallActive] = useState<boolean>(false);
   const [muted, setMuted] = useState<boolean>(false);
@@ -98,19 +127,28 @@ export default function VoiceAgentPage() {
   ]);
   const [selectedVoice, setSelectedVoice] = useState<string>("auto");
   const [lastTurn, setLastTurn] = useState<TurnResponse | null>(null);
+  const [draft, setDraft] = useState<GrievanceDraft | null>(null);
+  const [locationPending, setLocationPending] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [locationStatus, setLocationStatus] = useState("");
   const [messages, setMessages] = useState<Array<{ role: "user" | "agent"; text: string; meta?: string }>>([]);
   const [clientTtfaMs, setClientTtfaMs] = useState<number | null>(null);
 
   // OTP + HITL state
-  const [phoneMasked, setPhoneMasked] = useState<string>("98XXXXXX10");
+  const [phoneMasked, setPhoneMasked] = useState<string>("");
   const [otpSessionId, setOtpSessionId] = useState<string>("");
   const [otpDemoHint, setOtpDemoHint] = useState<string>("");
   const [otpCode, setOtpCode] = useState<string>("");
   const [otpVerified, setOtpVerified] = useState<boolean>(false);
   const [modalOk, setModalOk] = useState<boolean>(false);
   const [hitlApproved, setHitlApproved] = useState<boolean>(false);
+  const [handoffAuthorized, setHandoffAuthorized] = useState(false);
   const [hitlStatus, setHitlStatus] = useState<string>("");
   const [previewPacket, setPreviewPacket] = useState<PreviewPacket | null>(null);
+  const [attachment, setAttachment] = useState<AttachmentInfo | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState<boolean>(false);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
@@ -121,6 +159,14 @@ export default function VoiceAgentPage() {
   const callActiveRef = useRef<boolean>(false);
   const mutedRef = useRef<boolean>(false);
   const playbackGenRef = useRef<number>(0);
+  const captureGenRef = useRef(0);
+  const responseGenRef = useRef(0);
+  const pendingTurnRef = useRef<number | null>(null);
+  const localCallId = useRef("");
+  const callStartedAt = useRef<number | null>(null);
+  const complaintSessionRef = useRef(sessionId);
+  const consentRef = useRef(consentGranted);
+  const submitTurnRef = useRef(submitTurn);
   const messagesRef = useRef<Array<{ role: "user" | "agent"; text: string; meta?: string }>>([]);
 
   useEffect(() => {
@@ -152,6 +198,30 @@ export default function VoiceAgentPage() {
       .catch(() => null);
   }, []);
 
+  useEffect(() => {
+    sessionStorage.setItem(SESSION_KEY, sessionId);
+    if (!consentGranted) return;
+    const abort = new AbortController();
+    const generation = responseGenRef.current;
+    void fetch(`/api/workflow/draft?session_id=${encodeURIComponent(sessionId)}`, { signal: abort.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (!abort.signal.aborted && responseGenRef.current === generation && data?.grievance_draft) {
+          setDraft(data.grievance_draft);
+        }
+      })
+      .catch(() => undefined);
+    return () => abort.abort();
+  }, [sessionId, consentGranted]);
+
+  useEffect(() => {
+    window.addEventListener("pagehide", endCall);
+    return () => {
+      window.removeEventListener("pagehide", endCall);
+      endCall();
+    };
+  }, []);
+
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -159,7 +229,12 @@ export default function VoiceAgentPage() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    submitTurnRef.current = submitTurn;
+  });
+
   function stopMicCapture() {
+    captureGenRef.current += 1;
     if (vadTimerRef.current !== null) {
       window.clearInterval(vadTimerRef.current);
       vadTimerRef.current = null;
@@ -204,6 +279,12 @@ export default function VoiceAgentPage() {
   }
 
   function endCall() {
+    if (callStartedAt.current !== null) {
+      recordBrowserMeasurement("call.ended", localCallId.current, undefined, {
+        duration_ms: Math.round(performance.now() - callStartedAt.current),
+      });
+      callStartedAt.current = null;
+    }
     callActiveRef.current = false;
     setCallActive(false);
     stopMicCapture();
@@ -211,7 +292,12 @@ export default function VoiceAgentPage() {
     setOrbState("idle");
   }
 
-  async function speakText(text: string, turnStartMs?: number, cachedAssetUrl?: string) {
+  function newTurn(modality: TurnMeasurement["modality"]): TurnMeasurement {
+    localCallId.current ||= crypto.randomUUID();
+    return { callId: localCallId.current, turnId: crypto.randomUUID(), modality };
+  }
+
+  async function speakText(text: string, turn?: TurnMeasurement, cachedAssetUrl?: string) {
     if (!text.trim() && !cachedAssetUrl) {
       if (callActiveRef.current) startListeningTurn();
       return;
@@ -222,6 +308,24 @@ export default function VoiceAgentPage() {
     ttsAbortRef.current = ctrl;
     setSpeaking(true);
     setOrbState("talking");
+    let measuredPlayback = false;
+    const onPlayback = (audio: HTMLAudioElement) => {
+      if (myGen !== playbackGenRef.current) {
+        audio.pause();
+        return;
+      }
+      if (!turn || turn.submittedAt === undefined || measuredPlayback) return;
+      measuredPlayback = true;
+      const now = performance.now();
+      const postTranscript = Math.round(now - turn.submittedAt);
+      setClientTtfaMs(postTranscript);
+      recordBrowserMeasurement("call.playback", turn.callId, turn, {
+        post_transcript_ms: postTranscript,
+        speech_to_playback_ms: turn.speechEndedAt === undefined ? undefined : Math.round(now - turn.speechEndedAt),
+        endpoint_wait_ms: turn.endpointWaitMs,
+        browser_stt_ms: turn.browserSttMs,
+      });
+    };
 
     const resumeIfCallActive = () => {
       if (myGen !== playbackGenRef.current) return;
@@ -244,7 +348,7 @@ export default function VoiceAgentPage() {
         if (canMse) {
           const res = await fetch("/api/tts/stream", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...turnHeaders(turn) },
             body: JSON.stringify({ text, voice: selectedVoice, lang: "ta-IN" }),
             signal: ctrl.signal,
           });
@@ -254,21 +358,7 @@ export default function VoiceAgentPage() {
             const msUrl = URL.createObjectURL(ms);
             const audio = new Audio(msUrl);
             audioRef.current = audio;
-            audio.onplay = () => {
-              if (myGen !== playbackGenRef.current) {
-                audio.pause();
-                return;
-              }
-              if (turnStartMs) {
-                const ttfa = Math.round(performance.now() - turnStartMs);
-                setClientTtfaMs(ttfa);
-                fetch("/api/client-log", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ stage: "client.ttfa", message: "Browser streaming audio started", data: { latency_ms: ttfa, streamed: true } }),
-                }).catch(() => null);
-              }
-            };
+            audio.onplaying = () => onPlayback(audio);
             audio.onended = () => {
               URL.revokeObjectURL(msUrl);
               resumeIfCallActive();
@@ -315,7 +405,7 @@ export default function VoiceAgentPage() {
 
         const res = await fetch("/api/tts", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...turnHeaders(turn) },
           body: JSON.stringify({ text, voice: selectedVoice, lang: "ta-IN" }),
           signal: ctrl.signal,
         });
@@ -332,25 +422,7 @@ export default function VoiceAgentPage() {
 
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onplay = () => {
-        if (myGen !== playbackGenRef.current) {
-          audio.pause();
-          return;
-        }
-        if (turnStartMs) {
-          const ttfa = Math.round(performance.now() - turnStartMs);
-          setClientTtfaMs(ttfa);
-          fetch("/api/client-log", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              stage: "client.ttfa",
-              message: "Browser audio playback started",
-              data: { latency_ms: ttfa, cached: Boolean(cachedAssetUrl) },
-            }),
-          }).catch(() => null);
-        }
-      };
+      audio.onplaying = () => onPlayback(audio);
       audio.onended = () => {
         if (revokeAfter) URL.revokeObjectURL(url);
         resumeIfCallActive();
@@ -365,12 +437,13 @@ export default function VoiceAgentPage() {
     }
   }
 
-  async function submitTurn(rawText: string) {
+  async function submitTurn(rawText: string, turn = newTurn("text"), position?: GeolocationCoordinates) {
     const trimmed = rawText.trim();
-    if (!trimmed) {
+    if ((!trimmed && !position) || !consentRef.current) {
       if (callActiveRef.current) startListeningTurn();
       return;
     }
+    if (pendingTurnRef.current !== null) return;
 
     // Backchannel immunity during agent speech
     if (speaking && BACKCHANNEL_RE.test(trimmed)) {
@@ -389,29 +462,66 @@ export default function VoiceAgentPage() {
       stopPlayback();
     }
 
-    const t0 = performance.now();
+    stopMicCapture();
+    const requestGeneration = ++responseGenRef.current;
+    pendingTurnRef.current = requestGeneration;
+    setSubmitting(true);
+    const finishRequest = () => {
+      if (pendingTurnRef.current === requestGeneration) {
+        pendingTurnRef.current = null;
+        setSubmitting(false);
+      }
+    };
+    turn.submittedAt = performance.now();
     setOrbState("thinking");
+    if (turn.modality === "voice" && /^(?:confirm|உறுதி|urudhi|uruthi)[\s.!?,]*$/i.test(trimmed) && draft?.status === "needs_confirmation") {
+      try {
+        await handleHitlSeal(trimmed, turn);
+      } finally {
+        finishRequest();
+      }
+      return;
+    }
     const recentHistory = messagesRef.current.slice(-6).map((m) => ({ role: m.role, text: m.text }));
-    setMessages((m) => [...m, { role: "user", text: trimmed }]);
-    setInputText("");
+    if (trimmed) setMessages((m) => [...m, { role: "user", text: trimmed }]);
+    if (turn.modality === "text") setInputText("");
 
     try {
       const res = await fetch("/api/workflow/turn", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...turnHeaders(turn) },
         body: JSON.stringify({
           utterance: trimmed,
           session_id: sessionId,
           state_code: "tn",
+          input_mode: turn.modality,
           dpdp_consented: consentGranted,
           otp_verified: otpVerified,
           history: recentHistory,
+          gps_lat: position?.latitude,
+          gps_lon: position?.longitude,
+          gps_accuracy_m: position ? Math.min(position.accuracy, 100_000) : undefined,
         }),
       });
+      if (!res.ok) throw new Error("The service could not process this turn.");
       const data: TurnResponse = await res.json();
+      if (requestGeneration !== responseGenRef.current) return;
       setLastTurn(data);
-      if (data.preview_packet) {
-        setPreviewPacket(data.preview_packet);
+      if (data.grievance_draft) {
+        const next = data.grievance_draft;
+        if (draft && next.revision !== draft.revision) {
+          setModalOk(false);
+          setHitlApproved(false);
+          setHandoffAuthorized(false);
+          setHitlStatus("");
+        }
+        setDraft(next);
+        setPreviewPacket(next.destination.id === "gcc_pgrs" ? data.preview_packet ?? null : null);
+        if (position) {
+          setLocationStatus(next.location.source === "gps" && next.location.ward
+            ? "Location matched to a ward in the civic directory."
+            : "GPS did not verify the reported location. Type or say a nearby public landmark.");
+        }
       }
       const replyText = data.display_text || data.reply || "";
       setMessages((m) => [
@@ -428,11 +538,43 @@ export default function VoiceAgentPage() {
         setOrbState("urgent");
       }
       const speechTarget = data.tts_text || replyText;
-      await speakText(speechTarget, t0);
+      await speakText(speechTarget, turn);
     } catch (err) {
+      if (requestGeneration !== responseGenRef.current) return;
       setOrbState("idle");
       setMessages((m) => [...m, { role: "agent", text: `Error: ${String(err)}` }]);
+      if (position) setLocationStatus("Could not check GPS. Type or say the public landmark.");
+      if (callActiveRef.current) startListeningTurn();
+    } finally {
+      finishRequest();
     }
+  }
+
+  function requestLocation() {
+    if (!consentGranted || !draft || locationPending || submitting) return;
+    if (!navigator.geolocation) {
+      setLocationStatus("Location is unavailable in this browser. Type or say a landmark.");
+      return;
+    }
+    const activeSession = complaintSessionRef.current;
+    setLocationPending(true);
+    setLocationStatus("Waiting for your location permission…");
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      if (activeSession !== complaintSessionRef.current || !consentRef.current) return;
+      try {
+        if (pendingTurnRef.current !== null) {
+          setLocationStatus("Finish the current turn, then try sharing your location again.");
+          return;
+        }
+        await submitTurnRef.current("", newTurn("gps"), coords);
+      } finally {
+        setLocationPending(false);
+      }
+    }, () => {
+      if (activeSession !== complaintSessionRef.current) return;
+      setLocationPending(false);
+      setLocationStatus("Location unavailable. Type or say a nearby junction or public landmark.");
+    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
   }
 
   async function startSarvamMicTurn(): Promise<boolean> {
@@ -440,10 +582,11 @@ export default function VoiceAgentPage() {
       return false;
     }
     try {
+      const captureGen = ++captureGenRef.current;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       });
-      if (!callActiveRef.current) {
+      if (!callActiveRef.current || captureGen !== captureGenRef.current) {
         stream.getTracks().forEach((t) => t.stop());
         return true;
       }
@@ -467,6 +610,11 @@ export default function VoiceAgentPage() {
         if (ev.data && ev.data.size > 0) chunks.push(ev.data);
       };
       mr.onstop = async () => {
+        const stoppedAt = performance.now();
+        if (captureGen !== captureGenRef.current) {
+          audioCtx.close().catch(() => null);
+          return;
+        }
         if (vadTimerRef.current !== null) {
           window.clearInterval(vadTimerRef.current);
           vadTimerRef.current = null;
@@ -481,15 +629,27 @@ export default function VoiceAgentPage() {
           return;
         }
         const blob = new Blob(chunks, { type: mime });
+        const turn = newTurn("voice");
+        turn.speechEndedAt = lastSpeechMs;
+        turn.endpointWaitMs = Math.round(stoppedAt - lastSpeechMs);
+        recordBrowserMeasurement("call.upload", turn.callId, turn, {
+          recorded_audio_ms: Math.round(stoppedAt - startedMs),
+          endpoint_wait_ms: turn.endpointWaitMs,
+        });
         const form = new FormData();
         form.append("audio", blob, "speech.webm");
         try {
           setOrbState("thinking");
-          const sttRes = await fetch("/api/stt?lang=ta-IN", { method: "POST", body: form });
+          const sttStarted = performance.now();
+          const sttRes = await fetch("/api/stt?lang=ta-IN", {
+            method: "POST", body: form, headers: turnHeaders(turn),
+          });
           const sttJson = await sttRes.json();
+          if (captureGen !== captureGenRef.current || !callActiveRef.current) return;
+          turn.browserSttMs = Math.round(performance.now() - sttStarted);
           const transcript = String(sttJson.transcript || "").trim();
           if (transcript) {
-            await submitTurn(transcript);
+            await submitTurnRef.current(transcript, turn);
           } else if (callActiveRef.current) {
             startListeningTurn();
           } else {
@@ -537,8 +697,7 @@ export default function VoiceAgentPage() {
 
     const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRec) {
-      callActiveRef.current = false;
-      setCallActive(false);
+      endCall();
       setMessages((m) => [
         ...m,
         { role: "agent", text: "Browser SpeechRecognition unavailable; use the Tanglish text box or sample chips." },
@@ -546,6 +705,9 @@ export default function VoiceAgentPage() {
       return;
     }
     const rec = new SpeechRec();
+    const captureGen = ++captureGenRef.current;
+    let speechEndedAt: number | undefined;
+    rec.onspeechend = () => { speechEndedAt = performance.now(); };
     rec.lang = "ta-IN";
     rec.interimResults = false;
     rec.maxAlternatives = 1;
@@ -555,11 +717,12 @@ export default function VoiceAgentPage() {
       setOrbState("listening");
     };
     rec.onresult = (ev: any) => {
+      if (captureGen !== captureGenRef.current || !callActiveRef.current) return;
       const transcript = ev?.results?.[0]?.[0]?.transcript || "";
       gotResult = Boolean(transcript);
       setListening(false);
       if (transcript) {
-        submitTurn(transcript);
+        void submitTurnRef.current(transcript, { ...newTurn("voice"), speechEndedAt });
       } else if (callActiveRef.current) {
         startListeningTurn();
       } else {
@@ -567,6 +730,7 @@ export default function VoiceAgentPage() {
       }
     };
     rec.onerror = () => {
+      if (captureGen !== captureGenRef.current) return;
       setListening(false);
       if (callActiveRef.current && !gotResult) {
         window.setTimeout(() => {
@@ -577,7 +741,7 @@ export default function VoiceAgentPage() {
       }
     };
     rec.onend = () => {
-      setListening(false);
+      if (captureGen === captureGenRef.current) setListening(false);
     };
     recRef.current = rec;
     rec.start();
@@ -620,6 +784,9 @@ export default function VoiceAgentPage() {
       return;
     }
     if (speaking) stopPlayback();
+    localCallId.current = crypto.randomUUID();
+    callStartedAt.current = performance.now();
+    recordBrowserMeasurement("call.started", localCallId.current);
     callActiveRef.current = true;
     setCallActive(true);
     startListeningTurn();
@@ -646,60 +813,87 @@ export default function VoiceAgentPage() {
     setOtpVerified(Boolean(data.verified));
   }
 
-  async function handleHitlSeal() {
-    const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
-    const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
-    const res = await fetch("/api/hitl/seal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode: "modal_plus_voice",
-        spoken_phrase: "உறுதி / Confirm",
-        modal_ok: modalOk,
-        otp_session_id: otpSessionId,
-        ward: String(analysis.landmark?.ward || slots.ward || "Ward 103"),
-        service_id: String(analysis.service_id || slots.issue || "streetlight_eb"),
-        urgency_tier: String(analysis.urgency?.tier || "STANDARD"),
-        complaint_revision: String(lastTurn?.complaint_version ?? 1),
-      }),
-    });
-    const data = await res.json();
-    const ok = Boolean(data.sealed || data.approved || data.status === "sealed");
-    setHitlApproved(ok);
-    setHitlStatus(
-      data.reason ||
-        data.message ||
-        (ok ? `HITL Sealed (${data.ticket_id || "ready"})` : "Confirmation incomplete")
-    );
+  async function handleHitlSeal(spokenPhrase: string, turn: TurnMeasurement) {
+    try {
+      if (!draft || (!signedIn && !otpVerified) || !draft.location.ward) {
+        setHitlStatus("Verify your mobile OTP before saying Confirm.");
+        return;
+      }
+      const generation = responseGenRef.current;
+      const res = await fetch("/api/hitl/seal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...turnHeaders(turn) },
+        body: JSON.stringify({
+          mode: modalOk ? "modal_plus_voice" : "voice_double",
+          spoken_phrase: spokenPhrase,
+          modal_ok: modalOk,
+          otp_session_id: otpSessionId,
+          session_id: sessionId,
+          ward: draft.location.ward,
+          service_id: draft.intent,
+          urgency_tier: draft.urgency_tier,
+          complaint_revision: String(draft.revision),
+          turn_id: turn.turnId,
+        }),
+      });
+      if (!res.ok) throw new Error("Confirmation request failed.");
+      const data = await res.json();
+      if (generation !== responseGenRef.current) return;
+      setHitlApproved(Boolean(data.approved));
+      setHandoffAuthorized(Boolean(data.handoff_authorized));
+      setHitlStatus(data.approved
+        ? data.handoff_authorized ? "Review sealed. Open the official portal to file." : "Demo review complete. No complaint was submitted."
+        : data.reason || "Confirmation incomplete");
+      if (data.approved) endCall();
+    } catch {
+      setHitlStatus("Could not confirm the draft. Try saying Confirm again.");
+    } finally {
+      setOrbState("idle");
+      if (callActiveRef.current) startListeningTurn();
+    }
   }
 
-  async function handleGeneratePreview() {
-    const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
-    const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
-    const landmarkObj = analysis.landmark || {
-      name: String(slots.landmark || "Anna Arch pakkam"),
-      ward: String(slots.ward || ""),
-    };
-    const res = await fetch("/api/portal/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        service_id: String(analysis.service_id || slots.issue || "streetlight_eb"),
-        landmark: landmarkObj,
-        summary_text: lastTurn?.display_text || "Streetlight complaint preview",
-        urgency_tier: String(analysis.urgency?.tier || "STANDARD"),
-        complaint_version: lastTurn?.complaint_version || 1,
-        otp_verified: otpVerified,
-        hitl_approved: hitlApproved,
-        attachment_size_kb: 0,
-      }),
-    });
-    const data: PreviewPacket = await res.json();
-    setPreviewPacket(data);
+  async function saveToHistory() {
+    try {
+      const response = await fetch("/api/requests", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session_id: sessionId }),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        setHitlStatus(typeof result.detail === "string" ? result.detail : "Could not save this draft.");
+        return;
+      }
+      setHitlStatus("Saved to My requests.");
+    } catch {
+      setHitlStatus("Could not save this draft.");
+    }
   }
 
-  const slots = (lastTurn?.slots || {}) as Record<string, unknown>;
-  const analysis = (lastTurn?.analysis || {}) as Record<string, any>;
+  async function handleFileUpload(file: File) {
+    setUploadingAttachment(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (inputText.trim()) form.append("note", inputText.trim());
+      const res = await fetch("/api/attachment/inspect", { method: "POST", body: form });
+      const data: AttachmentInfo = await res.json();
+      setAttachment(data);
+      const ticketPart = data.extracted_ticket ? ` · Ticket ${data.extracted_ticket}` : "";
+      const limitPart = data.within_gcc_1mb_limit ? "GCC <1 MB OK" : "Exceeds 1 MB GCC limit";
+      setMessages((m) => [
+        ...m,
+        {
+          role: "agent",
+          text: `Attachment inspected: ${data.filename} (${data.size_kb} KB${ticketPart}) — ${limitPart}.`,
+          meta: data.type,
+        },
+      ]);
+    } catch {
+      setMessages((m) => [...m, { role: "agent", text: "Attachment inspection failed. Please try another photo or PDF." }]);
+    } finally {
+      setUploadingAttachment(false);
+    }
+  }
 
   return (
     <div className="nk-open-canvas">
@@ -713,7 +907,7 @@ export default function VoiceAgentPage() {
           </span>
           {clientTtfaMs !== null && (
             <span className={`nk-pill ${clientTtfaMs < 500 ? "emerald" : ""}`} style={{ fontVariantNumeric: "tabular-nums" }}>
-              TTFA: {clientTtfaMs} ms
+              After transcript: {clientTtfaMs} ms
             </span>
           )}
         </div>
@@ -725,13 +919,28 @@ export default function VoiceAgentPage() {
             title="Start a fresh conversation session"
             onClick={() => {
               endCall();
-              setSessionId(`nk-${Date.now().toString(36)}`);
+              responseGenRef.current += 1;
+              pendingTurnRef.current = null;
+              setSubmitting(false);
+              localCallId.current = "";
+              const nextSession = crypto.randomUUID();
+              complaintSessionRef.current = nextSession;
+              setSessionId(nextSession);
               setMessages([]);
               setLastTurn(null);
+              setDraft(null);
               setPreviewPacket(null);
+              setLocationStatus("");
+              setLocationPending(false);
+              setModalOk(false);
+              setOtpSessionId("");
+              setOtpDemoHint("");
+              setOtpCode("");
               setOtpVerified(false);
               setHitlApproved(false);
+              setHandoffAuthorized(false);
               setHitlStatus("");
+              setAttachment(null);
             }}
           >
             New Call
@@ -745,11 +954,28 @@ export default function VoiceAgentPage() {
               checked={consentGranted}
               onChange={(e) => {
                 const next = e.target.checked;
+                consentRef.current = next;
+                sessionStorage.setItem(CONSENT_KEY, next ? "granted" : "denied");
                 setConsentGranted(next);
                 if (!next) {
-                  stopPlayback();
-                  submitTurn("consent withdraw");
+                  endCall();
+                  responseGenRef.current += 1;
+                  pendingTurnRef.current = null;
+                  setSubmitting(false);
+                  setDraft(null);
+                  setLastTurn(null);
+                  setPreviewPacket(null);
+                  setHitlApproved(false);
+                  setHandoffAuthorized(false);
+                  setModalOk(false);
+                  setLocationPending(false);
+                  setLocationStatus("");
                 }
+                void fetch("/api/dpdp/consent", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ session_id: sessionId, consented: next }),
+                }).catch(() => undefined);
               }}
             />
             Consent
@@ -847,7 +1073,6 @@ export default function VoiceAgentPage() {
         className="nk-chat-stream"
         aria-live="polite"
         aria-label="Conversation transcript"
-        style={{ width: "100%", maxHeight: 300 }}
       >
         {messages.length === 0 && (
           <p style={{ margin: "6px 0", textAlign: "center", color: "var(--ink-3)", fontSize: "0.92rem" }}>
@@ -865,9 +1090,59 @@ export default function VoiceAgentPage() {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Pill Text Composer */}
+      {/* Attachment Preview Bar (if photo/PDF uploaded) */}
+      {attachment && (
+        <div className="nk-attachment-bar" role="status">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            {attachment.type === "document_pdf" ? <FileText size={16} /> : <ImageIcon size={16} />}
+            <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {attachment.filename}
+            </span>
+            <span className={`nk-pill ${attachment.within_gcc_1mb_limit ? "emerald" : ""}`}>
+              {attachment.size_kb} KB · {attachment.within_gcc_1mb_limit ? "< 1 MB OK" : "> 1 MB"}
+            </span>
+            {attachment.extracted_ticket && (
+              <span className="nk-pill accent mono">{attachment.extracted_ticket}</span>
+            )}
+          </div>
+          <button
+            type="button"
+            className="nk-attach-btn"
+            aria-label="Remove attachment"
+            title="Remove attachment"
+            onClick={() => setAttachment(null)}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Pill Text Composer with Photo / PDF Upload */}
       <div className="nk-open-composer">
         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,.pdf"
+          aria-label="Upload street photo or PDF bill"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFileUpload(file);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          className="nk-attach-btn"
+          aria-label="Attach photo or PDF"
+          title="Attach street photo or PDF bill (<1 MB GCC limit)"
+          disabled={uploadingAttachment}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Paperclip size={18} />
+        </button>
+        <input
+          type="text"
           aria-label="Civic complaint input"
           placeholder="Speak or type in Tamil / Tanglish..."
           value={inputText}
@@ -876,22 +1151,58 @@ export default function VoiceAgentPage() {
             if (e.key === "Enter") submitTurn(inputText);
           }}
         />
-        <button type="button" className="nk-btn primary" onClick={() => submitTurn(inputText)}>
+        <button type="button" className="nk-btn primary" disabled={submitting || !consentGranted} onClick={() => submitTurn(inputText)}>
           <Send size={15} />
           Send
         </button>
       </div>
 
-      {/* Active Slot Pills (Only shown once a complaint is detected) */}
-      {lastTurn && (
-        <div style={{ width: "100%", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-          <span className="nk-pill accent">{lastTurn.fsm_state} · v{lastTurn.complaint_version ?? 1}</span>
-          <span className="nk-pill">Service: {String(analysis.service_id || slots.issue || "—")}</span>
-          <span className="nk-pill">Place: {String(analysis.landmark_text || slots.landmark || "—")}</span>
-          <span className={`nk-pill ${analysis.landmark?.ward ? "emerald" : ""}`}>
-            Ward: {String(analysis.landmark?.ward || "Pending")}
-          </span>
-        </div>
+      {draft && (
+        <section className="nk-card nk-grievance" aria-labelledby="grievance-heading">
+          <h2 id="grievance-heading">Grievance draft</h2>
+          <strong>{draft.label} <span lang="ta">{draft.label_ta}</span></strong>
+          <p>{draft.summary}</p>
+          <dl>
+            <div><dt>Incident location</dt><dd>{[draft.location.landmark || draft.location.street, draft.location.area, draft.location.ward].filter(Boolean).filter((item, index, all) => all.indexOf(item) === index).join(" · ") || "Awaiting a landmark"}</dd></div>
+            <div><dt>{draft.location.ward ? "Filing channel" : "Referral channel"}</dt><dd>{draft.destination.name} · {draft.destination.helpline}</dd></div>
+            {draft.duration_days !== null && <div><dt>Problem duration</dt><dd>{draft.duration_days} days</dd></div>}
+            {draft.impact && <div><dt>Road passability</dt><dd>{draft.impact}</dd></div>}
+          </dl>
+          <ul className="nk-intake-checks" aria-label="Grievance checklist">
+            {draft.checklist.checks.map((check) => <li key={check.label}>{check.label} · {check.complete ? "Complete" : "Pending"}</li>)}
+          </ul>
+          {draft.status === "needs_location" && (
+            <div className="nk-grievance-actions">
+              <button type="button" className="nk-btn" onClick={requestLocation} disabled={locationPending || submitting}>
+                <MapPin size={16} /> Use my location
+              </button>
+              <p role="status">{locationStatus || "If you are at the incident, share GPS. You can also say or type a nearby landmark."}</p>
+            </div>
+          )}
+          {draft.status === "cooldown" && <p>There is a recent request of this type for this ward.</p>}
+          {draft.status === "needs_details" && <p>{draft.next_field === "impact"
+            ? "Say or type whether the road is blocked, passable, or you are unsure."
+            : "Chennai Metro Water asks how many days the problem has lasted. Say or type the number of days."}</p>}
+          {draft.status === "needs_confirmation" && !hitlApproved && <p>{signedIn
+            ? "Review the details and confirm by voice before opening a filing channel."
+            : "Review the details and verify the demo code before confirming by voice."}</p>}
+          <div className="nk-grievance-actions">
+            <button type="button" className="nk-btn" onClick={() => {
+              const duration = draft.duration_days === null ? "" : `Problem duration: ${draft.duration_days} days`;
+              const text = [draft.label, draft.summary, draft.location.landmark, draft.location.street, draft.location.ward, duration, draft.impact].filter(Boolean).join("\n");
+              void navigator.clipboard.writeText(text).then(() => setHitlStatus("Draft copied.")).catch(() => setHitlStatus("Could not copy the draft."));
+            }}>Copy grievance draft</button>
+            {signedIn && <button className="nk-btn" type="button" onClick={() => void saveToHistory()}>Save to My requests</button>}
+          </div>
+          {handoffAuthorized && draft.destination.url && (
+            <div className="nk-grievance-actions">
+              <a className="nk-btn primary" href={draft.destination.url} target="_blank" rel="noreferrer">Open official portal</a>
+              {draft.checklist.whatsapp && <a className="nk-btn" href={draft.checklist.whatsapp} target="_blank" rel="noreferrer">Open WhatsApp</a>}
+              {draft.checklist.email && <a className="nk-btn" href={`mailto:${draft.checklist.email}`}>Open email</a>}
+            </div>
+          )}
+          {hitlStatus && <p role="status">{hitlStatus}</p>}
+        </section>
       )}
 
       {/* Collapsible Sample Prompts & OTP/HITL Clarity Drawer */}
@@ -908,25 +1219,25 @@ export default function VoiceAgentPage() {
             ))}
           </div>
 
-          <section
+          {draft?.status === "needs_confirmation" && !hitlApproved && <section
             className="nk-card"
             aria-live="assertive"
             style={{ borderColor: lastTurn?.fsm_state === "HITL_SEAL" ? "var(--emerald)" : "var(--border)" }}
           >
             <h2 style={{ margin: "0 0 12px", fontSize: "1rem", display: "flex", alignItems: "center", gap: 7 }}>
               <ShieldCheck size={18} />
-              Citizen Verification &amp; GCC Pre-Submit Packet
+              Citizen verification
             </h2>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
+            {!signedIn && <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: 12 }}>
               <input
-                aria-label="Masked phone number"
+                aria-label="Masked number for demo OTP"
                 className="nk-input"
                 style={{ width: 145 }}
                 value={phoneMasked}
                 onChange={(e) => setPhoneMasked(e.target.value)}
               />
-              <button type="button" className="nk-btn" onClick={handleSendOtp}>
-                Send OTP
+              <button type="button" className="nk-btn" onClick={handleSendOtp} disabled={!phoneMasked.trim()}>
+                Generate demo code
               </button>
               {otpDemoHint && <span className="nk-pill mono">OTP: {otpDemoHint}</span>}
               <input
@@ -940,22 +1251,15 @@ export default function VoiceAgentPage() {
               <button type="button" className="nk-btn primary" onClick={handleVerifyOtp} disabled={!otpSessionId}>
                 Verify
               </button>
-              {otpVerified && <span className="nk-pill emerald">OTP Verified</span>}
-            </div>
+              {otpVerified && <span className="nk-pill emerald">Demo code verified</span>}
+            </div>}
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
               <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.86rem", cursor: "pointer" }}>
                 <input type="checkbox" checked={modalOk} onChange={(e) => setModalOk(e.target.checked)} />
-                Clarity Popup OK
+                I reviewed the grievance details
               </label>
-              <button type="button" className="nk-btn emerald" onClick={handleHitlSeal}>
-                <CheckCircle2 size={15} />
-                Seal HITL (&quot;உறுதி / Confirm&quot;)
-              </button>
-              <button type="button" className="nk-btn" onClick={handleGeneratePreview}>
-                Build GCC Packet
-              </button>
-              {hitlStatus && <span className="nk-pill">{hitlStatus}</span>}
+              <span>Say “உறுதி” or “Confirm” once after review, or twice in separate voice turns.</span>
             </div>
 
             {previewPacket && (
@@ -973,7 +1277,7 @@ export default function VoiceAgentPage() {
                 </pre>
               </div>
             )}
-          </section>
+          </section>}
         </div>
       </details>
     </div>

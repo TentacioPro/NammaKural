@@ -19,10 +19,10 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from backend.llm_bridge import chat_backends, chat_message
-from backend.nlu import TN_FIXTURE_MAX_DISTANCE_SQUARED, extract_landmark_text, life_safety_helpline, resolve_gps_to_landmark
+from backend.nlu import ROAD_CONTEXT, TN_FIXTURE_MAX_DISTANCE_SQUARED, extract_landmark_text, life_safety_helpline, resolve_gps_to_landmark
 from backend.logger import log_event
 from backend.nlu import analyze_turn, classify_conversational_chitchat, classify_semantic_vad, classify_sentiment_urgency
-from backend.portal_bridge import build_gcc_preview_packet
+from backend.portal_bridge import build_gcc_preview_packet, build_grievance_draft
 from backend.session_store import STORE
 from backend.state import check_cooldown, has_dpdp_consent, record_dpdp_consent, scrub_pii_and_aadhaar, verify_hitl_seal
 from backend.state_packs import REGISTRY
@@ -41,6 +41,19 @@ _SESSIONS: OrderedDict[tuple[str, str], tuple[float, dict[str, Any]]] = OrderedD
 _SESSION_TTL = 30 * 60
 _SESSION_LIMIT = 512
 _CORRECTION = re.compile(r"^\s*(?:\b(?:illa|change|actually|instead|no)\b|மாற்று|இல்ல)", re.I)
+_UNVERIFIED_FILING = re.compile(
+    r"\b(?:filed|submitted|registered|dispatched|ticket (?:number|id)|(?:will|i['’]ll|we['’]ll) "
+    r"(?:file|submit|register|dispatch|send|fix)|(?:file|submit|register)\W+(?:pan|paṇ))"
+    r"|(?:பதிவு|அனுப்பி|அனுப்பிட|பதிவுசெய்).{0,18}(?:செய்து|செய்தாச்சு|பண்ணி|பண்றேன்|விட்டேன்)"
+    r"|(?:team|குழு|அதிகாரி).{0,45}(?:வந்து|சரி பண்ண|will|fix)", re.I,
+)
+_GPS_AREA_WARDS = {"Anna Nagar": {"Ward 102", "Ward 103"}, "Velachery": {"Ward 175", "Ward 178"}}
+_PROBLEM_DAYS = re.compile(r"(?<!\d)(\d{1,3})\s*(?:-\s*)?(?:days?\b|naa?l\w*\b|நாள|நாட்கள)", re.I)
+_FLOOD_IMPACT = re.compile(
+    r"\b(?:blocked|passable|impassable|stranded|knee[ -]deep|ankle[ -]deep|"
+    r"can(?:not|'t) (?:walk|cross|pass)|traffic|don['’]?t know)\b|"
+    r"போக முடிய|கடக்க முடிய|முழங்கால்|கணுக்கால்|போக்குவரத்து|தெரியல", re.I,
+)
 
 
 def set_workflow_consent(session_id: str, consented: bool) -> dict[str, Any]:
@@ -185,10 +198,23 @@ def _resolve_pack_turn(query: str, state_code: str = "tn", gps_lat: float | None
 
 def _capture_slots(slots: dict[str, Any], candidate: dict[str, Any], text: str) -> None:
     if candidate["has_issue"] and candidate["urgency"]["tier"] != "LIFE_SAFETY":
+        if not slots.get("description") or slots.get("issue") != candidate["service_id"]:
+            slots["description"] = text[:280]
+            slots.pop("duration_days", None)
+            slots.pop("impact", None)
         slots.update(issue=candidate["service_id"], urgency=candidate["urgency"])
+    duration = _PROBLEM_DAYS.search(text)
+    if slots.get("issue") and duration:
+        slots["duration_days"] = int(duration[1])
+    if slots.get("issue") == "road_flooding" and _FLOOD_IMPACT.search(text):
+        slots["impact"] = text[:180]
     if candidate["has_place"]:
-        slots.update(landmark=candidate["landmark_text"], area=candidate["area"],
+        area = candidate["area"]
+        if not area and not candidate["landmark"].get("ward") and not _CORRECTION.search(text):
+            area = slots.get("area")
+        slots.update(landmark=candidate["landmark_text"], area=area,
                      match=candidate["landmark"], ambiguous_area=candidate["ambiguous_area"])
+        slots.update(location_source="landmark", reported_landmark=candidate["landmark_text"])
     if re.search(r"\b(?:add|note|also)\b|^(?:pole|pillar)\s+\d+\b|குறிப்பு|கூடவே", text, re.I):
         slots["note"] = text[:180]
     if re.search(r"\b[A-Z]{2,5}-?\d{4,6}\b", text, re.I):
@@ -208,6 +234,18 @@ def _with_slots(analysis: dict[str, Any], slots: dict[str, Any]) -> dict[str, An
         "urgency": slots.get("urgency", analysis["urgency"]),
         "ticket_ref": slots.get("ticket_ref", analysis["ticket_ref"]),
     }
+
+
+def get_grievance_draft(session_id: str) -> dict[str, Any] | None:
+    if not has_dpdp_consent(session_id):
+        return None
+    slots = STORE.get_json(f"slots:{session_id}:tn") or {}
+    if not slots.get("issue"):
+        return None
+    analysis = _with_slots(_resolve_pack_turn("", "tn"), slots)
+    ward = analysis["landmark"].get("ward")
+    cooldown = check_cooldown(ward, analysis["service_id"], analysis["urgency"]["tier"]) if ward else None
+    return build_grievance_draft(analysis, slots, cooldown)
 
 
 def execute_tool(name: str, args: dict[str, Any], ctx: dict[str, Any]) -> dict[str, Any]:
@@ -385,6 +423,7 @@ def _generate_natural_reply(
             f"You are {persona_name}, a sharp, warm, human-like assistant for NammaKural ({state_name}). {lang_rule} "
             f"Active civic state: {json.dumps(grounded_ctx, ensure_ascii=False)}. "
             "Respond naturally to what the user just said. Do not re-ask for an issue or place already in slots. "
+            "You are gathering a draft. Never promise to file, send, or resolve it or imply a team is on its way. "
             "If verified_ward is missing and they are reporting an issue, naturally ask for a nearby landmark or junction (never invent a Ward number). "
             "If fsm_state is HITL_SEAL, confirm the exact verified_ward and ask them to verify Mobile OTP and say 'Confirm' / 'உறுதி' twice."
         )
@@ -535,6 +574,7 @@ def _tamil_prompt(state: str, analysis: dict[str, Any], cooldown: dict[str, Any]
 
 class _GraphState(TypedDict, total=False):
     utterance: str
+    grievance_only: bool
     combined_text: str
     state_code: str
     lang: str
@@ -542,6 +582,7 @@ class _GraphState(TypedDict, total=False):
     history: list[dict[str, str]]
     gps_lat: float | None
     gps_lon: float | None
+    gps_accuracy_m: float | None
     otp_verified: bool
     dpdp_consented: bool
     assistant_speaking: bool
@@ -559,6 +600,7 @@ class _GraphState(TypedDict, total=False):
     ctx: dict[str, Any]
     analysis: dict[str, Any]
     fsm_state: str
+    grievance_draft: dict[str, Any] | None
     tool_trace: list[dict[str, Any]]
     llm_reply: str | None
     llm_tts: str | None
@@ -614,12 +656,15 @@ def _node_safety_and_vad(state: _GraphState) -> dict[str, Any]:
 
     clean_latest = scrub_latest["clean_text"]
     clean_combined = scrub_combined["clean_text"]
+    if not clean_latest and state.get("gps_lat") is not None and state.get("gps_lon") is not None:
+        return {"clean_latest": "", "clean_combined": "", "pii_masked": False,
+                "vad": {"action": "process_turn", "reason": "citizen_gps"}, "early_return": None}
     vad = classify_semantic_vad(clean_latest, state.get("assistant_speaking", False))
     if vad["action"] == "not_turn":
         log_event("vad.ignored", "Ignored backchannel or brief bystander noise", {"text": clean_latest})
         return {"early_return": {"fsm_state": "GREET", "vad": vad, "ignored_backchannel": True, **speech_fields("", ""), "tool_trace": []}}
 
-    chitchat = classify_conversational_chitchat(clean_latest)
+    chitchat = None if state.get("grievance_only") else classify_conversational_chitchat(clean_latest)
     if chitchat is not None and not next(iter(chat_backends(state.get("llm_mode", "offline"))), None):
         reply = chitchat["reply_ta"] if lang == "ta" else (chitchat.get("reply_tanglish", chitchat["reply_en"]) if lang == "tanglish" else chitchat["reply_en"])
         log_event("workflow.chitchat", "Responded naturally to greeting/mic-check", {"kind": chitchat["kind"], "lang": lang})
@@ -665,13 +710,22 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
             stored = STORE.get_json(f"slots:{session_id}:{state_code}")
             if stored:
                 slots = stored
+        if state.get("grievance_only"):
+            slots["focused_intake"] = True
         prev_lm, prev_issue = slots.get("landmark"), slots.get("issue")
+        prev_ward = (slots.get("match") or {}).get("ward")
+        prev_duration = slots.get("duration_days")
+        prev_impact = slots.get("impact")
         if not slots and clean_combined != clean_latest:
             _capture_slots(slots, _resolve_pack_turn(clean_combined, state_code), clean_combined)
+        if (state_code == "tn" and slots.get("issue") == "water_pipe"
+                and not latest_analysis["has_issue"] and ROAD_CONTEXT.search(clean_latest)
+                and re.search(r"\b(?:issue|problem|actually|only)\b|பிரச்சனை|தான்", clean_latest, re.I)):
+            latest_analysis.update(has_issue=True, service_id="road_flooding")
         if (
             state_code == "tn"
             and slots.get("issue")
-            and (not slots.get("landmark") or _CORRECTION.search(clean_latest))
+            and (not (slots.get("match") or {}).get("ward") or _CORRECTION.search(clean_latest))
             and not latest_analysis["has_issue"]
             and not latest_analysis["has_place"]
         ):
@@ -679,11 +733,21 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
             if place:
                 latest_analysis.update(has_place=True, landmark_text=place, landmark={**latest_analysis["landmark"], "name": place})
         _capture_slots(slots, latest_analysis, clean_latest)
-        if not latest_analysis["has_place"] and gps_lat is not None and gps_lon is not None:
+        gps_accuracy = state.get("gps_accuracy_m")
+        if (not latest_analysis["has_place"] and not (slots.get("match") or {}).get("ward")
+                and gps_lat is not None and gps_lon is not None and (gps_accuracy is None or gps_accuracy <= 100)):
             gps = _resolve_pack_turn("", state_code, gps_lat, gps_lon)
-            _capture_slots(slots, gps, "")
+            gps_ward = gps["landmark"].get("ward")
+            area = slots.get("area")
+            if gps_ward and (not slots.get("landmark") or gps_ward in _GPS_AREA_WARDS.get(area, set())):
+                reported = slots.get("reported_landmark")
+                _capture_slots(slots, gps, "")
+                slots.update(location_source="gps", area=area, reported_landmark=reported)
         ver = int(slots.get("complaint_version") or 1)
-        if (prev_lm and slots.get("landmark") != prev_lm) or (prev_issue and slots.get("issue") != prev_issue):
+        if ((prev_lm and slots.get("landmark") != prev_lm) or (prev_issue and slots.get("issue") != prev_issue)
+                or (prev_ward and (slots.get("match") or {}).get("ward") != prev_ward)
+                or (prev_duration is not None and slots.get("duration_days") != prev_duration)
+                or (prev_impact and slots.get("impact") != prev_impact)):
             ver += 1
         slots["complaint_version"] = ver
         snapshot = slots.copy()
@@ -709,7 +773,7 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
 
     first_backend = next(iter(chat_backends(llm_mode)), None) if llm_mode != "offline" else None
     if (
-        llm_mode != "offline"
+        clean_latest and llm_mode != "offline" and not state.get("grievance_only")
         and ctx["analysis"]["urgency"]["tier"] != "CRITICAL_SAFETY"
         and first_backend is not None
         and first_backend.get("provider") != "sarvam-cloud"
@@ -742,6 +806,9 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
         tool_trace.append({"tool": "check_ward_cooldown", "result": cd})
 
     fsm_state = _derive_fsm_state(analysis, ctx.get("seal_result"))
+    draft = build_grievance_draft(analysis, slots, ctx.get("cooldown"))
+    if draft and draft["status"] == "needs_details":
+        fsm_state = "DISAMBIGUATE"
     if not has_dpdp_consent(session_id):
         return {"early_return": _consent_blocked()}
 
@@ -754,6 +821,7 @@ def _node_slot_and_nlu(state: _GraphState) -> dict[str, Any]:
         "ctx": ctx,
         "analysis": analysis,
         "fsm_state": fsm_state,
+        "grievance_draft": draft,
         "tool_trace": tool_trace,
         "llm_reply": llm_reply,
         "llm_tts": None,
@@ -770,7 +838,11 @@ def _node_respond_conversational(state: _GraphState) -> dict[str, Any]:
     fsm_state = state["fsm_state"]
     lm = analysis["landmark"]
 
-    if not llm_reply and state.get("llm_mode") != "offline" and analysis["urgency"]["tier"] != "CRITICAL_SAFETY":
+    if (state.get("grievance_draft") or {}).get("status") == "needs_details":
+        return _node_respond_deterministic({**state, "llm_reply": None})
+
+    if (not llm_reply and state["clean_latest"] and state.get("llm_mode") != "offline"
+            and analysis["urgency"]["tier"] != "CRITICAL_SAFETY"):
         llm_reply, llm_tts, fast_model = _generate_natural_reply(
             utterance=state["clean_latest"],
             preferred_mode=state.get("llm_mode", "auto"),
@@ -801,6 +873,14 @@ def _node_respond_deterministic(state: _GraphState) -> dict[str, Any]:
     """Zero-key deterministic Tamil/Tanglish/English prompt builder."""
     if state.get("llm_reply"):
         return {}
+    draft = state.get("grievance_draft") or {}
+    if draft.get("status") == "needs_details":
+        prompt, spoken = (
+            ("Is the road blocked or still passable? Say so if you’re unsure.", "சாலை அடைஞ்சிருக்கா, இல்ல போக முடியுதா? தெரியலைன்னா அதையும் சொல்லுங்க.")
+            if draft["next_field"] == "impact" else
+            ("How many days has this problem been happening?", "இந்தப் பிரச்சனை எத்தனை நாளா இருக்கு?")
+        )
+        return {"llm_reply": spoken if state.get("lang") == "ta" else prompt, "llm_tts": spoken}
     fsm_state = state["fsm_state"]
     analysis = state["analysis"]
     lm = analysis["landmark"]
@@ -869,6 +949,11 @@ def _node_finalize(state: _GraphState) -> dict[str, Any]:
 
     raw_reply = state.get("llm_reply") or ""
     llm_tts = state.get("llm_tts")
+    if fsm_state != "DISPATCH" and _UNVERIFIED_FILING.search(f"{raw_reply} {llm_tts or ''}"):
+        deterministic = _node_respond_deterministic({**state, "llm_reply": None})
+        raw_reply = deterministic["llm_reply"]
+        llm_tts = None
+        state = {**state, "use_generated_speech": False}
     safe_reply = post_guardrail_reply(raw_reply, {lm["ward"]} if analysis.get("has_place") else set())
     candidate_tts = llm_tts or (safe_reply if state.get("use_generated_speech") else "")
     if candidate_tts and re.search(r"[\u0B80-\u0BFF]", candidate_tts):
@@ -938,6 +1023,7 @@ def _node_finalize(state: _GraphState) -> dict[str, Any]:
             "slots": _public_slots(slots),
             "cooldown": state["ctx"].get("cooldown"),
             "preview_packet": preview_packet,
+            "grievance_draft": state.get("grievance_draft"),
             **speech_fields(safe_reply, tts_out),
             "tool_trace": tool_trace,
         }
@@ -951,6 +1037,8 @@ def _route_after_safety(state: _GraphState) -> str:
 def _route_after_nlu(state: _GraphState) -> str:
     if state.get("early_return") is not None:
         return END
+    if state.get("grievance_only"):
+        return "respond_deterministic"
     if state.get("llm_mode") != "offline" and state["analysis"]["urgency"]["tier"] != "CRITICAL_SAFETY":
         return "respond_conversational"
     return "respond_deterministic"
@@ -993,16 +1081,19 @@ def run_workflow_turn(
     history: list[dict[str, str]] | None = None,
     gps_lat: float | None = None,
     gps_lon: float | None = None,
+    gps_accuracy_m: float | None = None,
     otp_verified: bool = False,
     dpdp_consented: bool = True,
     assistant_speaking: bool = False,
     persona_name: str = "Pallavi",
     session_id: str | None = None,
+    grievance_only: bool = False,
 ) -> dict[str, Any]:
     """Execute one turn through the LangGraph StateGraph with Code > LLM & DPDP guardrails."""
     out = _WORKFLOW_GRAPH.invoke(
         {
             "utterance": utterance,
+            "grievance_only": grievance_only,
             "combined_text": combined_text,
             "state_code": state_code,
             "lang": lang,
@@ -1010,6 +1101,7 @@ def run_workflow_turn(
             "history": history or [],
             "gps_lat": gps_lat,
             "gps_lon": gps_lon,
+            "gps_accuracy_m": gps_accuracy_m,
             "otp_verified": otp_verified,
             "dpdp_consented": dpdp_consented,
             "assistant_speaking": assistant_speaking,

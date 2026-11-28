@@ -74,7 +74,8 @@ def synthesize_bulbul_sync(text: str, speaker: str = "kavitha", pace: float = 1.
                 return {"ok": False, "audio": b"", "provider": "sarvam-bulbul-empty"}
             raw_wav = base64.b64decode(audios[0])
             latency_ms = round((time.monotonic() - t0) * 1000, 1)
-            log_event("tts.sarvam_bulbul", text[:60], {"bytes": len(raw_wav), "latency_ms": latency_ms, "speaker": speaker})
+            log_event("tts.sarvam_bulbul", data={"bytes": len(raw_wav), "latency_ms": latency_ms,
+                                               "speaker": speaker, "submitted_chars": len(text[:490])})
             return {"ok": True, "audio": raw_wav, "media_type": "audio/wav", "voice": f"sarvam-{speaker}", "latency_ms": latency_ms}
     except Exception as exc:
         log_event("tts.sarvam_bulbul_error", type(exc).__name__, level="WARN")
@@ -116,7 +117,10 @@ async def stream_bulbul_mp3(
                     if chunk:
                         if first_chunk:
                             first_chunk = False
-                            log_event("tts.sarvam_stream_ttfb", text[:60], {"latency_ms": round((time.monotonic() - t0) * 1000, 1), "speaker": speaker})
+                            log_event("tts.sarvam_stream_ttfb", data={
+                                "latency_ms": round((time.monotonic() - t0) * 1000, 1),
+                                "speaker": speaker, "submitted_chars": len(payload["text"]),
+                            })
                         yield chunk
     except Exception as exc:
         log_event("tts.sarvam_stream_error", type(exc).__name__, level="WARN")

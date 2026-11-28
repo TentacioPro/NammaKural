@@ -1,0 +1,250 @@
+{
+  "checked_at": "2026-11-28T09:00:23+00:00",
+  "sources": {
+    "gcc-form": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 29,
+      "static_options": 4,
+      "fingerprints": {
+        "fields": "84abc2f593b511cdeaa80d42367201de1a31e0509387f0619beb239d6cb35249",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "521e8b805b82a22d10902b273a66e47fa1d57b2a63d792b6780565511c355d04"
+      }
+    },
+    "gcc-contact": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 5,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "4950e4f5d131ddf88f2f82b954d7dba1f21c221246993b5950737368f11ef8cc",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "e26f73364619d0f9ad914e74afe9f39afeb705dc77eef7644d342679fa56d28c"
+      }
+    },
+    "gcc-erp": {
+      "status": "robots_unavailable",
+      "error_type": "URLError"
+    },
+    "gcc-whatsapp": {
+      "status": "unavailable",
+      "http_status": 404
+    },
+    "cams-form": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 15,
+      "static_options": 56,
+      "fingerprints": {
+        "fields": "4a71af29223a6fdabe04e2bac4569196d0edefd6777650649afca818b5c5c444",
+        "contacts": "5516b288525cf519f9a7a2c887005e844a8d5ccc42a51afec018363046240fd6",
+        "visible_text": "09e0820c878bb977447da753552755eeb980ef683101abec19ff33eab7b4125a"
+      }
+    },
+    "cm-faq": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "0024d652fe3512603607080a1aa9e1d54374fc9a9aebe82d7bfe41bc3f7431e5",
+        "visible_text": "de42cf6579c40a495af0353364f35e39d65c4fb692a45df184dda69bc78cc546"
+      }
+    },
+    "cm-about": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "5a81e9d9bed2b955895563e5848444527ed58033bcb3fa5b842a57c7b5f06821",
+        "visible_text": "5ddf666639b892d21cbe5111f70d750b3ca1fe5e60c30649cabf8245c4d7005d"
+      }
+    },
+    "cmwssb": {
+      "status": "app_shell_only",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "cf4937aa4acf7da5525667ac25b360759a5e2da29e4a5d2027a7cd1e4af4f9e3"
+      }
+    },
+    "twad": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 1,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "178c4b6fe296574150855c86df7a0e34422a3a1181be8dc180f8b0998d053d76",
+        "contacts": "39f178b8949652cb099c62620ff5f969328f678cdc8c68da221351fca23b9ef1",
+        "visible_text": "2b8f9f5ba5a9d25ae00d301c0c24fa1b861e3e76cc43f66b3991ff2d1858f889"
+      }
+    },
+    "ccms": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 13,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a4c6a311bdbf4c299fc5c2dea7f2d624d775c173c1a217cfbfe491ade3f8ae06",
+        "contacts": "f0608dd259c77ca72dca8a38222d53f2dacf8fe032eb378f7540205082e21e91",
+        "visible_text": "c6cec5848a935767f2b7e941719cf2fc6559cc7bd172110405aeef00204b1178"
+      }
+    },
+    "cgrf": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "513c05a251aecd2be07c976bf0a99f5b13ac014a3cbb94ad78917fa28a803d75",
+        "visible_text": "2b6b9a2717850b78310e681192e253f04624c3a47101b1448d2c99a73d5d268b"
+      }
+    },
+    "tnpds": {
+      "status": "robots_unavailable",
+      "error_type": "URLError"
+    },
+    "tnpcb": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 5,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "03460e87e71e29076f3baa8729dfc6d96b5a4f4671b55baf53c5158a4846b504",
+        "contacts": "452fbb2fd48c0287ce7b0412adebb6edce035639086b18490829f70b745c76e5",
+        "visible_text": "49d01240208bd6b618bfe23d697fe88897fb593a5851f381cc8df45630988b3c"
+      }
+    },
+    "nugarvor": {
+      "status": "robots_unavailable",
+      "error_type": "URLError"
+    },
+    "tnstc": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 6,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "cfe8edc472ad23701325f0a184d499a6c8aa6eeb1c2ce3676ab3bed2b3b17fd4",
+        "contacts": "189d42c09846bf28830321587b52af7e7bbe3ae47c636d1986251400b3ba9963",
+        "visible_text": "1e1b763f251aa262d5498997f0c81df45caa31cb93adfa1f1d64fbac3b7c7ed8"
+      }
+    },
+    "esevai": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "3c87cc80afcf3dcf45d41e3b1f735e8dfa426ee028e8d592ba0c12e1cdbccfba",
+        "visible_text": "4f4b30b81abec92076e20d3c1d1917c421f9a02eaa2d43780691708dee7327a0"
+      }
+    },
+    "esevai-help": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "86df5c150fb5431dee977b934108141d050823f46513703c3bf34797f8eabb40",
+        "visible_text": "a8c223c2c8f8cf2aabb5e1d1dffd088fd8541b3c3e3f01fb4e26fec056dfc9e3"
+      }
+    },
+    "esevai-expanded": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 0,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "a683096011db3975a1e401e33b0047d1f2677a11efe85ef12806f016ae039795",
+        "contacts": "93a494ac0fe9eff2e95626d954fa7d2cd22dac7910b9159511647af01911e039",
+        "visible_text": "2496265674a9b398e9480415a491334ac6d40d1de20c50912db41a98ae1217e4"
+      }
+    },
+    "urban": {
+      "status": "app_shell_only",
+      "missing_markers": [],
+      "static_controls": 6,
+      "static_options": 25,
+      "fingerprints": {
+        "fields": "20a225513baf3f2ffecc080327d8d6f690457e9115a4cb04b4aff6af4f537b4f",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "61d484fe2e6b9bca307983ba22131d296dbdd5f01ea106adfd5383700de46088"
+      }
+    },
+    "rural": {
+      "status": "robots_unavailable",
+      "error_type": "URLError"
+    },
+    "lgd": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 1,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "08662e155b535005d016003685a838f29705678bb2856046cfbeec8bacf19bd1",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "79ef098ad53ad2b6d23de75f90b5b5d9e3aefcbc00ab92c11c3ed7854fca35eb"
+      }
+    },
+    "districts": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 1,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "08662e155b535005d016003685a838f29705678bb2856046cfbeec8bacf19bd1",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "94a9385d9adbea890f1fed63e3a3e122a0341627b31e046def4252a55f42980e"
+      }
+    },
+    "district-petition": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 1,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "08662e155b535005d016003685a838f29705678bb2856046cfbeec8bacf19bd1",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "eb75c7050f0cdfb685d703f2ea0c8fda3a3f05523ddd334f3dd010e55543a35b"
+      }
+    },
+    "district-redirect": {
+      "status": "public_document",
+      "missing_markers": [],
+      "static_controls": 1,
+      "static_options": 0,
+      "fingerprints": {
+        "fields": "08662e155b535005d016003685a838f29705678bb2856046cfbeec8bacf19bd1",
+        "contacts": "f865256c77f3fc9fb80d7c6a2cdc9716f594a132d8ed568eff51d23dc252eb20",
+        "visible_text": "3f50fec511570345226f4aa4ec4ca1ef77db7df6894b55e1df91c9f0ca86de47"
+      }
+    }
+  },
+  "review_queue": [
+    {
+      "source": "esevai-expanded",
+      "signals": [
+        "no_baseline"
+      ],
+      "status": "public_document"
+    },
+    {
+      "source": "urban",
+      "signals": [
+        "visible_text"
+      ],
+      "status": "app_shell_only"
+    }
+  ]
+}

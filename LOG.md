@@ -32,3 +32,9 @@
 2026-11-27 19:40 IST | agent=codex | spec=tamil-playback-fallback | did=Added bundled Pallavi clips for fixed Tamil prompts when neural playback and browser Tamil speech are unavailable, plus Chromium playback regression coverage | files=index.html,assets/voice/,tests/test_a11y_playwright.py
 
 2026-11-27 21:40 IST | agent=antigravity | spec=round2-react-sarvam-vercel | did=Merged feat/v4-specs-003-004-memory, decluttered scratch/zip files, added SessionStore (Redis/TTL+HMAC), Sarvam realtime/Bulbul adapters, RapidFuzz matching, GCC dry-run preview packet (NK-PREVIEW-*), Vercel bom1 ASGI, and Vite/React/TS SPA (/, /debug, /traces, /telemetry) | files=api/index.py,vercel.json,backend/*,frontend/*,tests/test_voice_architectures.py,CONTEXT.md,TODO.md,specs/INDEX.md,LOG.md | gate=PASS npm_build+pytest(83)+eval_gate(31/31)+analyze_logs(0pii)+impeccable([])
+
+2026-11-28 14:00 IST | agent=codex | spec=009 | did=Added grievance intake across voice, text and GPS, portal-aware draft review, call timing and usage history | gate=PASS pytest(132)+golden(32/32)+npm-build+impeccable([])+playwright(0 errors/overflow)
+
+2026-11-28 14:17 IST | agent=codex | spec=010 | did=Added configurable mobile sign-in, private grievance history, public channel checklists and operator outcome, trace and eval views | gate=PASS pytest(134)+golden(33/33)+npm-build+impeccable([])+playwright(0 errors/overflow)+compose-config
+
+2026-11-28 14:33 IST | agent=codex | spec=011 | did=Archived civic research, 24 public-source checks, 122 e-Sevai codes, benchmark decisions and 2129 allowlisted telemetry records for cloud handoff | gate=PASS public-audit+catalog-validation+export-review
